@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* --- ESTILOS GENERALES (Modo Oscuro / Cyberpunk / Corridos) --- */
+        /* --- ESTILOS GENERALES --- */
         :root {
-            --primary: #ff0040; /* Rojo intenso para resaltar */
+            --primary: #ff0040;
             --dark: #0a0a0a;
             --gray: #1f1f1f;
             --text: #ffffff;
@@ -32,7 +32,7 @@
         a { text-decoration: none; color: white; transition: 0.3s; }
         a:hover { color: var(--primary); }
 
-        /* --- HERO SECTION (Donde irá tu video Anime) --- */
+        /* --- HERO SECTION --- */
         .hero {
             height: 100vh;
             display: flex;
@@ -40,7 +40,8 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.9)), url('https://images.unsplash.com/photo-1514525253440-b393452e8d26?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'); /* FOTO TEMPORAL */
+            /* Fondo con degradado oscuro para que el texto resalte */
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.9)), url('https://images.unsplash.com/photo-1514525253440-b393452e8d26?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
             background-size: cover;
             background-position: center;
             padding: 20px;
@@ -65,20 +66,18 @@
             cursor: pointer;
             font-size: 1.2rem;
         }
-
         .btn:hover { background: var(--primary); box-shadow: 0 0 20px var(--primary); }
 
-        /* --- MUSIC SECTION --- */
+        /* --- SECCIONES COMUNES --- */
         .section { padding: 80px 20px; max-width: 1000px; margin: 0 auto; }
         .section-title { font-size: 2.5rem; border-bottom: 2px solid var(--primary); display: inline-block; margin-bottom: 40px; }
 
+        /* --- MUSIC GRID --- */
         .music-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
-
-        /* Caja de Spotify simulada */
         .track-card {
             background: var(--gray);
             padding: 20px;
@@ -86,22 +85,68 @@
             text-align: center;
         }
 
+        /* --- NUEVO: SLIDER / GALERÍA --- */
+        .gallery-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 20px;
+            padding-bottom: 20px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch; /* Smooth scroll en iOS */
+        }
+        
+        /* Ocultar barra de scroll fea pero mantener funcionalidad */
+        .gallery-container::-webkit-scrollbar { height: 8px; }
+        .gallery-container::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+        .gallery-container::-webkit-scrollbar-track { background: var(--gray); }
+
+        .gallery-item {
+            scroll-snap-align: center;
+            min-width: 300px; /* Tamaño mínimo de cada "slide" */
+            height: 300px;
+            background-color: var(--gray);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #333;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Esto hace que la imagen llene el cuadro sin deformarse */
+            transition: transform 0.3s;
+        }
+        .gallery-item:hover img { transform: scale(1.05); }
+
         /* --- BIO & STATS --- */
         .bio-container { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; }
         .bio-text { flex: 1; min-width: 300px; }
+        
+        /* Imagen de Bio Personalizada (Círculo o Cuadrado con estilo) */
+        .bio-img-wrapper {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            justify-content: center;
+        }
         .bio-img { 
-            flex: 1; 
-            min-width: 300px; 
-            height: 400px; 
-            background: url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'); /* FOTO TEMPORAL */
-            background-size: cover; 
-            border-radius: 10px;
-            filter: grayscale(100%);
+            width: 300px; 
+            height: 300px; 
+            border-radius: 50%; /* Hazlo cuadrado quitando esta línea si prefieres */
+            border: 4px solid var(--primary);
+            box-shadow: 0 0 30px rgba(255, 0, 64, 0.2);
+            overflow: hidden;
+            background-color: black;
+        }
+        .bio-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         /* --- CONTACTO / FOOTER --- */
         .contact-links { display: flex; justify-content: center; gap: 30px; font-size: 2rem; margin-top: 30px; }
-        
         footer { text-align: center; padding: 20px; background: black; color: #555; margin-top: 50px; }
 
         /* --- RESPONSIVE --- */
@@ -136,9 +181,33 @@
     </section>
 
     <section class="section">
+        <h2 class="section-title">Visuals</h2>
+        <p style="margin-bottom: 20px; color: #888;">Desliza para ver más &rarr;</p>
+        
+        <div class="gallery-container">
+            <div class="gallery-item">
+                <img src="https://open.spotify.com/intl-es/artist/5YtRkkyiXntYnEZWO4kUxB" alt="Cover Art">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="https://is1-ssl.mzstatic.com/image/thumb/AMCArtistImages211/v4/51/01/7a/51017a3d-cca6-0aa8-d750-5a02a04ae425/file_cropped.png/190x190cc.webp" alt="Liros Music Profile">
+            </div>
+
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Studio Vibes">
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
         <h2 class="section-title">Sobre Mí</h2>
         <div class="bio-container">
-            <div class="bio-img"></div>
+            <div class="bio-img-wrapper">
+                <div class="bio-img">
+                    <img src="https://is1-ssl.mzstatic.com/image/thumb/AMCArtistImages211/v4/51/01/7a/51017a3d-cca6-0aa8-d750-5a02a04ae425/file_cropped.png/190x190cc.webp" alt="Liros Music Face">
+                </div>
+            </div>
+            
             <div class="bio-text">
                 <h3>El cruce entre Música y Tecnología</h3>
                 <p><br>Desde Sinaloa para el mundo. Creando una fusión única entre la narrativa de los corridos y la estética digital.</p>
@@ -161,7 +230,7 @@
     </section>
 
     <footer>
-        <p>&copy; 2026 Liros Music. Todos los derechos reservados.</p>
+        <p>© 2026 Liros Music. Todos los derechos reservados.</p>
     </footer>
 
 </body>

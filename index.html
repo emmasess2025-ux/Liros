@@ -3,818 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liros Music | Official EPK</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Liros Music | EPK</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* --- 1. CARGA DE FUENTES LOCALES (HK GROTESK WIDE) --- */
-        /* Asegúrate de que la carpeta 'fonts' exista y tenga estos archivos dentro */
-        
-        @font-face {
-            font-family: 'HK Grotesk Wide';
-            src: url('fonts/HKGroteskWide-Light.otf') format('opentype');
-            font-weight: 300;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'HK Grotesk Wide';
-            src: url('fonts/HKGroteskWide-Regular.otf') format('opentype');
-            font-weight: 400;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'HK Grotesk Wide';
-            src: url('fonts/HKGroteskWide-Medium.otf') format('opentype');
-            font-weight: 500;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'HK Grotesk Wide';
-            src: url('fonts/HKGroteskWide-Bold.otf') format('opentype');
-            font-weight: 700;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'HK Grotesk Wide';
-            src: url('fonts/HKGroteskWide-Black.otf') format('opentype');
-            font-weight: 900;
-            font-style: normal;
-        }
+        /* --- FONTS --- */
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('fonts/HKGroteskWide-Regular.otf'); }
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('fonts/HKGroteskWide-Bold.otf'); font-weight: 700; }
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('fonts/HKGroteskWide-Black.otf'); font-weight: 900; }
 
+        /* --- THEME CONFIGURATION --- */
         :root {
-            /* Primary Colors Swapped for Light Mode */
-            --primary-blue: #0a8cff;
-            --primary-dark: #ffffff; /* Background is now White */
-            --primary-light: #0a0a0a; /* Text is now Dark */
+            /* Backgrounds */
+            --bg-main: #ffffff;
             
-            --accent-blue: #0066cc;
-            --accent-gray: #f4f4f4; /* Light gray for sections */
-            --mosaic-blue: #e0efff; /* Lighter blue for background pattern */
-            --mosaic-light: #1a3a5f; /* Darker blue for contrast elements */
+            /* Text */
+            --text-dark: #050505;
+            --text-grey: #666666;
             
-            --main-font: 'HK Grotesk Wide', sans-serif;
+            /* Accents */
+            --accent: #4a6fa5;       /* Steel Blue */
+            --accent-soft: #a8c0dd;  /* Soft Blue */
+            
+            --font: 'HK Grotesk Wide', sans-serif;
+
+            /* --- LIQUID GLASS VARIABLES --- */
+            --c-glass: #ffffff;
+            --c-dark: #222222;
+            --saturation: 110%;
+            --glass-reflex-light: 1;
+            --glass-reflex-dark: 0.8;
         }
 
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-            cursor: none;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            font-family: var(--main-font);
-            font-weight: 400; /* Regular por defecto */
-            background-color: var(--primary-dark);
-            color: var(--primary-light);
-            line-height: 1.6;
+            font-family: var(--font);
+            background-color: var(--bg-main);
+            color: var(--text-dark);
             overflow-x: hidden;
-            letter-spacing: 0.5px; /* Las fuentes Wide se ven mejor con un poco de aire */
             position: relative;
+            min-height: 100vh;
         }
 
-        /* Mosaic Background Pattern */
-        .mosaic-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-            opacity: 0.15;
-            background-image: 
-                radial-gradient(circle at 25% 25%, var(--mosaic-blue) 2px, transparent 2px),
-                radial-gradient(circle at 75% 75%, var(--mosaic-blue) 2px, transparent 2px),
-                radial-gradient(circle at 50% 50%, var(--mosaic-light) 1px, transparent 1px);
-            background-size: 100px 100px, 150px 150px, 200px 200px;
-            animation: mosaicMove 20s linear infinite;
+        /* --- CORNER GRADIENTS --- */
+        .corner-glow {
+            position: fixed; width: 900px; height: 900px; border-radius: 50%;
+            filter: blur(120px); z-index: -2; opacity: 0.4; pointer-events: none;
         }
+        .glow-tr { top: -400px; right: -400px; background: radial-gradient(circle, var(--accent-soft), transparent 70%); }
+        .glow-bl { bottom: -400px; left: -400px; background: radial-gradient(circle, var(--accent), transparent 70%); }
 
-        @keyframes mosaicMove {
-            0% { background-position: 0 0, 0 0, 0 0; }
-            100% { background-position: 100px 100px, 150px 150px, 200px 200px; }
-        }
-
-        /* Animated Blue Particles */
-        .particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        .particle {
-            position: absolute;
-            background-color: var(--mosaic-light);
-            border-radius: 50%;
-            opacity: 0.3;
-            animation: float 15s infinite linear;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0) translateX(0); }
-            25% { transform: translateY(-20px) translateX(10px); }
-            50% { transform: translateY(-10px) translateX(20px); }
-            75% { transform: translateY(-30px) translateX(-10px); }
-            100% { transform: translateY(0) translateX(0); }
-        }
-
-        /* Custom Cursor */
+        /* --- CURSOR --- */
         .cursor {
+            position: fixed; width: 30px; height: 30px;
+            border: 2px solid var(--accent); border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            transition: transform 0.1s;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .cursor-inner { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+        .cursor.hover { transform: scale(1.8); background: rgba(74, 111, 165, 0.1); }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
+        a { text-decoration: none; color: var(--text-dark); transition: 0.3s; }
+        
+        /* --- LIQUID GLASS CLASS (Shared by Cards & Nav) --- */
+        .liquid-glass {
+            position: relative;
+            background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+            backdrop-filter: blur(10px) saturate(var(--saturation));
+            -webkit-backdrop-filter: blur(10px) saturate(var(--saturation));
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff88 10%, #00000000), 
+                        inset 1.8px 3px 2px -2px color-mix(in srgb, #ffffff99 90%, #00000000), 
+                        inset -1.8px -3px 2px -2px color-mix(in srgb, #ffffff 80%, #00000000), 
+                        0px 6px 16px 0px rgba(0,0,0,0.05);
+        }
+
+        /* --- 1. NEW: SIDE NAVIGATION PILL --- */
+        .nav-pill {
             position: fixed;
-            width: 40px;
-            height: 40px;
-            border: 2px solid var(--primary-blue);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9999;
-            transition: transform 0.1s, width 0.3s, height 0.3s;
-            mix-blend-mode: difference;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .cursor-inner {
-            width: 8px;
-            height: 8px;
-            background-color: var(--primary-blue);
-            border-radius: 50%;
-            transition: width 0.3s, height 0.3s;
-        }
-
-        .cursor.hover {
-            transform: scale(1.5);
-            border-color: var(--mosaic-light);
-            background-color: rgba(10, 140, 255, 0.1);
-        }
-
-        .cursor.hover .cursor-inner {
-            background-color: var(--mosaic-light);
-            width: 12px;
-            height: 12px;
-        }
-
-        /* Títulos: Usamos Bold o Black para impacto */
-        h1, h2, h3 { 
-            font-weight: 700; 
-            text-transform: uppercase; 
-        }
-        
-        a { 
-            text-decoration: none; 
-            color: white; 
-            transition: 0.3s; 
-            position: relative;
-        }
-        
-        a:hover { 
-            color: var(--primary-blue); 
-        }
-
-        /* Animated Underline Effect */
-        .underline-effect {
-            position: relative;
-            display: inline-block;
-        }
-
-        .underline-effect::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(to right, var(--primary-blue), var(--mosaic-light));
-            transition: width 0.4s ease;
-        }
-
-        .underline-effect:hover::after {
-            width: 100%;
-        }
-
-        /* --- HERO SECTION --- */
-        .hero {
-            height: 100vh;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            background: linear-gradient(rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.7)), 
-                        radial-gradient(circle at 30% 30%, rgba(10, 140, 255, 0.2), transparent 70%),
-                        radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.1), transparent 70%);
-            background-size: cover;
-            background-position: center;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
+            gap: 25px;
+            padding: 30px 15px;
+            border-radius: 50px; /* Pill Shape */
+            z-index: 1000;
+            transition: 0.3s;
         }
 
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(90deg, transparent 49%, rgba(255,255,255,0.03) 50%, transparent 51%),
-                linear-gradient(transparent 49%, rgba(255,255,255,0.03) 50%, transparent 51%);
-            background-size: 50px 50px;
-            animation: gridMove 20s linear infinite;
-            z-index: -1;
-        }
-
-        @keyframes gridMove {
-            0% { background-position: 0 0; }
-            100% { background-position: 50px 50px; }
-        }
-
-        .hero h1 {
-            font-size: 5rem; /* Tamaño gigante */
-            font-weight: 900; /* Usamos la versión BLACK aquí */
-            letter-spacing: 5px;
-            margin-bottom: 10px;
-            text-shadow: 0 0 30px rgba(10, 140, 255, 0.7);
-            opacity: 0;
-            transform: translateY(50px);
-            animation: fadeInUp 1s ease forwards 0.5s;
-        }
-
-        .hero p { 
-            font-size: 1.5rem; 
-            font-weight: 300; /* Versión LIGHT para el subtítulo */
-            color: #ccc; 
-            margin-bottom: 40px; 
-            letter-spacing: 3px;
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 1s ease forwards 0.8s;
-        }
-
-        .btn {
-            padding: 18px 50px;
-            border: 2px solid var(--primary-blue);
-            background: rgba(10, 10, 10, 0.7);
-            color: white;
-            font-weight: 700; /* Bold */
-            font-family: var(--main-font);
-            cursor: pointer;
+        .nav-link {
+            width: 40px; height: 40px;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 50%;
+            color: var(--text-grey);
             font-size: 1.1rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 1s ease forwards 1.1s;
-        }
-        
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(10, 140, 255, 0.4), transparent);
-            transition: left 0.7s;
-            z-index: -1;
-        }
-        
-        .btn:hover::before {
-            left: 100%;
-        }
-        
-        .btn:hover { 
-            background: rgba(10, 140, 255, 0.1); 
-            box-shadow: 0 0 30px rgba(10, 140, 255, 0.5); 
-            border-color: var(--mosaic-light);
-        }
-
-        /* Fade In Up Animation */
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* --- SECCIONES COMUNES --- */
-        .section { 
-            padding: 100px 20px; 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            position: relative;
-        }
-        
-        /* Section Reveal Animation */
-        .reveal {
-            position: relative;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 1s ease;
-        }
-        
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .section-title { 
-            font-size: 3rem; 
-            font-weight: 900; /* Black */
-            border-bottom: 3px solid var(--primary-blue); 
-            display: inline-block; 
-            margin-bottom: 60px; 
-            padding-bottom: 15px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: -3px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(to right, var(--primary-blue), var(--mosaic-light), var(--primary-blue));
-            transform: translateX(-100%);
-            transition: transform 1.5s ease;
-        }
-        
-        .section-title.in-view::after {
-            transform: translateX(0);
-        }
-
-        /* --- MUSIC GRID --- */
-        .music-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-        }
-        
-        .track-card {
-            background: linear-gradient(145deg, rgba(31, 31, 31, 0.8), rgba(10, 10, 10, 0.9));
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .track-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, transparent 40%, rgba(10, 140, 255, 0.05) 50%, transparent 60%);
-            transform: translateX(-100%);
-            transition: transform 0.6s;
-        }
-        
-        .track-card:hover::before {
-            transform: translateX(100%);
-        }
-        
-        .track-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 40px rgba(10, 140, 255, 0.2);
-            border-color: rgba(10, 140, 255, 0.3);
-        }
-        
-        .track-card h3 { 
-            font-weight: 500; 
-            letter-spacing: 2px; 
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-
-        /* --- SLIDER / GALERÍA --- */
-        .gallery-container {
-            display: flex;
-            overflow-x: auto;
-            gap: 30px;
-            padding-bottom: 30px;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .gallery-container::-webkit-scrollbar { 
-            height: 12px; 
-        }
-        
-        .gallery-container::-webkit-scrollbar-thumb { 
-            background: linear-gradient(to right, var(--primary-blue), var(--mosaic-light));
-            border-radius: 6px; 
-        }
-        
-        .gallery-container::-webkit-scrollbar-track { 
-            background: var(--accent-gray); 
-            border-radius: 6px;
-        }
-
-        .gallery-item {
-            scroll-snap-align: center;
-            min-width: 350px;
-            height: 350px;
-            background: linear-gradient(145deg, rgba(31, 31, 31, 0.8), rgba(10, 10, 10, 0.9));
-            border-radius: 15px;
-            overflow: hidden;
-            position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-        
-        .gallery-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.03) 50%, transparent 70%);
-            z-index: 1;
-        }
-        
-        .gallery-item img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transition: transform 0.8s ease; 
-        }
-        
-        .gallery-item:hover img { 
-            transform: scale(1.1); 
-        }
-
-        /* --- BIO --- */
-        .bio-container { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 60px; 
-            align-items: center; 
-        }
-        
-        .bio-text { 
-            flex: 1; 
-            min-width: 300px; 
-        }
-        
-        .bio-img-wrapper {
-            flex: 1;
-            min-width: 300px;
-            display: flex;
-            justify-content: center;
-        }
-        
-        .bio-img { 
-            width: 350px; 
-            height: 350px; 
-            border-radius: 50%; 
-            border: 4px solid transparent;
-            background: linear-gradient(45deg, var(--primary-blue), var(--mosaic-light), var(--primary-blue)) border-box;
-            box-shadow: 0 0 40px rgba(10, 140, 255, 0.3);
-            overflow: hidden;
-            position: relative;
-            animation: rotateBorder 10s linear infinite;
-        }
-        
-        @keyframes rotateBorder {
-            0% { background: linear-gradient(0deg, var(--primary-blue), var(--mosaic-light), var(--primary-blue)) border-box; }
-            25% { background: linear-gradient(90deg, var(--primary-blue), var(--mosaic-light), var(--primary-blue)) border-box; }
-            50% { background: linear-gradient(180deg, var(--primary-blue), var(--mosaic-light), var(--primary-blue)) border-box; }
-            75% { background: linear-gradient(270deg, var(--primary-blue), var(--mosaic-light), var(--primary-blue)) border-box; }
-            100% { background: linear-gradient(360deg, var(--primary-blue), var(--mosaic-light), var(--primary-blue)) border-box; }
-        }
-        
-        .bio-img img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            border-radius: 50%;
-            padding: 4px;
-            background-color: var(--primary-dark);
-        }
-        
-        .bio-text h3 { 
-            font-size: 2.2rem; 
-            margin-bottom: 25px; 
-            color: var(--mosaic-light);
-        }
-        
-        .bio-text p { 
-            font-weight: 300; 
-            margin-bottom: 20px; 
-            font-size: 1.2rem; 
-            line-height: 1.8;
-        }
-
-        /* --- CONTACTO / FOOTER --- */
-        .contact-links { 
-            display: flex; 
-            justify-content: center; 
-            gap: 40px; 
-            font-size: 2.5rem; 
-            margin-top: 40px; 
-        }
-        
-        .contact-links a {
-            width: 70px;
-            height: 70px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 50%;
-            background: linear-gradient(145deg, rgba(31, 31, 31, 0.8), rgba(10, 10, 10, 0.9));
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
         }
-        
-        .contact-links a:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(10, 140, 255, 0.3);
-            border-color: rgba(10, 140, 255, 0.3);
-            color: var(--primary-blue);
-        }
-        
-        footer { 
-            text-align: center; 
-            padding: 30px; 
-            background: rgba(0, 0, 0, 0.8); 
-            color: #888; 
-            margin-top: 80px; 
-            font-size: 1rem; 
-            font-weight: 300; 
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            position: relative;
-        }
-        
-        footer::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200px;
-            height: 3px;
-            background: linear-gradient(to right, transparent, var(--primary-blue), transparent);
+
+        /* Active State / Hover */
+        .nav-link.active, .nav-link:hover {
+            background-color: var(--accent);
+            color: white;
+            box-shadow: 0 0 15px rgba(74, 111, 165, 0.5);
+            transform: scale(1.1);
         }
 
-        /* --- RESPONSIVE --- */
-        @media (max-width: 992px) {
-            .hero h1 { font-size: 3.5rem; }
-            .section-title { font-size: 2.5rem; }
-            .bio-img { width: 300px; height: 300px; }
+        /* --- HERO --- */
+        .hero {
+            height: 90vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
         }
-        
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            .hero p { font-size: 1.2rem; }
-            .section-title { font-size: 2rem; }
-            .bio-container { flex-direction: column; }
-            .contact-links { gap: 25px; font-size: 2rem; }
-            .contact-links a { width: 60px; height: 60px; }
-            .track-card, .gallery-item { min-width: 100%; }
+        .hero h1 { font-size: 5rem; margin-bottom: 10px; color: var(--text-dark); }
+        .hero p { font-size: 1.2rem; color: var(--text-grey); letter-spacing: 4px; margin-bottom: 40px; }
+
+        .btn {
+            padding: 15px 40px; border: 2px solid var(--text-dark); background: transparent;
+            color: var(--text-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+            transition: 0.3s; display: inline-block;
         }
-        
-        @media (max-width: 480px) {
-            .hero h1 { font-size: 2rem; letter-spacing: 3px; }
-            .btn { padding: 15px 30px; font-size: 0.9rem; }
-            .section-title { font-size: 1.8rem; }
-            .music-grid { grid-template-columns: 1fr; }
+        .btn:hover { background: var(--text-dark); color: white; }
+
+        /* --- SECTIONS --- */
+        .section { padding: 100px 20px; max-width: 1200px; margin: 0 auto; }
+        .section-title { font-size: 3rem; margin-bottom: 60px; color: var(--text-dark); border-bottom: 3px solid var(--accent); display: inline-block; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 1s ease; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* --- CARDS (Using Liquid Glass) --- */
+        .card-box {
+            padding: 30px;
+            border-radius: 32px;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .card-box:hover { transform: translateY(-5px); box-shadow: inset 0 0 0 1px white, 0px 15px 30px 0px rgba(74, 111, 165, 0.2); }
+
+        /* --- IMAGES --- */
+        .gallery-container { display: flex; gap: 30px; overflow-x: auto; padding-bottom: 30px; }
+        .gallery-item { min-width: 350px; height: 350px; overflow: hidden; border-radius: 12px; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); transition: 0.5s; }
+        .gallery-item:hover img { filter: grayscale(0%); transform: scale(1.05); }
+
+        /* --- BIO --- */
+        .bio-container { display: flex; gap: 60px; align-items: center; flex-wrap: wrap; }
+        .bio-img { width: 350px; height: 350px; border-radius: 50%; overflow: hidden; border: 5px solid white; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .bio-img img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); }
+        .bio-text h3 { font-size: 2rem; margin-bottom: 20px; color: var(--accent); }
+        .bio-text p { color: var(--text-grey); margin-bottom: 20px; line-height: 1.8; }
+
+        /* --- FOOTER --- */
+        footer { text-align: center; padding: 50px; margin-top: 50px; background: transparent; color: var(--text-grey); border-top: 1px solid #eee; }
+        .contact-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; font-size: 2rem; }
+
+        /* Responsive */
+        @media(max-width: 900px) {
+            .nav-pill { 
+                /* Move nav to bottom on mobile */
+                left: 50%; top: auto; bottom: 20px; 
+                transform: translateX(-50%); 
+                flex-direction: row; 
+                padding: 15px 30px;
+                width: 90%;
+                justify-content: space-between;
+            }
+            .section { padding: 60px 20px; }
+        }
+        @media(max-width: 768px) {
+            .hero h1 { font-size: 3rem; }
+            .bio-container { flex-direction: column; text-align: center; }
+            .cursor { display: none; }
+            * { cursor: auto; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Mosaic Background -->
-    <div class="mosaic-bg"></div>
-    
-    <!-- Animated Particles -->
-    <div class="particles" id="particles"></div>
-    
-    <!-- Custom Cursor -->
-    <div class="cursor" id="cursor">
-        <div class="cursor-inner"></div>
-    </div>
+    <div class="corner-glow glow-tr"></div>
+    <div class="corner-glow glow-bl"></div>
+    <div class="cursor" id="cursor"><div class="cursor-inner"></div></div>
 
-    <header class="hero">
-        <h1>LIROS MUSIC</h1>
-        <p>ARTIST</p>
-        <a href="#music" class="btn underline-effect">ESCUCHAR AHORA</a>
+    <nav class="nav-pill liquid-glass">
+        <a href="#home" class="nav-link active" title="Inicio"><i class="fas fa-home"></i></a>
+        <a href="#music" class="nav-link" title="Música"><i class="fas fa-music"></i></a>
+        <a href="#visuals" class="nav-link" title="Galería"><i class="fas fa-eye"></i></a>
+        <a href="#bio" class="nav-link" title="Bio"><i class="fas fa-user"></i></a>
+        <a href="#contact" class="nav-link" title="Contacto"><i class="fas fa-envelope"></i></a>
+    </nav>
+
+    <header id="home" class="hero">
+        <h1 class="reveal">LIROS MUSIC</h1>
+        <p class="reveal">Sad Romántico</p>
+        <a href="#music" class="btn reveal">Escuchar Ahora</a>
     </header>
 
     <section id="music" class="section">
-        <h2 class="section-title reveal">Últimos Lanzamientos</h2>
-        <div class="music-grid">
-            <div class="track-card reveal">
-                <h3>Track Destacado 1</h3>
+        <h2 class="section-title reveal">Lanzamientos</h2>
+        <div class="grid">
+            <div class="liquid-glass card-box reveal">
+                <h3>Último Sencillo</h3>
                 <br>
-                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/1ujwihHpfR61eDntqCUuwT?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-            </div>
-            <div class="track-card reveal">
-                <h3>Track Destacado 2</h3>
-                <br>
-                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/03TAG3WXL6h5rlzCdoNnR9?utm_source=generator" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-            </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <h2 class="section-title reveal">Visuals</h2>
-        <p style="margin-bottom: 20px; color: #aaa; font-weight:300;" class="reveal">Desliza para ver más →</p>
-        
-        <div class="gallery-container">
-            <div class="gallery-item">
-                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Cover Art">
-            </div>
-            <div class="gallery-item">
-                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w-1350&q=80" alt="Liros Music Profile">
-            </div>
-            <div class="gallery-item">
-                <img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Studio Vibes">
-            </div>
-            <div class="gallery-item">
-                <img src="https://images.unsplash.com/photo-1514525253440-b393452e8d26?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Performance">
-            </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <h2 class="section-title reveal">Sobre Mí</h2>
-        <div class="bio-container">
-            <div class="bio-img-wrapper reveal">
-                <div class="bio-img">
-                    <img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Liros Music Face">
-                </div>
+                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/1ujwihHpfR61eDntqCUuwT?utm_source=generator" width="100%" height="152" frameBorder="0" allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
             </div>
             
-            <div class="bio-text reveal">
-                <h3>El cruce entre Música</h3>
-                <p>Desde Sinaloa para el mundo. Creando una fusión única entre la narrativa de los corridos y la estética digital.</p>
-                <p>No solo compongo la música, construyo el mundo alrededor de ella. Instrumentalismo en vivo mezclado con producción moderna.</p>
+            <div class="liquid-glass card-box reveal">
+                <h3>Top Hits</h3>
                 <br>
-                <a href="#" class="underline-effect" style="color: var(--primary-blue); font-weight: 700;">
-                    Descargar Press Kit (PDF) <i class="fas fa-download"></i>
-                </a>
+                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/03TAG3WXL6h5rlzCdoNnR9?utm_source=generator" width="100%" height="152" frameBorder="0" allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
             </div>
         </div>
     </section>
 
-    <section class="section" style="text-align: center;">
-        <h2 class="section-title reveal">Booking</h2>
-        <p style="font-weight:300; margin-bottom: 10px;" class="reveal">Disponible para fechas en 2026. Mazatlán / Nacional.</p>
-        <p style="font-weight:300; color: #aaa;" class="reveal">Contáctame para más información sobre shows y colaboraciones.</p>
-        
-        <div class="contact-links">
-            <a href="https://instagram.com/TU_USUARIO" target="_blank" class="underline-effect"><i class="fab fa-instagram"></i></a>
-            <a href="https://wa.me/521XXXXXXXXXX" target="_blank" class="underline-effect"><i class="fab fa-whatsapp"></i></a>
-            <a href="mailto:booking@lirosmusic.com" class="underline-effect"><i class="fas fa-envelope"></i></a>
-            <a href="https://spotify.com" target="_blank" class="underline-effect"><i class="fab fa-spotify"></i></a>
+    <section id="visuals" class="section">
+        <h2 class="section-title reveal">Visuals</h2>
+        <div class="gallery-container reveal">
+            <div class="gallery-item"><img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80"></div>
+            <div class="gallery-item"><img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80"></div>
+            <div class="gallery-item"><img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&q=80"></div>
         </div>
     </section>
 
-    <footer>
-        <p>© 2026 Liros Music. Todos los derechos reservados.</p>
-        <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">Diseño con mosaico blanco, negro y azul</p>
+    <section id="bio" class="section">
+        <h2 class="section-title reveal">Bio</h2>
+        <div class="bio-container reveal">
+            <div class="bio-img"><img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=600&q=80"></div>
+            <div class="bio-text">
+                <h3>Desde Sinaloa</h3>
+                <p>Narrativas rotas sobre acordes tumbados. Una fusión de tradición y estética digital moderna.</p>
+                <p>Instrumentalismo en vivo mezclado con producción minimalista.</p>
+                <a href="#" class="btn" style="padding: 10px 30px; font-size: 0.9rem;">Descargar EPK</a>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <div class="contact-links">
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-whatsapp"></i></a>
+            <a href="#"><i class="fas fa-envelope"></i></a>
+        </div>
+        <p>© 2026 Liros Music. Mazatlán, MX.</p>
     </footer>
 
     <script>
-        // Create animated particles
-        function createParticles() {
-            const particlesContainer = document.getElementById('particles');
-            const particleCount = 30;
-            
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.classList.add('particle');
-                
-                // Random size and position
-                const size = Math.random() * 5 + 2;
-                particle.style.width = `${size}px`;
-                particle.style.height = `${size}px`;
-                particle.style.left = `${Math.random() * 100}vw`;
-                particle.style.top = `${Math.random() * 100}vh`;
-                
-                // Random color (blue/white shades)
-                const colors = ['#0a8cff', '#4a7bb9', '#e6f2ff', '#ffffff'];
-                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                
-                // Random animation duration and delay
-                const duration = Math.random() * 20 + 10;
-                const delay = Math.random() * 5;
-                particle.style.animationDuration = `${duration}s`;
-                particle.style.animationDelay = `${delay}s`;
-                
-                particlesContainer.appendChild(particle);
-            }
-        }
-        
-        // Custom cursor
+        // Cursor Logic
         const cursor = document.getElementById('cursor');
-        let mouseX = 0;
-        let mouseY = 0;
-        let cursorX = 0;
-        let cursorY = 0;
-        
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
+        document.addEventListener('mousemove', e => {
+            cursor.style.left = (e.clientX - 15) + 'px';
+            cursor.style.top = (e.clientY - 15) + 'px';
         });
         
-        function updateCursor() {
-            // Smooth cursor movement
-            cursorX += (mouseX - cursorX) * 0.1;
-            cursorY += (mouseY - cursorY) * 0.1;
-            
-            cursor.style.left = `${cursorX - 20}px`;
-            cursor.style.top = `${cursorY - 20}px`;
-            
-            requestAnimationFrame(updateCursor);
-        }
-        
-        // Cursor hover effects
-        const hoverElements = document.querySelectorAll('a, button, .track-card, .gallery-item');
-        
-        hoverElements.forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                cursor.classList.add('hover');
-            });
-            
-            el.addEventListener('mouseleave', () => {
-                cursor.classList.remove('hover');
-            });
+        document.querySelectorAll('a, iframe, img, .liquid-glass').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
         });
-        
-        // Scroll reveal animations
-        function revealOnScroll() {
-            const reveals = document.querySelectorAll('.reveal');
-            const sectionTitles = document.querySelectorAll('.section-title');
+
+        // Scroll Reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) entry.target.classList.add('active');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Active Link Highlighting (Scroll Spy)
+        const sections = document.querySelectorAll('header, section, footer');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
             
-            reveals.forEach(element => {
-                const windowHeight = window.innerHeight;
-                const elementTop = element.getBoundingClientRect().top;
-                const elementVisible = 100;
-                
-                if (elementTop < windowHeight - elementVisible) {
-                    element.classList.add('active');
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                // If we are within 1/3rd of the section
+                if (pageYOffset >= (sectionTop - sectionHeight / 3)) {
+                    current = section.getAttribute('id');
                 }
             });
-            
-            sectionTitles.forEach(title => {
-                const windowHeight = window.innerHeight;
-                const elementTop = title.getBoundingClientRect().top;
-                
-                if (elementTop < windowHeight - 100) {
-                    title.classList.add('in-view');
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active');
                 }
             });
-        }
-        
-        // Initialize everything when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            createParticles();
-            updateCursor();
-            revealOnScroll();
-            
-            // Update on scroll
-            window.addEventListener('scroll', revealOnScroll);
-            
-            // Add mosaic pattern to hero background
-            const hero = document.querySelector('.hero');
-            const mosaicPattern = document.createElement('div');
-            mosaicPattern.style.position = 'absolute';
-            mosaicPattern.style.top = '0';
-            mosaicPattern.style.left = '0';
-            mosaicPattern.style.width = '100%';
-            mosaicPattern.style.height = '100%';
-            mosaicPattern.style.backgroundImage = `
-                radial-gradient(circle at 20% 80%, rgba(74, 123, 185, 0.1) 2px, transparent 2px),
-                radial-gradient(circle at 80% 20%, rgba(10, 140, 255, 0.1) 2px, transparent 2px)
-            `;
-            mosaicPattern.style.backgroundSize = '100px 100px, 150px 150px';
-            mosaicPattern.style.opacity = '0.5';
-            mosaicPattern.style.zIndex = '-1';
-            hero.appendChild(mosaicPattern);
         });
     </script>
 </body>

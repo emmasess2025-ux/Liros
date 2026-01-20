@@ -5,29 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liros Music | Official EPK</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        /* --- ESTILOS GENERALES --- */
+        /* --- 1. CARGA DE FUENTES LOCALES (HK GROTESK WIDE) --- */
+        /* Asegúrate de que la carpeta 'fonts' exista y tenga estos archivos dentro */
+        
+        @font-face {
+            font-family: 'HK Grotesk Wide';
+            src: url('fonts/HKGroteskWide-Light.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'HK Grotesk Wide';
+            src: url('fonts/HKGroteskWide-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'HK Grotesk Wide';
+            src: url('fonts/HKGroteskWide-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'HK Grotesk Wide';
+            src: url('fonts/HKGroteskWide-Bold.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'HK Grotesk Wide';
+            src: url('fonts/HKGroteskWide-Black.otf') format('opentype');
+            font-weight: 900;
+            font-style: normal;
+        }
+
+        /* --- 2. ESTILOS GENERALES --- */
         :root {
             --primary: #ff0040;
             --dark: #0a0a0a;
             --gray: #1f1f1f;
             --text: #ffffff;
+            /* Aquí definimos tu nueva fuente como la principal */
+            --main-font: 'HK Grotesk Wide', sans-serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: var(--main-font);
+            font-weight: 400; /* Regular por defecto */
             background-color: var(--dark);
             color: var(--text);
             line-height: 1.6;
             overflow-x: hidden;
+            letter-spacing: 0.5px; /* Las fuentes Wide se ven mejor con un poco de aire */
         }
 
-        h1, h2, h3 { font-family: 'Oswald', sans-serif; text-transform: uppercase; }
+        /* Títulos: Usamos Bold o Black para impacto */
+        h1, h2, h3 { 
+            font-weight: 700; 
+            text-transform: uppercase; 
+        }
         
         a { text-decoration: none; color: white; transition: 0.3s; }
         a:hover { color: var(--primary); }
@@ -40,7 +81,6 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            /* Fondo con degradado oscuro para que el texto resalte */
             background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.9)), url('https://images.unsplash.com/photo-1514525253440-b393452e8d26?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
             background-size: cover;
             background-position: center;
@@ -48,29 +88,45 @@
         }
 
         .hero h1 {
-            font-size: 4rem;
-            letter-spacing: 5px;
+            font-size: 4rem; /* Tamaño gigante */
+            font-weight: 900; /* Usamos la versión BLACK aquí */
+            letter-spacing: 3px;
             margin-bottom: 10px;
             text-shadow: 0 0 20px rgba(255, 0, 64, 0.5);
         }
 
-        .hero p { font-size: 1.5rem; color: #ccc; margin-bottom: 30px; }
+        .hero p { 
+            font-size: 1.2rem; 
+            font-weight: 300; /* Versión LIGHT para el subtítulo */
+            color: #ccc; 
+            margin-bottom: 30px; 
+            letter-spacing: 2px;
+        }
 
         .btn {
             padding: 15px 40px;
             border: 2px solid var(--primary);
             background: transparent;
             color: white;
-            font-weight: bold;
-            font-family: 'Oswald', sans-serif;
+            font-weight: 700; /* Bold */
+            font-family: var(--main-font);
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
         .btn:hover { background: var(--primary); box-shadow: 0 0 20px var(--primary); }
 
         /* --- SECCIONES COMUNES --- */
         .section { padding: 80px 20px; max-width: 1000px; margin: 0 auto; }
-        .section-title { font-size: 2.5rem; border-bottom: 2px solid var(--primary); display: inline-block; margin-bottom: 40px; }
+        
+        .section-title { 
+            font-size: 2.5rem; 
+            font-weight: 900; /* Black */
+            border-bottom: 2px solid var(--primary); 
+            display: inline-block; 
+            margin-bottom: 40px; 
+        }
 
         /* --- MUSIC GRID --- */
         .music-grid {
@@ -84,25 +140,24 @@
             border-radius: 10px;
             text-align: center;
         }
+        .track-card h3 { font-weight: 500; letter-spacing: 1px; }
 
-        /* --- NUEVO: SLIDER / GALERÍA --- */
+        /* --- SLIDER / GALERÍA --- */
         .gallery-container {
             display: flex;
             overflow-x: auto;
             gap: 20px;
             padding-bottom: 20px;
             scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch; /* Smooth scroll en iOS */
+            -webkit-overflow-scrolling: touch;
         }
-        
-        /* Ocultar barra de scroll fea pero mantener funcionalidad */
         .gallery-container::-webkit-scrollbar { height: 8px; }
         .gallery-container::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
         .gallery-container::-webkit-scrollbar-track { background: var(--gray); }
 
         .gallery-item {
             scroll-snap-align: center;
-            min-width: 300px; /* Tamaño mínimo de cada "slide" */
+            min-width: 300px;
             height: 300px;
             background-color: var(--gray);
             border-radius: 10px;
@@ -110,20 +165,13 @@
             position: relative;
             border: 1px solid #333;
         }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Esto hace que la imagen llene el cuadro sin deformarse */
-            transition: transform 0.3s;
-        }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
         .gallery-item:hover img { transform: scale(1.05); }
 
-        /* --- BIO & STATS --- */
+        /* --- BIO --- */
         .bio-container { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; }
         .bio-text { flex: 1; min-width: 300px; }
         
-        /* Imagen de Bio Personalizada (Círculo o Cuadrado con estilo) */
         .bio-img-wrapper {
             flex: 1;
             min-width: 300px;
@@ -131,23 +179,21 @@
             justify-content: center;
         }
         .bio-img { 
-            width: 300px; 
-            height: 300px; 
-            border-radius: 50%; /* Hazlo cuadrado quitando esta línea si prefieres */
+            width: 300px; height: 300px; 
+            border-radius: 50%; 
             border: 4px solid var(--primary);
             box-shadow: 0 0 30px rgba(255, 0, 64, 0.2);
             overflow: hidden;
             background-color: black;
         }
-        .bio-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .bio-img img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .bio-text h3 { font-size: 1.8rem; margin-bottom: 20px; }
+        .bio-text p { font-weight: 300; margin-bottom: 15px; font-size: 1.1rem; }
 
         /* --- CONTACTO / FOOTER --- */
         .contact-links { display: flex; justify-content: center; gap: 30px; font-size: 2rem; margin-top: 30px; }
-        footer { text-align: center; padding: 20px; background: black; color: #555; margin-top: 50px; }
+        footer { text-align: center; padding: 20px; background: black; color: #555; margin-top: 50px; font-size: 0.9rem; font-weight: 300; }
 
         /* --- RESPONSIVE --- */
         @media (max-width: 768px) {
@@ -160,7 +206,7 @@
 
     <header class="hero">
         <h1>LIROS MUSIC</h1>
-        <p>Artist</p>
+        <p>ARTIST</p>
         <a href="#music" class="btn">ESCUCHAR AHORA</a>
     </header>
 
@@ -182,17 +228,15 @@
 
     <section class="section">
         <h2 class="section-title">Visuals</h2>
-        <p style="margin-bottom: 20px; color: #888;">Desliza para ver más &rarr;</p>
+        <p style="margin-bottom: 20px; color: #888; font-weight:300;">Desliza para ver más →</p>
         
         <div class="gallery-container">
             <div class="gallery-item">
                 <img src="https://open.spotify.com/intl-es/artist/5YtRkkyiXntYnEZWO4kUxB" alt="Cover Art">
             </div>
-            
             <div class="gallery-item">
                 <img src="https://is1-ssl.mzstatic.com/image/thumb/AMCArtistImages211/v4/51/01/7a/51017a3d-cca6-0aa8-d750-5a02a04ae425/file_cropped.png/190x190cc.webp" alt="Liros Music Profile">
             </div>
-
             <div class="gallery-item">
                 <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Studio Vibes">
             </div>
@@ -209,18 +253,18 @@
             </div>
             
             <div class="bio-text">
-                <h3>El cruce entre Música y Tecnología</h3>
-                <p><br>Desde Sinaloa para el mundo. Creando una fusión única entre la narrativa de los corridos y la estética digital.</p>
-                <p><br>No solo compongo la música, construyo el mundo alrededor de ella. Instrumentalismo en vivo mezclado con producción moderna.</p>
+                <h3>El cruce entre Música</h3>
+                <p>Desde Sinaloa para el mundo. Creando una fusión única entre la narrativa de los corridos y la estética digital.</p>
+                <p>No solo compongo la música, construyo el mundo alrededor de ella. Instrumentalismo en vivo mezclado con producción moderna.</p>
                 <br>
-                <a href="#" style="color: var(--primary); font-weight: bold;">Descargar Press Kit (PDF) <i class="fas fa-download"></i></a>
+                <a href="#" style="color: var(--primary); font-weight: 700;">Descargar Press Kit (PDF) <i class="fas fa-download"></i></a>
             </div>
         </div>
     </section>
 
     <section class="section" style="text-align: center;">
-        <h2 class="section-title">Contrataciones / Booking</h2>
-        <p>Disponible para fechas en 2026. Mazatlán / Nacional.</p>
+        <h2 class="section-title">Booking</h2>
+        <p style="font-weight:300;">Disponible para fechas en 2026. Mazatlán / Nacional.</p>
         
         <div class="contact-links">
             <a href="https://instagram.com/TU_USUARIO" target="_blank"><i class="fab fa-instagram"></i></a>

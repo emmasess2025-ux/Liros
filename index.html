@@ -31,12 +31,9 @@
             --c-glass: #ffffff;
             --c-dark: #222222;
             --saturation: 110%;
-            --glass-reflex-light: 1;
-            --glass-reflex-dark: 0.8;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
-
         html { scroll-behavior: smooth; }
 
         body {
@@ -71,7 +68,7 @@
         h1, h2, h3 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
         a { text-decoration: none; color: var(--text-dark); transition: 0.3s; }
         
-        /* --- LIQUID GLASS CLASS (Shared by Cards & Nav) --- */
+        /* --- SHARED LIQUID GLASS STYLE --- */
         .liquid-glass {
             position: relative;
             background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
@@ -83,19 +80,33 @@
                         0px 6px 16px 0px rgba(0,0,0,0.05);
         }
 
-        /* --- 1. NEW: SIDE NAVIGATION PILL --- */
-        .nav-pill {
+        /* --- NEW: DYNAMIC ISLAND NAV --- */
+        .dynamic-island {
             position: fixed;
-            left: 30px;
-            top: 50%;
-            transform: translateY(-50%);
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            
+            /* Initial Compact State */
             gap: 25px;
-            padding: 30px 15px;
-            border-radius: 50px; /* Pill Shape */
+            padding: 12px 40px;
+            border-radius: 50px;
+            
             z-index: 1000;
-            transition: 0.3s;
+            /* Physics-based transition for that "Dynamic" feel */
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Expansion Effect on Hover */
+        .dynamic-island:hover {
+            padding: 12px 60px; /* Gets wider */
+            gap: 35px;          /* Icons spread out */
+            background-color: color-mix(in srgb, var(--c-glass) 80%, transparent); /* Becomes more solid */
+            box-shadow: 0px 15px 35px 0px rgba(74, 111, 165, 0.15);
         }
 
         .nav-link {
@@ -107,12 +118,11 @@
             transition: all 0.3s ease;
         }
 
-        /* Active State / Hover */
         .nav-link.active, .nav-link:hover {
-            background-color: var(--accent);
-            color: white;
-            box-shadow: 0 0 15px rgba(74, 111, 165, 0.5);
-            transform: scale(1.1);
+            color: var(--accent);
+            transform: scale(1.2);
+            /* Small glow for the active icon */
+            text-shadow: 0 0 10px rgba(74, 111, 165, 0.4);
         }
 
         /* --- HERO --- */
@@ -130,28 +140,25 @@
         }
         .btn:hover { background: var(--text-dark); color: white; }
 
-        /* --- SECTIONS --- */
+        /* --- SECTIONS & CARDS --- */
         .section { padding: 100px 20px; max-width: 1200px; margin: 0 auto; }
         .section-title { font-size: 3rem; margin-bottom: 60px; color: var(--text-dark); border-bottom: 3px solid var(--accent); display: inline-block; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
         .reveal { opacity: 0; transform: translateY(30px); transition: all 1s ease; }
         .reveal.active { opacity: 1; transform: translateY(0); }
 
-        /* --- CARDS (Using Liquid Glass) --- */
         .card-box {
-            padding: 30px;
-            border-radius: 32px;
+            padding: 30px; border-radius: 32px;
             transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
         .card-box:hover { transform: translateY(-5px); box-shadow: inset 0 0 0 1px white, 0px 15px 30px 0px rgba(74, 111, 165, 0.2); }
 
-        /* --- IMAGES --- */
+        /* --- IMAGES & BIO --- */
         .gallery-container { display: flex; gap: 30px; overflow-x: auto; padding-bottom: 30px; }
         .gallery-item { min-width: 350px; height: 350px; overflow: hidden; border-radius: 12px; }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); transition: 0.5s; }
         .gallery-item:hover img { filter: grayscale(0%); transform: scale(1.05); }
 
-        /* --- BIO --- */
         .bio-container { display: flex; gap: 60px; align-items: center; flex-wrap: wrap; }
         .bio-img { width: 350px; height: 350px; border-radius: 50%; overflow: hidden; border: 5px solid white; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
         .bio-img img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); }
@@ -159,21 +166,23 @@
         .bio-text p { color: var(--text-grey); margin-bottom: 20px; line-height: 1.8; }
 
         /* --- FOOTER --- */
-        footer { text-align: center; padding: 50px; margin-top: 50px; background: transparent; color: var(--text-grey); border-top: 1px solid #eee; }
+        footer { text-align: center; padding: 50px; margin-top: 50px; border-top: 1px solid #eee; color: var(--text-grey); }
         .contact-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; font-size: 2rem; }
 
         /* Responsive */
         @media(max-width: 900px) {
-            .nav-pill { 
-                /* Move nav to bottom on mobile */
-                left: 50%; top: auto; bottom: 20px; 
-                transform: translateX(-50%); 
-                flex-direction: row; 
-                padding: 15px 30px;
+            .dynamic-island {
+                top: auto;
+                bottom: 30px; /* Move to bottom on mobile for thumb reach */
+                padding: 10px 30px;
+                gap: 15px;
                 width: 90%;
-                justify-content: space-between;
+                justify-content: space-around;
             }
-            .section { padding: 60px 20px; }
+            .dynamic-island:hover {
+                width: 95%;
+                padding: 10px 30px;
+            }
         }
         @media(max-width: 768px) {
             .hero h1 { font-size: 3rem; }
@@ -189,7 +198,7 @@
     <div class="corner-glow glow-bl"></div>
     <div class="cursor" id="cursor"><div class="cursor-inner"></div></div>
 
-    <nav class="nav-pill liquid-glass">
+    <nav class="dynamic-island liquid-glass">
         <a href="#home" class="nav-link active" title="Inicio"><i class="fas fa-home"></i></a>
         <a href="#music" class="nav-link" title="Música"><i class="fas fa-music"></i></a>
         <a href="#visuals" class="nav-link" title="Galería"><i class="fas fa-eye"></i></a>
@@ -272,17 +281,15 @@
         }, { threshold: 0.1 });
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        // Active Link Highlighting (Scroll Spy)
+        // Scroll Spy for Dynamic Island
         const sections = document.querySelectorAll('header, section, footer');
         const navLinks = document.querySelectorAll('.nav-link');
 
         window.addEventListener('scroll', () => {
             let current = '';
-            
             sections.forEach(section => {
                 const sectionTop = section.offsetTop;
                 const sectionHeight = section.clientHeight;
-                // If we are within 1/3rd of the section
                 if (pageYOffset >= (sectionTop - sectionHeight / 3)) {
                     current = section.getAttribute('id');
                 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liros Music | EPK</title>
+    <title>Liros Music | Official Site</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -12,22 +12,16 @@
         @font-face { font-family: 'HK Grotesk Wide'; src: url('fonts/HKGroteskWide-Bold.otf'); font-weight: 700; }
         @font-face { font-family: 'HK Grotesk Wide'; src: url('fonts/HKGroteskWide-Black.otf'); font-weight: 900; }
 
-        /* --- THEME CONFIGURATION --- */
+        /* --- THEME VARS --- */
         :root {
-            /* Backgrounds */
             --bg-main: #ffffff;
-            
-            /* Text */
             --text-dark: #050505;
             --text-grey: #666666;
-            
-            /* Accents */
-            --accent: #4a6fa5;       /* Steel Blue */
-            --accent-soft: #a8c0dd;  /* Soft Blue */
-            
+            --accent: #4a6fa5;       
+            --accent-soft: #a8c0dd;  
             --font: 'HK Grotesk Wide', sans-serif;
 
-            /* --- LIQUID GLASS VARIABLES --- */
+            /* Liquid Glass Vars */
             --c-glass: #ffffff;
             --c-dark: #222222;
             --saturation: 110%;
@@ -43,9 +37,10 @@
             overflow-x: hidden;
             position: relative;
             min-height: 100vh;
+            /* Removed global perspective to prevent dizziness */
         }
 
-        /* --- CORNER GRADIENTS --- */
+        /* --- BACKGROUND FX --- */
         .corner-glow {
             position: fixed; width: 900px; height: 900px; border-radius: 50%;
             filter: blur(120px); z-index: -2; opacity: 0.4; pointer-events: none;
@@ -64,125 +59,158 @@
         .cursor-inner { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
         .cursor.hover { transform: scale(1.8); background: rgba(74, 111, 165, 0.1); }
 
-        /* --- TYPOGRAPHY --- */
-        h1, h2, h3 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
-        a { text-decoration: none; color: var(--text-dark); transition: 0.3s; }
-        
         /* --- SHARED LIQUID GLASS STYLE --- */
         .liquid-glass {
             position: relative;
             background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
-            backdrop-filter: blur(10px) saturate(var(--saturation));
-            -webkit-backdrop-filter: blur(10px) saturate(var(--saturation));
+            backdrop-filter: blur(12px) saturate(var(--saturation));
+            -webkit-backdrop-filter: blur(12px) saturate(var(--saturation));
             box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff88 10%, #00000000), 
                         inset 1.8px 3px 2px -2px color-mix(in srgb, #ffffff99 90%, #00000000), 
                         inset -1.8px -3px 2px -2px color-mix(in srgb, #ffffff 80%, #00000000), 
                         0px 6px 16px 0px rgba(0,0,0,0.05);
         }
 
-        /* --- NEW: DYNAMIC ISLAND NAV --- */
-        .dynamic-island {
+        /* --- NAV 1: LEFT VERTICAL (Section Navigation) --- */
+        .nav-left {
             position: fixed;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
             display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center;
-            
-            /* Initial Compact State */
+            flex-direction: column;
             gap: 25px;
-            padding: 12px 40px;
+            padding: 30px 15px;
             border-radius: 50px;
-            
-            z-index: 1000;
-            /* Physics-based transition for that "Dynamic" feel */
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2000; /* High Z-index to ensure it's always clickable */
+            transition: opacity 0.5s ease;
         }
 
-        /* Expansion Effect on Hover */
-        .dynamic-island:hover {
-            padding: 12px 60px; /* Gets wider */
-            gap: 35px;          /* Icons spread out */
-            background-color: color-mix(in srgb, var(--c-glass) 80%, transparent); /* Becomes more solid */
-            box-shadow: 0px 15px 35px 0px rgba(74, 111, 165, 0.15);
-        }
-
-        .nav-link {
+        .nav-icon {
             width: 40px; height: 40px;
             display: flex; justify-content: center; align-items: center;
             border-radius: 50%;
             color: var(--text-grey);
             font-size: 1.1rem;
             transition: all 0.3s ease;
+            position: relative;
         }
-
-        .nav-link.active, .nav-link:hover {
+        
+        /* Active State Indicator */
+        .nav-icon.active {
+            background-color: var(--accent); 
+            color: white;
+            box-shadow: 0 0 15px rgba(74, 111, 165, 0.5); 
+            transform: scale(1.1);
+        }
+        
+        .nav-icon:hover {
             color: var(--accent);
-            transform: scale(1.2);
-            /* Small glow for the active icon */
-            text-shadow: 0 0 10px rgba(74, 111, 165, 0.4);
+            transform: scale(1.1);
         }
 
-        /* --- HERO --- */
-        .hero {
-            height: 90vh;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+        /* --- NAV 2: TOP DYNAMIC ISLAND (Mode Switcher) --- */
+        .top-island {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 8px;
+            border-radius: 50px;
+            z-index: 2001; /* Highest Z-index */
+            transition: all 0.4s ease; /* Smoother, less bouncy */
         }
+        
+        .top-island:hover {
+            gap: 15px;
+            padding: 10px 30px;
+            background-color: color-mix(in srgb, var(--c-glass) 90%, transparent);
+            box-shadow: 0px 10px 30px 0px rgba(74, 111, 165, 0.15);
+        }
+
+        .tab-btn {
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-family: var(--font);
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.3s;
+            color: var(--text-grey);
+            border: none;
+            background: transparent;
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent);
+            color: white;
+            box-shadow: 0 5px 15px rgba(74, 111, 165, 0.3);
+        }
+
+        /* --- VIEW CONTAINERS --- */
+        .view-container {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .view-container.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* --- GENERAL UI --- */
+        h1, h2, h3 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
+        a { text-decoration: none; color: var(--text-dark); transition: 0.3s; }
+
+        .hero { height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .hero h1 { font-size: 5rem; margin-bottom: 10px; color: var(--text-dark); }
         .hero p { font-size: 1.2rem; color: var(--text-grey); letter-spacing: 4px; margin-bottom: 40px; }
-
-        .btn {
-            padding: 15px 40px; border: 2px solid var(--text-dark); background: transparent;
-            color: var(--text-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
-            transition: 0.3s; display: inline-block;
-        }
+        
+        .btn { padding: 15px 40px; border: 2px solid var(--text-dark); background: transparent; color: var(--text-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; display: inline-block; }
         .btn:hover { background: var(--text-dark); color: white; }
 
-        /* --- SECTIONS & CARDS --- */
         .section { padding: 100px 20px; max-width: 1200px; margin: 0 auto; }
         .section-title { font-size: 3rem; margin-bottom: 60px; color: var(--text-dark); border-bottom: 3px solid var(--accent); display: inline-block; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; }
+        
         .reveal { opacity: 0; transform: translateY(30px); transition: all 1s ease; }
         .reveal.active { opacity: 1; transform: translateY(0); }
 
-        .card-box {
-            padding: 30px; border-radius: 32px;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        /* --- CARDS & TILT CONTAINERS --- */
+        /* Note: 'perspective' is added here locally, not globally, to stabilize layout */
+        .tilt-wrapper {
+            perspective: 1000px;
         }
-        .card-box:hover { transform: translateY(-5px); box-shadow: inset 0 0 0 1px white, 0px 15px 30px 0px rgba(74, 111, 165, 0.2); }
 
-        /* --- IMAGES & BIO --- */
-        .gallery-container { display: flex; gap: 30px; overflow-x: auto; padding-bottom: 30px; }
-        .gallery-item { min-width: 350px; height: 350px; overflow: hidden; border-radius: 12px; }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); transition: 0.5s; }
-        .gallery-item:hover img { filter: grayscale(0%); transform: scale(1.05); }
+        .card-box, .liquid-box {
+            position: relative; padding: 30px; border-radius: 32px;
+            background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+            backdrop-filter: blur(10px) saturate(var(--saturation));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8), 0px 10px 30px -10px rgba(0,0,0,0.1);
+            transform-style: preserve-3d; /* Key for tilt */
+            will-change: transform;
+        }
+
+        .gallery-container { display: flex; gap: 30px; overflow-x: auto; padding-bottom: 30px; perspective: 1000px; }
+        .gallery-item { min-width: 350px; height: 350px; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transform-style: preserve-3d; will-change: transform; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); transition: 0.5s; pointer-events: none; }
+        .gallery-item:hover img { filter: grayscale(0%); scale: 1.05; }
 
         .bio-container { display: flex; gap: 60px; align-items: center; flex-wrap: wrap; }
-        .bio-img { width: 350px; height: 350px; border-radius: 50%; overflow: hidden; border: 5px solid white; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-        .bio-img img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); }
+        .bio-img { width: 350px; height: 350px; border-radius: 50%; border: 5px solid white; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; transform-style: preserve-3d; will-change: transform; }
+        .bio-img img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); pointer-events: none; }
         .bio-text h3 { font-size: 2rem; margin-bottom: 20px; color: var(--accent); }
         .bio-text p { color: var(--text-grey); margin-bottom: 20px; line-height: 1.8; }
 
-        /* --- FOOTER --- */
         footer { text-align: center; padding: 50px; margin-top: 50px; border-top: 1px solid #eee; color: var(--text-grey); }
         .contact-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; font-size: 2rem; }
 
-        /* Responsive */
         @media(max-width: 900px) {
-            .dynamic-island {
-                top: auto;
-                bottom: 30px; /* Move to bottom on mobile for thumb reach */
-                padding: 10px 30px;
-                gap: 15px;
-                width: 90%;
-                justify-content: space-around;
-            }
-            .dynamic-island:hover {
-                width: 95%;
-                padding: 10px 30px;
-            }
+            .nav-left { left: 50%; top: auto; bottom: 20px; transform: translateX(-50%); flex-direction: row; padding: 15px 30px; width: 90%; justify-content: space-between; }
         }
         @media(max-width: 768px) {
             .hero h1 { font-size: 3rem; }
@@ -198,144 +226,186 @@
     <div class="corner-glow glow-bl"></div>
     <div class="cursor" id="cursor"><div class="cursor-inner"></div></div>
 
-    <nav class="dynamic-island liquid-glass">
-        <a href="#home" class="nav-link active" title="Inicio"><i class="fas fa-home"></i></a>
-        <a href="#music" class="nav-link" title="Música"><i class="fas fa-music"></i></a>
-        <a href="#visuals" class="nav-link" title="Galería"><i class="fas fa-eye"></i></a>
-        <a href="#bio" class="nav-link" title="Bio"><i class="fas fa-user"></i></a>
-        <a href="#contact" class="nav-link" title="Contacto"><i class="fas fa-envelope"></i></a>
+    <nav id="section-nav" class="nav-left liquid-glass">
+        <a href="#home" class="nav-icon active" title="Inicio"><i class="fas fa-home"></i></a>
+        <a href="#music" class="nav-icon" title="Música"><i class="fas fa-music"></i></a>
+        <a href="#visuals" class="nav-icon" title="Galería"><i class="fas fa-eye"></i></a>
+        <a href="#bio" class="nav-icon" title="Bio"><i class="fas fa-user"></i></a>
+        <a href="#contact" class="nav-icon" title="Contacto"><i class="fas fa-envelope"></i></a>
     </nav>
 
-    <header id="home" class="hero">
-        <h1 class="reveal">LIROS</h1>
-        <p class="reveal">Sad Romántico tumbado </3</p>
-        <a href="#music" class="btn reveal">Escuchar Ahora</a>
-    </header>
+    <nav class="top-island liquid-glass">
+        <button class="tab-btn active" onclick="switchMode('epk')">EPK</button>
+        <button class="tab-btn" onclick="switchMode('merch')">MERCH</button>
+    </nav>
 
-    <section id="music" class="section">
-        <h2 class="section-title reveal">Lanzamientos</h2>
-        <div class="grid">
-            <div class="liquid-glass card-box reveal">
-                <h3>Último Sencillo</h3>
-                <br>
-                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/1ujwihHpfR61eDntqCUuwT?utm_source=generator" width="100%" height="152" frameBorder="0" allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-            </div>
-            
-            <div class="liquid-glass card-box reveal">
-                <h3>Top Hits</h3>
-                <br>
-                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/03TAG3WXL6h5rlzCdoNnR9?utm_source=generator" width="100%" height="152" frameBorder="0" allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-            </div>
-        </div>
-    </section>
+    <div id="epk-view" class="view-container active">
+        <header id="home" class="hero">
+            <h1 class="reveal">LIROS MUSIC</h1>
+            <p class="reveal">Sad Romántico</p>
+            <a href="#music" class="btn reveal">Escuchar Ahora</a>
+        </header>
 
-    <section id="visuals" class="section">
-        <h2 class="section-title reveal">Visuals</h2>
-        <div class="gallery-container reveal">
-            <div class="gallery-item"><img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80"></div>
-            <div class="gallery-item"><img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80"></div>
-            <div class="gallery-item"><img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&q=80"></div>
-        </div>
-    </section>
-
-    <section id="merch" class="section">
-        <h2 class="section-title reveal">Merch Store</h2>
-        <div class="grid">
-            
-            <div class="liquid-box tilt-target reveal">
-                <div style="height: 250px; background: #eee; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
-                    <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&q=80" style="width:100%; height:100%; object-fit:cover; filter: grayscale(100%); transition: 0.5s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(100%)'">
+        <section id="music" class="section">
+            <h2 class="section-title reveal">Lanzamientos</h2>
+            <div class="grid tilt-wrapper">
+                <div class="liquid-box tilt-target reveal">
+                    <h3>Último Sencillo</h3>
+                    <br>
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/1ujwihHpfR61eDntqCUuwT?utm_source=generator" width="100%" height="152" frameBorder="0" allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
                 </div>
-                
-                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Sad Hoodie v1</h3>
-                <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 20px;">Edición Limitada. 100% Algodón.</p>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 900; font-size: 1.2rem;">$650 MXN</span>
-                    <button class="btn" style="padding: 10px 20px; font-size: 0.8rem;">
-                        <i class="fas fa-shopping-bag"></i> Pre-ordenar
-                    </button>
+                <div class="liquid-box tilt-target reveal">
+                    <h3>Top Hits</h3>
+                    <br>
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/03TAG3WXL6h5rlzCdoNnR9?utm_source=generator" width="100%" height="152" frameBorder="0" allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
                 </div>
             </div>
+        </section>
 
-            <div class="liquid-box tilt-target reveal">
-                <div style="height: 250px; background: #eee; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
-                    <img src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&q=80" style="width:100%; height:100%; object-fit:cover; filter: grayscale(100%); transition: 0.5s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(100%)'">
-                </div>
-                
-                <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Digital Vinyl</h3>
-                <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 20px;">Copia física firmada + Digital.</p>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 900; font-size: 1.2rem;">$400 MXN</span>
-                    <button class="btn" style="padding: 10px 20px; font-size: 0.8rem;">
-                        <i class="fas fa-shopping-bag"></i> Pre-ordenar
-                    </button>
+        <section id="visuals" class="section">
+            <h2 class="section-title reveal">Visuals</h2>
+            <div class="gallery-container tilt-wrapper reveal">
+                <div class="gallery-item tilt-target"><img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80"></div>
+                <div class="gallery-item tilt-target"><img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80"></div>
+                <div class="gallery-item tilt-target"><img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&q=80"></div>
+            </div>
+        </section>
+
+        <section id="bio" class="section">
+            <h2 class="section-title reveal">Bio</h2>
+            <div class="bio-container tilt-wrapper reveal">
+                <div class="bio-img tilt-target"><img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=600&q=80"></div>
+                <div class="bio-text">
+                    <h3>Desde Sinaloa</h3>
+                    <p>Narrativas rotas sobre acordes tumbados. Una fusión de tradición y estética digital moderna.</p>
+                    <a href="#" class="btn" style="padding: 10px 30px; font-size: 0.9rem;">Descargar EPK</a>
                 </div>
             </div>
+        </section>
 
-        </div>
-    </section>
-
-    <section id="bio" class="section">
-        <h2 class="section-title reveal">Bio</h2>
-        <div class="bio-container reveal">
-            <div class="bio-img"><img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=600&q=80"></div>
-            <div class="bio-text">
-                <h3>Desde Sinaloa</h3>
-                <p>Narrativas rotas sobre acordes tumbados. Una fusión de tradición y estética digital moderna.</p>
-                <p>Instrumentalismo en vivo mezclado con producción minimalista.</p>
-                <a href="#" class="btn" style="padding: 10px 30px; font-size: 0.9rem;">Descargar EPK</a>
+        <footer id="contact">
+            <div class="contact-links">
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-whatsapp"></i></a>
+                <a href="#"><i class="fas fa-envelope"></i></a>
             </div>
-        </div>
-    </section>
+            <p>© 2026 Liros Music. Mazatlán, MX.</p>
+        </footer>
+    </div>
 
-    <footer id="contact">
-        <div class="contact-links">
-            <a href="#"><i class="fab fa-instagram"></i></a>
-            <a href="#"><i class="fab fa-whatsapp"></i></a>
-            <a href="#"><i class="fas fa-envelope"></i></a>
+    <div id="merch-view" class="view-container">
+        <div class="hero" style="height: 50vh;">
+            <h1 class="reveal">OFFICIAL STORE</h1>
+            <p class="reveal">Colección 2026</p>
         </div>
-        <p>© 2026 Liros Music. Mazatlán, MX.</p>
-    </footer>
+
+        <section class="section">
+            <div class="grid tilt-wrapper">
+                <div class="liquid-box tilt-target reveal">
+                    <div style="height: 250px; background: #eee; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+                        <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&q=80" style="width:100%; height:100%; object-fit:cover; filter: grayscale(100%); transition: 0.5s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(100%)'">
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Sad Hoodie v1</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 900; font-size: 1.2rem;">$650 MXN</span>
+                        <button class="btn" style="padding: 10px 20px; font-size: 0.8rem;">Comprar</button>
+                    </div>
+                </div>
+                <div class="liquid-box tilt-target reveal">
+                    <div style="height: 250px; background: #eee; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+                        <img src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&q=80" style="width:100%; height:100%; object-fit:cover; filter: grayscale(100%); transition: 0.5s;" onmouseover="this.style.filter='grayscale(0%)'" onmouseout="this.style.filter='grayscale(100%)'">
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Digital Vinyl</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 900; font-size: 1.2rem;">$400 MXN</span>
+                        <button class="btn" style="padding: 10px 20px; font-size: 0.8rem;">Comprar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>© 2026 Liros Music Store. Envíos a todo México.</p>
+        </footer>
+    </div>
 
     <script>
-    
-            // Add this to your <script> section
-        document.querySelectorAll('.liquid-box, .card-box').forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
+        // --- 1. VIEW SWITCHER LOGIC ---
+        function switchMode(mode) {
+            const epkView = document.getElementById('epk-view');
+            const merchView = document.getElementById('merch-view');
+            const leftNav = document.getElementById('section-nav');
+            const btns = document.querySelectorAll('.tab-btn');
+
+            // Handle Tabs
+            btns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if(mode === 'merch') {
+                epkView.classList.remove('active');
+                merchView.classList.add('active');
+                leftNav.style.opacity = '0';
+                leftNav.style.pointerEvents = 'none';
+                window.scrollTo(0,0);
+            } else {
+                merchView.classList.remove('active');
+                epkView.classList.add('active');
+                leftNav.style.opacity = '1';
+                leftNav.style.pointerEvents = 'all';
+                window.scrollTo(0,0);
+            }
+            
+            // Re-trigger reveal animation
+            setTimeout(() => {
+                document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+            }, 100);
+        }
+
+        // --- 2. TAMED 3D TILT ENGINE ---
+        // Only target elements with 'tilt-target' class. Navigation is EXCLUDED.
+        const tiltElements = document.querySelectorAll('.tilt-target');
+        
+        tiltElements.forEach(el => {
+            el.addEventListener('mousemove', (e) => {
+                const rect = el.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
                 
-                // Calculate rotation (max 10 degrees)
-                const xRotation = -1 * ((y - rect.height / 2) / rect.height * 10);
-                const yRotation = (x - rect.width / 2) / rect.width * 10;
+                // Reduced sensitivity (divided by 25 instead of 10) for subtle effect
+                const rotateX = ((y - centerY) / centerY) * -5; 
+                const rotateY = ((x - centerX) / centerX) * 5;
                 
-                // Apply the transform
-                card.style.transform = `perspective(1000px) rotateX(${xRotation}deg) rotateY(${yRotation}deg) scale(1.02)`;
-                card.style.transition = 'transform 0.1s';
+                el.style.transition = 'none';
+                el.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.01)`;
+                
+                // Subtle Shadow
+                const shadowX = (x - centerX) / 15;
+                const shadowY = (y - centerY) / 15;
+                el.style.boxShadow = `${-shadowX}px ${-shadowY}px 20px rgba(0,0,0,0.05)`;
             });
-        
-            card.addEventListener('mouseleave', () => {
-                // Reset
-                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
-                card.style.transition = 'transform 0.5s ease';
+
+            el.addEventListener('mouseleave', () => {
+                el.style.transition = 'transform 0.5s ease, box-shadow 0.5s ease';
+                el.style.transform = 'rotateX(0) rotateY(0) scale(1)';
+                el.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
             });
         });
-        // Cursor Logic
+
+        // --- 3. CURSOR & HOVER ---
         const cursor = document.getElementById('cursor');
         document.addEventListener('mousemove', e => {
             cursor.style.left = (e.clientX - 15) + 'px';
             cursor.style.top = (e.clientY - 15) + 'px';
         });
         
-        document.querySelectorAll('a, iframe, img, .liquid-glass').forEach(el => {
+        document.querySelectorAll('a, iframe, img, .liquid-glass, .liquid-box, .btn, .tab-btn').forEach(el => {
             el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
             el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
         });
 
-        // Scroll Reveal
+        // --- 4. SCROLL REVEAL ---
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if(entry.isIntersecting) entry.target.classList.add('active');
@@ -343,16 +413,19 @@
         }, { threshold: 0.1 });
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        // Scroll Spy for Dynamic Island
-        const sections = document.querySelectorAll('header, section, footer');
-        const navLinks = document.querySelectorAll('.nav-link');
+        // --- 5. FIXED SCROLL SPY ("Anchored" Logic) ---
+        // This calculates the current section accurately for the Left Nav
+        const sections = document.querySelectorAll('#epk-view header, #epk-view section, #epk-view footer');
+        const navLinks = document.querySelectorAll('.nav-icon');
 
         window.addEventListener('scroll', () => {
             let current = '';
+            
             sections.forEach(section => {
                 const sectionTop = section.offsetTop;
                 const sectionHeight = section.clientHeight;
-                if (pageYOffset >= (sectionTop - sectionHeight / 3)) {
+                // Offset of 200px helps activate the section a bit earlier
+                if (pageYOffset >= (sectionTop - 250)) {
                     current = section.getAttribute('id');
                 }
             });

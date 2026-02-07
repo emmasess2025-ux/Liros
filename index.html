@@ -427,24 +427,22 @@
             }, 100);
         }
 
-        // 1. The Data Object
+        // --- 2. DATA OBJECT (FIXED) ---
         const profileData = {
-            // Just change this ID to update your featured song site-wide
-            const profileData = {
             featuredSong: {
                 title: "Latest Release",
-                spotifyId: "0jJBTP1lRCe35zspJBa94D", // Solo el código alfanumérico
+                spotifyId: "0jJBTP1lRCe35zspJBa94D", // Your Song ID
                 platform: "track",
                 themeColor: "#4a6fa5"
             },
             links: [
-                { name: 'Spotify', icon: 'fab fa-spotify', url: 'https://open.spotify.com/intl-es/artist/5YtRkkyiXntYnEZWO4kUxB', color: '#1DB954' },
+                { name: 'Spotify', icon: 'fab fa-spotify', url: 'https://open.spotify.com/artist/YOUR_ARTIST_ID', color: '#1DB954' },
                 { name: 'Apple Music', icon: 'fab fa-apple', url: 'https://music.apple.com/mx/artist/liros/1639080261', color: '#FC3C44' },
                 { name: 'Instagram', icon: 'fab fa-instagram', url: 'https://instagram.com/liros__', color: '#E1306C' },
             ]
         };
         
-        // 2. The Integrated Render Function
+        // --- 3. RENDER FUNCTION (FIXED URL) ---
         function renderLinksView() {
             // A. Render Featured Player
             const playerContainer = document.getElementById('featured-player');
@@ -459,7 +457,7 @@
                         border: 1px solid ${song.themeColor}44; 
                         box-shadow: 0 10px 40px ${song.themeColor}22;
                     ">
-                        <iframe style="border-radius:15px" 
+                         <iframe style="border-radius:15px" 
                             src="https://open.spotify.com/embed/${song.platform}/${song.spotifyId}?utm_source=generator&theme=0" 
                             width="100%" height="152" frameBorder="0" 
                             allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
@@ -489,11 +487,9 @@
         // Update your DOMContentLoaded to call this
         document.addEventListener('DOMContentLoaded', () => {
             renderLinksView();
-            // call other init functions if you have them
         });
 
-        // --- 2. TAMED 3D TILT ENGINE ---
-        // Only target elements with 'tilt-target' class. Navigation is EXCLUDED.
+        // --- 4. TILT ENGINE ---
         const tiltElements = document.querySelectorAll('.tilt-target');
         
         tiltElements.forEach(el => {
@@ -504,14 +500,12 @@
                 const centerX = rect.width / 2;
                 const centerY = rect.height / 2;
                 
-                // Reduced sensitivity (divided by 25 instead of 10) for subtle effect
                 const rotateX = ((y - centerY) / centerY) * -5; 
                 const rotateY = ((x - centerX) / centerX) * 5;
                 
                 el.style.transition = 'none';
                 el.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.01)`;
                 
-                // Subtle Shadow
                 const shadowX = (x - centerX) / 15;
                 const shadowY = (y - centerY) / 15;
                 el.style.boxShadow = `${-shadowX}px ${-shadowY}px 20px rgba(0,0,0,0.05)`;
@@ -524,7 +518,7 @@
             });
         });
 
-        // --- 3. CURSOR & HOVER ---
+        // --- 5. CURSOR & HOVER ---
         const cursor = document.getElementById('cursor');
         document.addEventListener('mousemove', e => {
             cursor.style.left = (e.clientX - 15) + 'px';
@@ -536,7 +530,7 @@
             el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
         });
 
-        // --- 4. SCROLL REVEAL ---
+        // --- 6. SCROLL REVEAL ---
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if(entry.isIntersecting) entry.target.classList.add('active');
@@ -544,8 +538,7 @@
         }, { threshold: 0.1 });
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        // --- 5. FIXED SCROLL SPY ("Anchored" Logic) ---
-        // This calculates the current section accurately for the Left Nav
+        // --- 7. SCROLL SPY ---
         const sections = document.querySelectorAll('#epk-view header, #epk-view section, #epk-view footer');
         const navLinks = document.querySelectorAll('.nav-icon');
 
@@ -554,8 +547,6 @@
             
             sections.forEach(section => {
                 const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                // Offset of 200px helps activate the section a bit earlier
                 if (pageYOffset >= (sectionTop - 250)) {
                     current = section.getAttribute('id');
                 }

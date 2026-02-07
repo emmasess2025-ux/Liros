@@ -218,6 +218,46 @@
             .cursor { display: none; }
             * { cursor: auto; }
         }
+
+        .link-tree-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+        }
+        
+        .link-card {
+            display: flex;
+            align-items: center;
+            padding: 20px 30px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        
+        .link-card i:first-child {
+            font-size: 1.5rem;
+            width: 40px;
+            color: var(--accent);
+        }
+        
+        .link-card span {
+            flex-grow: 1;
+            letter-spacing: 1px;
+        }
+        
+        .link-card i:last-child {
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+        
+        .link-card:hover {
+            transform: translateX(10px);
+            background-color: color-mix(in srgb, var(--c-glass) 40%, transparent);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
@@ -237,7 +277,44 @@
     <nav class="top-island liquid-glass">
         <button class="tab-btn active" onclick="switchMode('epk')">EPK</button>
         <button class="tab-btn" onclick="switchMode('merch')">MERCH</button>
-    </nav>
+        <button class="tab-btn" onclick="switchMode('links')">LINKS</button> </nav>
+    
+    <div id="links-view" class="view-container">
+        <div class="hero" style="height: 40vh;">
+            <h1 class="reveal">CONNECT</h1>
+            <p class="reveal">Find me everywhere</p>
+        </div>
+    
+        <section class="section" style="max-width: 600px;">
+            <div class="link-tree-container">
+                <a href="YOUR_SPOTIFY_LINK" class="link-card liquid-glass reveal">
+                    <i class="fab fa-spotify"></i>
+                    <span>Spotify</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="YOUR_APPLE_LINK" class="link-card liquid-glass reveal">
+                    <i class="fab fa-apple"></i>
+                    <span>Apple Music</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="YOUR_YOUTUBE_LINK" class="link-card liquid-glass reveal">
+                    <i class="fab fa-youtube"></i>
+                    <span>YouTube Music</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="YOUR_IG_LINK" class="link-card liquid-glass reveal">
+                    <i class="fab fa-instagram"></i>
+                    <span>Instagram</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="YOUR_WA_LINK" class="link-card liquid-glass reveal">
+                    <i class="fab fa-whatsapp"></i>
+                    <span>Contrataciones</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+        </section>
+    </div>
 
     <div id="epk-view" class="view-container active">
         <header id="home" class="hero">
@@ -332,30 +409,41 @@
     <script>
         // --- 1. VIEW SWITCHER LOGIC ---
         function switchMode(mode) {
-            const epkView = document.getElementById('epk-view');
-            const merchView = document.getElementById('merch-view');
+            const views = {
+                epk: document.getElementById('epk-view'),
+                merch: document.getElementById('merch-view'),
+                links: document.getElementById('links-view')
+            };
             const leftNav = document.getElementById('section-nav');
             const btns = document.querySelectorAll('.tab-btn');
-
-            // Handle Tabs
-            btns.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            if(mode === 'merch') {
-                epkView.classList.remove('active');
-                merchView.classList.add('active');
-                leftNav.style.opacity = '0';
-                leftNav.style.pointerEvents = 'none';
-                window.scrollTo(0,0);
-            } else {
-                merchView.classList.remove('active');
-                epkView.classList.add('active');
+        
+            // Update Tab Buttons
+            btns.forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.innerText.toLowerCase() === mode) btn.classList.add('active');
+            });
+        
+            // Hide all views, then show active
+            Object.keys(views).forEach(key => {
+                views[key].classList.remove('active');
+                views[key].style.display = 'none';
+            });
+        
+            views[mode].style.display = 'block';
+            setTimeout(() => views[mode].classList.add('active'), 10);
+        
+            // Show/Hide Left Nav (only active on EPK)
+            if(mode === 'epk') {
                 leftNav.style.opacity = '1';
                 leftNav.style.pointerEvents = 'all';
-                window.scrollTo(0,0);
+            } else {
+                leftNav.style.opacity = '0';
+                leftNav.style.pointerEvents = 'none';
             }
-            
-            // Re-trigger reveal animation
+        
+            window.scrollTo(0, 0);
+        
+            // Re-trigger scroll animations for the new view
             setTimeout(() => {
                 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
             }, 100);

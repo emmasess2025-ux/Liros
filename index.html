@@ -491,40 +491,6 @@
             // call other init functions if you have them
         });
 
-        // 1. Your "Database" (The Data Object)
-        const myLinks = [
-            { name: 'Spotify', icon: 'fab fa-spotify', url: 'https://open.spotify.com/artist/your_id', color: '#1DB954' },
-            { name: 'Apple Music', icon: 'fab fa-apple', url: 'https://music.apple.com/...', color: '#FC3C44' },
-            { name: 'YouTube Music', icon: 'fab fa-youtube', url: 'https://youtube.com/...', color: '#FF0000' },
-            { name: 'Instagram', icon: 'fab fa-instagram', url: 'https://instagram.com/lirosmusic', color: '#E1306C' },
-            { name: 'WhatsApp', icon: 'fab fa-whatsapp', url: 'https://wa.me/your_number', color: '#25D366' }
-        ];
-        
-        // 2. The Logic to Render them
-        function renderLinks() {
-            const container = document.getElementById('link-tree-list');
-            container.innerHTML = ''; // Clear existing
-        
-            myLinks.forEach(link => {
-                const a = document.createElement('a');
-                a.href = link.url;
-                a.target = "_blank"; // Open in new tab
-                a.className = "link-card liquid-glass reveal";
-                
-                // You can even use the 'color' from the object to tint the icon
-                a.innerHTML = `
-                    <i class="${link.icon}" style="color: ${link.color}"></i>
-                    <span>${link.name}</span>
-                    <i class="fas fa-chevron-right"></i>
-                `;
-                
-                container.appendChild(a);
-            });
-        }
-        
-        // 3. Call it when the page loads
-        document.addEventListener('DOMContentLoaded', renderLinks);
-
         // --- 2. TAMED 3D TILT ENGINE ---
         // Only target elements with 'tilt-target' class. Navigation is EXCLUDED.
         const tiltElements = document.querySelectorAll('.tilt-target');

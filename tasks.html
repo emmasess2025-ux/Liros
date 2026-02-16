@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liros Tasks</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* All the same CSS from before */
+        :root {
+            --bg-color: #121212; --container-bg: #1e1e1e; --input-bg: #2c2c2c;
+            --border-color: #444; --text-main: #e0e0e0; --text-muted: #888;
+            --accent: #6200ee; --accent-hover: #7f39fb; --danger: #cf6679; --danger-hover: #e57373;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { background: var(--container-bg); padding: 25px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+        h2 { margin-top: 0; text-align: center; font-weight: 500; letter-spacing: 1px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="text"] { flex-grow: 1; padding: 12px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 6px; font-size: 16px; }
+        input[type="text"]:focus { outline: none; border-color: var(--accent); }
+        button { padding: 12px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        button:hover { background: var(--accent-hover); }
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: var(--input-bg); margin-bottom: 10px; border-radius: 6px; border: 1px solid transparent; }
+        .task-text { cursor: pointer; flex-grow: 1; font-size: 16px; transition: color 0.2s; }
+        .done { text-decoration: line-through; color: var(--text-muted); }
+        .delete-btn { background: var(--danger); padding: 6px 12px; font-size: 14px; margin-left: 10px; }
+        .delete-btn:hover { background: var(--danger-hover); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Private Task Tracker</h2>
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="Add a new task..." onkeypress="handleKeyPress(event)">
+            <button onclick="addTask()">Add</button>
+        </div>
+        <ul id="taskList"></ul>
+    </div>
+
+    <script>
+        // 1. Configure Supabase
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://supabase.com/dashboard/project/hwsffnsxwxygvamqdxcd'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3c2ZmbnN4d3h5Z3ZhbXFkeGNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzM2MTIsImV4cCI6MjA4NDYwOTYxMn0.1cslca0G6SMjGv2UBiRCYJsTNelc8vfhCixErap-2hU';
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        let tasks = [];
+
+        // 2. READ: Fetch tasks from the database
+        async function loadTasks() {
+            const { data, error } = await supabaseClient
+                .from('tasks')
+                .select('*')
+                .order('id', { ascending: false }); // Show newest first
+                
+            if (error) {
+                console.error('Error loading tasks:', error);
+                return;
+            }
+            tasks = data;
+            renderTasks();
+        }
+
+        // 3. CREATE: Add a new task to the database
+        async function addTask() {
+            const input = document.getElementById('taskInput');
+            const text = input.value.trim();
+            
+            if (text) {
+                const { data, error } = await supabaseClient
+                    .from('tasks')
+                    .insert([{ task_text: text, is_done: false }])
+                    .select(); // Returns the newly created row
+                    
+                if (!error && data) {
+                    tasks.unshift(data[0]); // Add to the top of our local array
+                    input.value = '';
+                    renderTasks();
+                } else {
+                    console.error('Error adding task:', error);
+                }
+            }
+        }
+
+        // 4. UPDATE: Toggle task status in the database
+        async function toggleTask(index) {
+            const task = tasks[index];
+            const newStatus = !task.is_done;
+            
+            const { error } = await supabaseClient
+                .from('tasks')
+                .update({ is_done: newStatus })
+                .eq('id', task.id);
+                
+            if (!error) {
+                tasks[index].is_done = newStatus;
+                renderTasks();
+            } else {
+                console.error('Error updating task:', error);
+            }
+        }
+
+        // 5. DELETE: Remove task from the database
+        async function deleteTask(index) {
+            const task = tasks[index];
+            
+            const { error } = await supabaseClient
+                .from('tasks')
+                .delete()
+                .eq('id', task.id);
+                
+            if (!error) {
+                tasks.splice(index, 1);
+                renderTasks();
+            } else {
+                console.error('Error deleting task:', error);
+            }
+        }
+
+        // --- UI Rendering logic ---
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                
+                const span = document.createElement('span');
+                span.className = `task-text ${task.is_done ? 'done' : ''}`;
+                span.textContent = task.task_text;
+                span.onclick = () => toggleTask(index);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.textContent = 'Del';
+                delBtn.onclick = () => deleteTask(index);
+
+                li.appendChild(span);
+                li.appendChild(delBtn);
+                list.appendChild(li);
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') addTask();
+        }
+
+        // Initialize the app by fetching from Supabase
+        loadTasks();
+    </script>
+</body>
+</html>

@@ -346,22 +346,20 @@
         // --- 5. AI VOICE ASSISTANT (GEMINI) ---
         const GEMINI_API_KEY = 'AIzaSyATgHyPywddkXLkas0BAelTmpwgWRV3oGg'; // ¡Pon tu llave aquí!
 
-// --- LÓGICA DE VOZ (SÍNTESIS) ---
+        // --- LÓGICA DE VOZ (SÍNTESIS) ---
         function speak(text) {
+            // Cancelar cualquier voz previa para que no se amontonen
             window.speechSynthesis.cancel();
             
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'es-MX'; // Acento latino/mexicano
-            utterance.rate = 1.05; 
+            utterance.lang = 'es-ES';
+            utterance.rate = 1.1; // Un poquito más rápido para que suene natural
             utterance.pitch = 1.0;
             window.speechSynthesis.speak(utterance);
         }
         
-// --- FUNCIÓN PARA CONSULTAR POR TEXTO ---
+        // --- FUNCIÓN PARA CONSULTAR POR TEXTO ---
         async function askGeminiText() {
-            // 🚨 EL TRUCO PARA iPHONE: Reproducir un texto vacío inmediatamente al tocar el botón para "desbloquear" el audio
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
-
             const input = document.getElementById('taskInput');
             const prompt = input.value.trim();
             const status = document.getElementById('micStatus');
@@ -370,10 +368,13 @@
 
             status.textContent = "PENSANDO...";
             
+            // Llamamos a la función de Gemini que definimos antes
             const aiResponse = await askGemini(prompt);
             
+            // Reproducir respuesta por voz
             speak(aiResponse);
             
+            // Limpiar input y resetear status
             input.value = '';
             status.textContent = "AI LISTA";
             setTimeout(() => status.textContent = "USAR VOZ", 3000);
@@ -383,9 +384,9 @@
         const GEMINI_API_KEY = 'AIzaSyATgHyPywddkXLkas0BAelTmpwgWRV3oGg'; 
         
         // Cambiamos a v1beta y nos aseguramos de que el modelo esté bien escrito
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-        const body = {
+const body = {
             contents: [{
                 parts: [{ text: prompt }]
             }],
@@ -417,62 +418,49 @@
             
             return "No obtuve una respuesta clara.";
 
-            } catch (error) {
-                console.error("Error de conexión:", error);
-                return "Error de red al conectar con Liros.";
-            }
+        } catch (error) {
+            console.error("Error de conexión:", error);
+            return "Error de red al conectar con Liros.";
         }
+    }
 
         function startVoiceAssistant() {
-            // 🚨 EL TRUCO PARA iPHONE: Desbloquear la voz de la IA inmediatamente
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
-
-            // Iniciamos el micrófono sin retrasos ni promesas asíncronas
             const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             const status = document.getElementById('micStatus');
-            const micBtn = document.getElementById('micBtn');
             
-            recognition.lang = 'es-MX';
-            
-            try {
-                recognition.start();
-            } catch (e) {
-                console.error("Error al iniciar el micro:", e);
-                status.textContent = "ERROR MIC";
-                setTimeout(() => status.textContent = "USAR VOZ", 2000);
-                return;
-            }
+            recognition.lang = 'es-ES';
+            recognition.start();
 
             recognition.onstart = () => {
-                status.textContent = "ESCUCHANDO...";
-                micBtn.style.background = "var(--accent-soft)";
+                status.textContent = "LISTENING...";
+                document.getElementById('micBtn').style.background = "var(--accent-soft)";
             };
 
             recognition.onresult = async (event) => {
                 const transcript = event.results[0][0].transcript;
-                status.textContent = "PENSANDO...";
+                status.textContent = "THINKING...";
                 
+                // 1. Obtener respuesta de Gemini
                 const aiResponse = await askGemini(transcript);
                 
+                // 2. Responder con voz
                 speak(aiResponse);
                 
-                status.textContent = "AI LISTA";
-                micBtn.style.background = "transparent";
-                setTimeout(() => status.textContent = "USAR VOZ", 3000);
+                // 3. (Opcional) Si el usuario dijo "agrega tarea", podrías procesarlo aquí
+                if(transcript.toLowerCase().includes("agrega")) {
+                    // Lógica extra para parsear la tarea
+                }
+
+                status.textContent = "AI ASSISTANT";
+                document.getElementById('micBtn').style.background = "transparent";
             };
 
-            recognition.onerror = (event) => {
-                console.error("Error de reconocimiento:", event.error);
-                status.textContent = "NO ESCUCHÉ";
-                micBtn.style.background = "transparent";
-                setTimeout(() => status.textContent = "USAR VOZ", 2000);
-            };
-            
-            recognition.onend = () => {
-                micBtn.style.background = "transparent";
+            recognition.onerror = () => {
+                status.textContent = "ERROR";
+                setTimeout(() => status.textContent = "AI ASSISTANT", 2000);
             };
         }
-        
+
         // Initialize
         loadTasks();
     </script>

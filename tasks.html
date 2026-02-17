@@ -1,153 +1,339 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liros Tasks</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Liros | Task Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
     <style>
-        /* All the same CSS from before */
+        /* --- FONTS --- */
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('../fonts/HKGroteskWide-Regular.otf'); }
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('../fonts/HKGroteskWide-Bold.otf'); font-weight: 700; }
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('../fonts/HKGroteskWide-Black.otf'); font-weight: 900; }
+
+        /* --- THEME VARS --- */
         :root {
-            --bg-color: #121212; --container-bg: #1e1e1e; --input-bg: #2c2c2c;
-            --border-color: #444; --text-main: #e0e0e0; --text-muted: #888;
-            --accent: #6200ee; --accent-hover: #7f39fb; --danger: #cf6679; --danger-hover: #e57373;
+            --bg-main: #e3e3e3;
+            --text-dark: #050505;
+            --text-grey: #666666;
+            --accent: #4a6fa5;       
+            --accent-soft: #a8c0dd;  
+            --font: 'HK Grotesk Wide', sans-serif;
+            --c-glass: #ffffff;
+            --c-dark: #222222;
+            --saturation: 110%;
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: var(--container-bg); padding: 25px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
-        h2 { margin-top: 0; text-align: center; font-weight: 500; letter-spacing: 1px; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input[type="text"] { flex-grow: 1; padding: 12px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 6px; font-size: 16px; }
-        input[type="text"]:focus { outline: none; border-color: var(--accent); }
-        button { padding: 12px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-        button:hover { background: var(--accent-hover); }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+        
+        body {
+            font-family: var(--font);
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px; 
+        }
+
+        /* --- BACKGROUND FX --- */
+        .corner-glow {
+            position: fixed; width: 900px; height: 900px; border-radius: 50%;
+            filter: blur(120px); z-index: -2; opacity: 0.4; pointer-events: none;
+        }
+        .glow-tr { top: -400px; right: -400px; background: radial-gradient(circle, var(--accent-soft), transparent 70%); }
+        .glow-bl { bottom: -400px; left: -400px; background: radial-gradient(circle, var(--accent), transparent 70%); }
+
+        /* --- CURSOR --- */
+        .cursor {
+            position: fixed; width: 30px; height: 30px;
+            border: 2px solid var(--accent); border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            transition: transform 0.1s;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .cursor-inner { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+        .cursor.hover { transform: scale(1.8); background: rgba(74, 111, 165, 0.1); }
+
+        /* --- LIQUID GLASS STYLES --- */
+        .liquid-box {
+            position: relative; padding: 35px 25px; border-radius: 32px;
+            background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+            backdrop-filter: blur(12px) saturate(var(--saturation));
+            -webkit-backdrop-filter: blur(12px) saturate(var(--saturation));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8), 0px 10px 30px -10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .task-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; margin-bottom: 12px; border-radius: 18px;
+            background-color: color-mix(in srgb, var(--c-glass) 40%, transparent);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0px 4px 10px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+            touch-action: manipulation; /* Helps with mobile tap vs drag */
+        }
+
+        /* SortableJS Ghost class (Visual feedback when dragging) */
+        .sortable-ghost {
+            opacity: 0.3;
+            background-color: var(--accent-soft);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+
+        /* --- TYPOGRAPHY & UI --- */
+        h2 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; text-align: center; margin-bottom: 25px; color: var(--text-dark); }
+        
+        .input-group { display: flex; gap: 10px; margin-bottom: 25px; }
+        
+        input[type="text"] {
+            flex-grow: 1; padding: 15px 20px;
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.8);
+            border-radius: 30px; font-family: var(--font);
+            color: var(--text-dark); font-size: 16px; 
+            outline: none; transition: 0.3s;
+        }
+        input[type="text"]:focus { background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(74, 111, 165, 0.2); }
+        
+        .btn { 
+            padding: 15px 25px; border: 2px solid var(--text-dark); border-radius: 30px;
+            background: transparent; color: var(--text-dark); 
+            font-family: var(--font); font-weight: 700; text-transform: uppercase; 
+            letter-spacing: 1px; transition: 0.3s; display: inline-block;
+        }
+        .btn:hover { background: var(--text-dark); color: white; }
+
         ul { list-style: none; padding: 0; margin: 0; }
-        li { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: var(--input-bg); margin-bottom: 10px; border-radius: 6px; border: 1px solid transparent; }
-        .task-text { cursor: pointer; flex-grow: 1; font-size: 16px; transition: color 0.2s; }
-        .done { text-decoration: line-through; color: var(--text-muted); }
-        .delete-btn { background: var(--danger); padding: 6px 12px; font-size: 14px; margin-left: 10px; }
-        .delete-btn:hover { background: var(--danger-hover); }
+        
+        .task-text { flex-grow: 1; font-weight: 700; font-size: 0.95rem; transition: color 0.3s, opacity 0.3s; padding-right: 10px; }
+        .task-text.done { text-decoration: line-through; opacity: 0.4; }
+
+        .action-btns { display: flex; gap: 12px; }
+        
+        .icon-btn {
+            background: transparent; border: none; color: var(--text-grey);
+            font-size: 1.1rem; padding: 5px; transition: 0.3s;
+            position: relative; z-index: 10; /* Keeps buttons clickable during drag events */
+        }
+        .icon-btn:hover { color: var(--accent); transform: scale(1.1); }
+        .icon-btn.delete:hover { color: #cf6679; }
+
+        /* --- DIVIDER STYLES --- */
+        .divider {
+            height: 1px; border: none;
+            background: color-mix(in srgb, var(--text-grey) 20%, transparent);
+            margin: 25px 0;
+        }
+        .done-label {
+            text-align: center; font-size: 0.75rem; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--text-grey); margin-bottom: 15px;
+        }
+
+        /* --- MOBILE TWEAKS --- */
+        @media(max-width: 768px) {
+            * { cursor: auto; }
+            .cursor { display: none; }
+            .liquid-box { padding: 25px 15px; }
+            .btn:active { transform: scale(0.96); background: var(--text-dark); color: white; }
+            .icon-btn:active { transform: scale(0.9); }
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Private Task Tracker</h2>
+    <div class="corner-glow glow-tr"></div>
+    <div class="corner-glow glow-bl"></div>
+    <div class="cursor" id="cursor"><div class="cursor-inner"></div></div>
+
+    <div class="liquid-box">
+        <h2>System Tasks</h2>
         <div class="input-group">
             <input type="text" id="taskInput" placeholder="Add a new task..." onkeypress="handleKeyPress(event)">
-            <button onclick="addTask()">Add</button>
+            <button class="btn" onclick="addTask()">ADD</button>
         </div>
-        <ul id="taskList"></ul>
+        <div id="taskListContainer"></div>
     </div>
 
     <script>
-        // 1. Configure Supabase
+        // --- 1. CONFIGURATION ---
         const { createClient } = supabase;
-        const supabaseUrl = 'https://supabase.com/dashboard/project/hwsffnsxwxygvamqdxcd'; 
+        const supabaseUrl = 'https://hwsffnsxwxygvamqdxcd.supabase.co'; 
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3c2ZmbnN4d3h5Z3ZhbXFkeGNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzM2MTIsImV4cCI6MjA4NDYwOTYxMn0.1cslca0G6SMjGv2UBiRCYJsTNelc8vfhCixErap-2hU';
         const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
         let tasks = [];
+        let sortableInstance = null;
 
-        // 2. READ: Fetch tasks from the database
+        // --- 2. DATABASE LOGIC ---
         async function loadTasks() {
+            // Now ordering by the new 'position' column
             const { data, error } = await supabaseClient
                 .from('tasks')
                 .select('*')
-                .order('id', { ascending: false }); // Show newest first
+                .order('position', { ascending: true }) 
+                .order('id', { ascending: false });
                 
-            if (error) {
-                console.error('Error loading tasks:', error);
-                return;
-            }
-            tasks = data;
-            renderTasks();
+            if (!error) { tasks = data; renderTasks(); }
         }
 
-        // 3. CREATE: Add a new task to the database
         async function addTask() {
             const input = document.getElementById('taskInput');
             const text = input.value.trim();
-            
             if (text) {
+                // Generate a negative timestamp so new tasks naturally fall to the very top of the list
+                const newPosition = -Date.now();
+                
                 const { data, error } = await supabaseClient
                     .from('tasks')
-                    .insert([{ task_text: text, is_done: false }])
-                    .select(); // Returns the newly created row
+                    .insert([{ task_text: text, is_done: false, position: newPosition }])
+                    .select();
                     
-                if (!error && data) {
-                    tasks.unshift(data[0]); // Add to the top of our local array
-                    input.value = '';
-                    renderTasks();
-                } else {
-                    console.error('Error adding task:', error);
+                if (!error && data) { 
+                    tasks.unshift(data[0]); 
+                    input.value = ''; 
+                    renderTasks(); 
                 }
             }
         }
 
-        // 4. UPDATE: Toggle task status in the database
-        async function toggleTask(index) {
-            const task = tasks[index];
-            const newStatus = !task.is_done;
-            
-            const { error } = await supabaseClient
-                .from('tasks')
-                .update({ is_done: newStatus })
-                .eq('id', task.id);
-                
-            if (!error) {
-                tasks[index].is_done = newStatus;
-                renderTasks();
-            } else {
-                console.error('Error updating task:', error);
+        async function editTask(id, currentText) {
+            const newText = prompt("Edit your task:", currentText);
+            if (newText !== null && newText.trim() !== "" && newText !== currentText) {
+                const { error } = await supabaseClient.from('tasks').update({ task_text: newText.trim() }).eq('id', id);
+                if (!error) {
+                    const taskIndex = tasks.findIndex(t => t.id === id);
+                    if (taskIndex !== -1) { tasks[taskIndex].task_text = newText.trim(); renderTasks(); }
+                }
             }
         }
 
-        // 5. DELETE: Remove task from the database
-        async function deleteTask(index) {
-            const task = tasks[index];
-            
-            const { error } = await supabaseClient
-                .from('tasks')
-                .delete()
-                .eq('id', task.id);
-                
+        async function toggleTask(id, currentStatus) {
+            const newStatus = !currentStatus;
+            const { error } = await supabaseClient.from('tasks').update({ is_done: newStatus }).eq('id', id);
             if (!error) {
-                tasks.splice(index, 1);
-                renderTasks();
-            } else {
-                console.error('Error deleting task:', error);
+                const taskIndex = tasks.findIndex(t => t.id === id);
+                if (taskIndex !== -1) { tasks[taskIndex].is_done = newStatus; renderTasks(); }
             }
         }
 
-        // --- UI Rendering logic ---
+        async function deleteTask(id) {
+            const { error } = await supabaseClient.from('tasks').delete().eq('id', id);
+            if (!error) { tasks = tasks.filter(t => t.id !== id); renderTasks(); }
+        }
+
+        // --- 3. UI RENDERING & DRAG LOGIC ---
+        function createTaskElement(task) {
+            const li = document.createElement('li');
+            li.className = 'task-item';
+            li.dataset.id = task.id; // Store ID on the HTML element for dragging
+            
+            const span = document.createElement('span');
+            span.className = `task-text ${task.is_done ? 'done' : ''}`;
+            span.textContent = task.task_text;
+            span.onclick = () => toggleTask(task.id, task.is_done);
+
+            const actions = document.createElement('div');
+            actions.className = 'action-btns';
+
+            if (!task.is_done) {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'icon-btn edit';
+                editBtn.innerHTML = '<i class="fas fa-pen"></i>';
+                editBtn.onclick = () => editTask(task.id, task.task_text);
+                actions.appendChild(editBtn);
+            }
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'icon-btn delete';
+            delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            delBtn.onclick = () => deleteTask(task.id);
+            actions.appendChild(delBtn);
+
+            li.appendChild(span);
+            li.appendChild(actions);
+            return li;
+        }
+
         function renderTasks() {
-            const list = document.getElementById('taskList');
-            list.innerHTML = '';
+            const container = document.getElementById('taskListContainer');
+            container.innerHTML = ''; 
             
-            tasks.forEach((task, index) => {
-                const li = document.createElement('li');
+            const pendingTasks = tasks.filter(t => !t.is_done);
+            const doneTasks = tasks.filter(t => t.is_done);
+
+            // Render Pending Tasks (Draggable)
+            if (pendingTasks.length > 0) {
+                const pendingList = document.createElement('ul');
+                pendingList.id = "pendingList";
+                pendingTasks.forEach(task => pendingList.appendChild(createTaskElement(task)));
+                container.appendChild(pendingList);
+
+                // Initialize SortableJS on the pending list
+                sortableInstance = new Sortable(pendingList, {
+                    animation: 150,
+                    delay: 200, // 200ms long press to drag
+                    delayOnTouchOnly: true, // Only require long press on touch screens
+                    ghostClass: 'sortable-ghost',
+                    onEnd: async function () {
+                        // When drag ends, update the position in the database
+                        const items = Array.from(pendingList.children);
+                        for (let i = 0; i < items.length; i++) {
+                            const taskId = parseInt(items[i].dataset.id);
+                            const task = tasks.find(t => t.id === taskId);
+                            if (task && task.position !== i) {
+                                task.position = i;
+                                // Silently update Supabase in the background
+                                await supabaseClient.from('tasks').update({ position: i }).eq('id', taskId);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Render Completed Tasks (Not Draggable)
+            if (doneTasks.length > 0) {
+                if (pendingTasks.length > 0) {
+                    const divider = document.createElement('hr');
+                    divider.className = 'divider';
+                    container.appendChild(divider);
+                }
                 
-                const span = document.createElement('span');
-                span.className = `task-text ${task.is_done ? 'done' : ''}`;
-                span.textContent = task.task_text;
-                span.onclick = () => toggleTask(index);
+                const label = document.createElement('div');
+                label.className = 'done-label';
+                label.textContent = 'Completed';
+                container.appendChild(label);
 
-                const delBtn = document.createElement('button');
-                delBtn.className = 'delete-btn';
-                delBtn.textContent = 'Del';
-                delBtn.onclick = () => deleteTask(index);
+                const doneList = document.createElement('ul');
+                doneTasks.forEach(task => doneList.appendChild(createTaskElement(task)));
+                container.appendChild(doneList);
+            }
+        }
 
-                li.appendChild(span);
-                li.appendChild(delBtn);
-                list.appendChild(li);
+        function handleKeyPress(event) { if (event.key === 'Enter') addTask(); }
+
+        // --- 4. CURSOR LOGIC ---
+        if (window.innerWidth > 768) {
+            const cursor = document.getElementById('cursor');
+            document.addEventListener('mousemove', e => {
+                cursor.style.left = e.clientX - 15 + 'px';
+                cursor.style.top = e.clientY - 15 + 'px';
             });
+            document.body.addEventListener('mouseenter', (e) => {
+                if(e.target.closest('button, input, .task-text, .icon-btn')) cursor.classList.add('hover');
+            }, true);
+            document.body.addEventListener('mouseleave', (e) => {
+                if(e.target.closest('button, input, .task-text, .icon-btn')) cursor.classList.remove('hover');
+            }, true);
         }
 
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') addTask();
-        }
-
-        // Initialize the app by fetching from Supabase
+        // Initialize
         loadTasks();
     </script>
 </body>

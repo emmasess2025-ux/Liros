@@ -424,27 +424,28 @@
         }
 
         function startVoiceAssistant() {
-
-            // --- NUEVO: ACTIVAR REPRODUCTOR AL PRIMER CLIC ---
-            if (!reproductorActivado) {
-                silentAudio.play().then(() => {
-                    activarReproductorFantasma();
-                    reproductorActivado = true;
-                }).catch(e => console.log("iOS bloqueó el audio: ", e));
-            }
-            // 🚨 EL TRUCO PARA iPHONE: Desbloquear el audio aquí también
+            // 🚨 EL TRUCO PARA iPHONE: Desbloquear la voz de la IA inmediatamente
             window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
 
+            // Iniciamos el micrófono sin retrasos ni promesas asíncronas
             const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             const status = document.getElementById('micStatus');
+            const micBtn = document.getElementById('micBtn');
             
-            // También le ponemos español de México para que te entienda mejor el dictado
             recognition.lang = 'es-MX';
-            recognition.start();
+            
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error("Error al iniciar el micro:", e);
+                status.textContent = "ERROR MIC";
+                setTimeout(() => status.textContent = "USAR VOZ", 2000);
+                return;
+            }
 
             recognition.onstart = () => {
                 status.textContent = "ESCUCHANDO...";
-                document.getElementById('micBtn').style.background = "var(--accent-soft)";
+                micBtn.style.background = "var(--accent-soft)";
             };
 
             recognition.onresult = async (event) => {
@@ -455,43 +456,21 @@
                 
                 speak(aiResponse);
                 
-                status.textContent = "AI ASSISTANT";
-                document.getElementById('micBtn').style.background = "transparent";
+                status.textContent = "AI LISTA";
+                micBtn.style.background = "transparent";
+                setTimeout(() => status.textContent = "USAR VOZ", 3000);
             };
 
-            recognition.onerror = () => {
-                status.textContent = "ERROR";
-                setTimeout(() => status.textContent = "AI ASSISTANT", 2000);
+            recognition.onerror = (event) => {
+                console.error("Error de reconocimiento:", event.error);
+                status.textContent = "NO ESCUCHÉ";
+                micBtn.style.background = "transparent";
+                setTimeout(() => status.textContent = "USAR VOZ", 2000);
             };
-        }
-
-        // --- 6. HACK PARA AUDÍFONOS (NUEVA VERSIÓN iPHONE) ---
-        
-        // Usamos un archivo real de silencio alojado en GitHub para que Safari no sospeche
-        const silentAudio = new Audio('https://raw.githubusercontent.com/anars/blank-audio/master/250-milliseconds-of-silence.mp3');
-        silentAudio.loop = true;
-        let reproductorActivado = false;
-
-        function activarReproductorFantasma() {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: 'Asistente Liros',
-                    artist: 'Esperando comandos...',
-                    artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/8644/8644104.png', sizes: '512x512', type: 'image/png' }]
-                });
-
-                // Al tocar el audífono
-                navigator.mediaSession.setActionHandler('play', function() {
-                    silentAudio.play(); 
-                    startVoiceAssistant(); // Dispara tu IA
-                });
-
-                // A veces iOS manda 'pause' en lugar de 'play', cubrimos ambos
-                navigator.mediaSession.setActionHandler('pause', function() {
-                    silentAudio.play(); 
-                    startVoiceAssistant(); // Dispara tu IA
-                });
-            }
+            
+            recognition.onend = () => {
+                micBtn.style.background = "transparent";
+            };
         }
         
         // Initialize

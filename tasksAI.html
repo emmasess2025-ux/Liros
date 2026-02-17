@@ -424,6 +424,14 @@
         }
 
         function startVoiceAssistant() {
+
+            // --- NUEVO: ACTIVAR REPRODUCTOR AL PRIMER CLIC ---
+            if (!reproductorActivado) {
+                silentAudio.play().then(() => {
+                    activarReproductorFantasma();
+                    reproductorActivado = true;
+                }).catch(e => console.log("iOS bloqueó el audio: ", e));
+            }
             // 🚨 EL TRUCO PARA iPHONE: Desbloquear el audio aquí también
             window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
 
@@ -457,46 +465,35 @@
             };
         }
 
-        // --- 6. HACK PARA AUDÍFONOS (MEDIA SESSION API) ---
+        // --- 6. HACK PARA AUDÍFONOS (NUEVA VERSIÓN iPHONE) ---
         
-        // Creamos un audio MP3 de 1 segundo de puro silencio absoluto
-        const silentAudio = new Audio('data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//MUxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//MUxDsAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
-        silentAudio.loop = true; // Se repite infinitamente para que iOS no nos quite el control
+        // Usamos un archivo real de silencio alojado en GitHub para que Safari no sospeche
+        const silentAudio = new Audio('https://raw.githubusercontent.com/anars/blank-audio/master/250-milliseconds-of-silence.mp3');
+        silentAudio.loop = true;
+        let reproductorActivado = false;
 
-        function initHeadsetControl() {
-            // Reproducimos el silencio
-            silentAudio.play().catch(e => console.log("Esperando toque del usuario para iniciar audio..."));
-
-            // Conectamos los controles del iPhone a nuestra página
+        function activarReproductorFantasma() {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
-                    title: 'IA Liros',
-                    artist: 'Escuchando comandos...',
-                    // Puedes poner una URL de una imagen tuya aquí para que salga en la pantalla de bloqueo
-                    artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/8644/8644104.png', sizes: '512x512', type: 'image/png' }] 
+                    title: 'Asistente Liros',
+                    artist: 'Esperando comandos...',
+                    artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/8644/8644104.png', sizes: '512x512', type: 'image/png' }]
                 });
 
-                // Cuando presionas el botón "Play" en tu audífono
+                // Al tocar el audífono
                 navigator.mediaSession.setActionHandler('play', function() {
-                    silentAudio.play(); // Forzamos que siga el silencio
-                    startVoiceAssistant(); // ¡Llamamos a tu IA!
+                    silentAudio.play(); 
+                    startVoiceAssistant(); // Dispara tu IA
                 });
 
-                // Cuando presionas el botón "Pause" en tu audífono (A veces iOS alterna entre play/pause)
+                // A veces iOS manda 'pause' en lugar de 'play', cubrimos ambos
                 navigator.mediaSession.setActionHandler('pause', function() {
-                    silentAudio.play(); // Evitamos que se pause de verdad
-                    startVoiceAssistant(); // ¡Llamamos a tu IA!
+                    silentAudio.play(); 
+                    startVoiceAssistant(); // Dispara tu IA
                 });
             }
         }
-
-        // EVENTO CLAVE: Desbloqueamos este superpoder con el primer toque en la pantalla
-        document.body.addEventListener('touchstart', function() {
-            if(silentAudio.paused) {
-                initHeadsetControl();
-            }
-        }, { once: true }); // El "once: true" asegura que solo se ejecute la primera vez
-
+        
         // Initialize
         loadTasks();
     </script>

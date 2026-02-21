@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Liros | Task Tracker</title>
+    <title>Liros | System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -33,116 +33,156 @@
             font-family: var(--font);
             background-color: var(--bg-main);
             color: var(--text-dark);
-            overflow-x: hidden;
-            min-height: 100vh;
+            overflow: hidden; 
+            min-height: 92vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 15px; 
         }
 
         /* --- BACKGROUND FX --- */
-        .corner-glow {
-            position: fixed; width: 900px; height: 900px; border-radius: 50%;
-            filter: blur(120px); z-index: -2; opacity: 0.4; pointer-events: none;
-        }
+        .corner-glow { position: fixed; width: 900px; height: 900px; border-radius: 50%; filter: blur(120px); z-index: -2; opacity: 0.4; pointer-events: none; }
         .glow-tr { top: -400px; right: -400px; background: radial-gradient(circle, var(--accent-soft), transparent 70%); }
         .glow-bl { bottom: -400px; left: -400px; background: radial-gradient(circle, var(--accent), transparent 70%); }
 
         /* --- CURSOR --- */
-        .cursor {
-            position: fixed; width: 30px; height: 30px;
-            border: 2px solid var(--accent); border-radius: 50%;
-            pointer-events: none; z-index: 9999;
-            transition: transform 0.1s;
-            display: flex; justify-content: center; align-items: center;
-        }
+        .cursor { position: fixed; width: 30px; height: 30px; border: 2px solid var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; transition: transform 0.1s; display: flex; justify-content: center; align-items: center; }
         .cursor-inner { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
         .cursor.hover { transform: scale(1.8); background: rgba(74, 111, 165, 0.1); }
 
-        /* --- LIQUID GLASS STYLES --- */
-        .liquid-box {
-            position: relative; padding: 35px 25px; border-radius: 32px;
-            background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
-            backdrop-filter: blur(12px) saturate(var(--saturation));
-            -webkit-backdrop-filter: blur(12px) saturate(var(--saturation));
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8), 0px 10px 30px -10px rgba(0,0,0,0.1);
+        /* --- LIQUID GLASS SHARED --- */
+        .liquid-glass {
+            background-color: color-mix(in srgb, var(--c-glass) 20%, transparent);
+            backdrop-filter: blur(15px) saturate(var(--saturation));
+            -webkit-backdrop-filter: blur(15px) saturate(var(--saturation));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8), 0px 10px 30px -10px rgba(0,0,0,0.15);
+        }
+
+        /* --- 3D CARD LAYOUT (PEEKING EFFECT) --- */
+        .cards-wrapper {
+            position: relative;
             width: 100%;
             max-width: 500px;
+            height: 85vh; 
+            perspective: 1500px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: -20px; 
         }
 
-        .task-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 20px; margin-bottom: 12px; border-radius: 18px;
-            background-color: color-mix(in srgb, var(--c-glass) 40%, transparent);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0px 4px 10px rgba(0,0,0,0.03);
+        .liquid-box {
+            position: absolute; 
+            padding: 35px 25px 15px 25px; 
+            border-radius: 32px;
+            width: 90%; max-width: 500px; 
+            max-height: 105%;
+            display: flex; flex-direction: column; overflow: hidden; 
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease, z-index 0s;
+            transform-style: preserve-3d;
+        }
+
+        .scroll-area { flex-grow: 1; overflow-y: auto; min-height: 0; padding-bottom: 20px; }
+        .scroll-area::-webkit-scrollbar { display: none; }
+
+        .card-active { 
+            transform: translateZ(0px) translateX(0px) scale(1); 
+            opacity: 1; z-index: 10; pointer-events: auto; 
+        }
+        
+        /* THE PEEKING INACTIVE CARD */
+        .card-inactive { 
+            /* Pushed back, scaled down slightly, and shifted to the right */
+            transform: translateZ(-100px) translateX(15%) scale(0.95); 
+            opacity: 0.5; z-index: 5; pointer-events: auto; box-shadow: none; 
+            cursor: pointer; 
+        }
+        /* Prevents accidentally clicking buttons inside the inactive card */
+        .card-inactive * { pointer-events: none; }
+
+        /* --- DYNAMIC ISLAND BOTTOM NAV --- */
+        .bottom-island {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 5px; padding: 8px; border-radius: 50px; z-index: 2000;
             transition: all 0.3s ease;
-            touch-action: manipulation; /* Helps with mobile tap vs drag */
+        }
+        
+        .nav-btn {
+            padding: 12px 25px; border-radius: 30px; border: none; background: transparent;
+            color: var(--text-grey); font-family: var(--font); font-weight: 900; 
+            font-size: 0.85rem; letter-spacing: 1px; transition: 0.3s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        
+        .nav-btn.active {
+            background: var(--accent); color: white;
+            box-shadow: 0 5px 15px rgba(74, 111, 165, 0.3);
         }
 
-        /* SortableJS Ghost class (Visual feedback when dragging) */
-        .sortable-ghost {
-            opacity: 0.3;
-            background-color: var(--accent-soft);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        /* --- COLOR SELECTOR UI --- */
+        .color-picker-container {
+            display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;
+            padding: 10px; background: rgba(255,255,255,0.3); border-radius: 20px;
+        }
+        .color-option { cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center;}
+        .color-option input { display: none; }
+        .color-dot-large { 
+            display: inline-block; width: 22px; height: 22px; border-radius: 50%; 
+            opacity: 0.4; transition: 0.3s; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .color-option input:checked + .color-dot-large {
+            opacity: 1; transform: scale(1.3); border-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.2);
         }
 
-        /* --- TYPOGRAPHY & UI --- */
-        h2 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; text-align: center; margin-bottom: 25px; color: var(--text-dark); }
+        /* --- UI ELEMENTS --- */
+        h2 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; text-align: center; margin-bottom: 25px; color: var(--text-dark); flex-shrink: 0; }
+        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; flex-shrink: 0; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 25px; flex-shrink: 0; }
         
-        .input-group { display: flex; gap: 10px; margin-bottom: 25px; }
-        
-        input[type="text"] {
-            flex-grow: 1; padding: 15px 20px;
-            background: rgba(255,255,255,0.5);
-            border: 1px solid rgba(255,255,255,0.8);
-            border-radius: 30px; font-family: var(--font);
-            color: var(--text-dark); font-size: 16px; 
-            outline: none; transition: 0.3s;
+        input[type="text"], textarea {
+            flex-grow: 1; padding: 15px 20px; background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.8);
+            border-radius: 20px; font-family: var(--font); color: var(--text-dark); font-size: 16px; outline: none; transition: 0.3s; resize: none;
         }
-        input[type="text"]:focus { background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(74, 111, 165, 0.2); }
+        input[type="text"]:focus, textarea:focus { background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(74, 111, 165, 0.2); }
         
-        .btn { 
-            padding: 15px 25px; border: 2px solid var(--text-dark); border-radius: 30px;
-            background: transparent; color: var(--text-dark); 
-            font-family: var(--font); font-weight: 700; text-transform: uppercase; 
-            letter-spacing: 1px; transition: 0.3s; display: inline-block;
-        }
+        .btn { padding: 15px 25px; border: 2px solid var(--text-dark); border-radius: 30px; background: transparent; color: var(--text-dark); font-family: var(--font); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; display: inline-block; width: 100%; }
         .btn:hover { background: var(--text-dark); color: white; }
+        .btn-inverted { background: var(--text-dark); color: white; }
+        .btn-inverted:hover { background: transparent; color: var(--text-dark); }
+        .btn-small { width: auto; padding: 0 20px; display: flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; }
 
         ul { list-style: none; padding: 0; margin: 0; }
+        .task-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; margin-bottom: 12px; border-radius: 18px; background-color: color-mix(in srgb, var(--c-glass) 40%, transparent); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0px 4px 10px rgba(0,0,0,0.03); transition: all 0.3s ease; touch-action: manipulation; }
         
-        .task-text { flex-grow: 1; font-weight: 700; font-size: 0.95rem; transition: color 0.3s, opacity 0.3s; padding-right: 10px; }
-        .task-text.done { text-decoration: line-through; opacity: 0.4; }
+        .text-container { flex-grow: 1; padding-right: 15px; }
+        .task-text { display: block; font-weight: 900; font-size: 0.95rem; transition: opacity 0.3s; }
+        
+        .task-desc-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .status-dot-small { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s;}
+        .status-dot-small:hover { transform: scale(1.3); }
+        .task-desc { font-weight: 400; font-size: 0.8rem; color: var(--text-grey); line-height: 1.3; }
+        
+        .done .task-text, .done .task-desc-row { text-decoration: line-through; opacity: 0.4; }
 
-        .action-btns { display: flex; gap: 12px; }
-        
-        .icon-btn {
-            background: transparent; border: none; color: var(--text-grey);
-            font-size: 1.1rem; padding: 5px; transition: 0.3s;
-            position: relative; z-index: 10; /* Keeps buttons clickable during drag events */
-        }
+        .action-btns { display: flex; gap: 12px; flex-shrink: 0; }
+        .icon-btn { background: transparent; border: none; color: var(--text-grey); font-size: 1.1rem; padding: 5px; transition: 0.3s; position: relative; z-index: 10; }
         .icon-btn:hover { color: var(--accent); transform: scale(1.1); }
         .icon-btn.delete:hover { color: #cf6679; }
 
-        /* --- DIVIDER STYLES --- */
-        .divider {
-            height: 1px; border: none;
-            background: color-mix(in srgb, var(--text-grey) 20%, transparent);
-            margin: 25px 0;
-        }
-        .done-label {
-            text-align: center; font-size: 0.75rem; letter-spacing: 2px;
-            text-transform: uppercase; color: var(--text-grey); margin-bottom: 15px;
-        }
+        .sortable-ghost { opacity: 0.3; background-color: var(--accent-soft); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+        .divider { height: 1px; border: none; background: color-mix(in srgb, var(--text-grey) 20%, transparent); margin: 25px 0; flex-shrink: 0;}
+        .done-label { text-align: center; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-grey); margin-bottom: 15px; flex-shrink: 0;}
 
-        /* --- MOBILE TWEAKS --- */
         @media(max-width: 768px) {
             * { cursor: auto; }
             .cursor { display: none; }
-            .liquid-box { padding: 25px 15px; }
-            .btn:active { transform: scale(0.96); background: var(--text-dark); color: white; }
+            .liquid-box { padding: 25px 15px 10px 15px; width: 91%; }
+            .btn:active, .nav-btn:active { transform: scale(0.96); }
             .icon-btn:active { transform: scale(0.9); }
+            .bottom-island { justify-content: space-around; }
+            .nav-btn { flex-grow: 1; justify-content: center; }
+            .btn-small { padding: 0 15px; } 
+            .card-inactive { transform: translateZ(-100px) translateX(12%) scale(0.95); } /* Slightly less peek on mobile */
         }
     </style>
 </head>
@@ -152,14 +192,61 @@
     <div class="corner-glow glow-bl"></div>
     <div class="cursor" id="cursor"><div class="cursor-inner"></div></div>
 
-    <div class="liquid-box">
-        <h2>System Tasks</h2>
-        <div class="input-group">
-            <input type="text" id="taskInput" placeholder="Add a new task..." onkeypress="handleKeyPress(event)">
-            <button class="btn" onclick="addTask()">ADD</button>
+    <div class="cards-wrapper">
+        
+        <div class="liquid-box liquid-glass card-active" id="card-0" onclick="handleCardClick(0)">
+            <h2><i style="color:var(--accent);"></i> Tasks</h2>
+            
+            <div class="input-row">
+                <input type="text" id="taskInput" placeholder="Add a new task..." onkeypress="handleTaskKey(event)">
+                <button class="btn btn-inverted btn-small" onclick="addTask()">
+                    <i class="fas fa-plus"></i> ADD
+                </button>
+            </div>
+
+            <div id="taskListContainer" class="scroll-area"></div>
         </div>
-        <div id="taskListContainer"></div>
+
+        <div class="liquid-box liquid-glass card-inactive" id="card-1" onclick="handleCardClick(1)">
+            <h2><i  style="color:var(--accent);"></i> Songs</h2>
+            <div class="input-group">
+                <input type="text" id="songTitleInput" placeholder="Project / Song Title...">
+                
+                <div class="color-picker-container">
+                    <label class="color-option" title="Just recorded a sample">
+                        <input type="radio" name="songColor" value="#2196F3" checked>
+                        <span class="color-dot-large" style="background: #2196F3;"></span>
+                    </label>
+                    <label class="color-option" title="Recording instruments">
+                        <input type="radio" name="songColor" value="#FFC107">
+                        <span class="color-dot-large" style="background: #FFC107;"></span>
+                    </label>
+                    <label class="color-option" title="Vocals and instruments">
+                        <input type="radio" name="songColor" value="#FF9800">
+                        <span class="color-dot-large" style="background: #FF9800;"></span>
+                    </label>
+                    <label class="color-option" title="Mix and master">
+                        <input type="radio" name="songColor" value="#8BC34A">
+                        <span class="color-dot-large" style="background: #8BC34A;"></span>
+                    </label>
+                    <label class="color-option" title="Done">
+                        <input type="radio" name="songColor" value="#4CAF50">
+                        <span class="color-dot-large" style="background: #4CAF50;"></span>
+                    </label>
+                </div>
+
+                <textarea id="songDescInput" rows="2" placeholder="Notes..." onkeypress="handleSongKey(event)"></textarea>
+                <button class="btn btn-inverted" onclick="addSong()">SAVE PROJECT</button>
+            </div>
+            <div id="songListContainer" class="scroll-area"></div>
+        </div>
+
     </div>
+
+    <nav class="bottom-island liquid-glass">
+        <button class="nav-btn active" id="btn-nav-0" onclick="switchCard(0)"><i class="fas fa-check-double"></i></button>
+        <button class="nav-btn" id="btn-nav-1" onclick="switchCard(1)"><i class="fas fa-music"></i></button>
+    </nav>
 
     <script>
         // --- 1. CONFIGURATION ---
@@ -169,172 +256,255 @@
         const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
         let tasks = [];
-        let sortableInstance = null;
+        let songs = [];
+        
+        // The stages flow
+        const colorStages = ['#2196F3', '#FFC107', '#FF9800', '#8BC34A', '#4CAF50'];
 
-        // --- 2. DATABASE LOGIC ---
+        // --- 2. CARD SWITCHING LOGIC ---
+        function switchCard(index) {
+            document.getElementById('card-0').className = index === 0 ? 'liquid-box liquid-glass card-active' : 'liquid-box liquid-glass card-inactive';
+            document.getElementById('card-1').className = index === 1 ? 'liquid-box liquid-glass card-active' : 'liquid-box liquid-glass card-inactive';
+            
+            document.getElementById('btn-nav-0').className = index === 0 ? 'nav-btn active' : 'nav-btn';
+            document.getElementById('btn-nav-1').className = index === 1 ? 'nav-btn active' : 'nav-btn';
+        }
+
+        // Triggered when clicking the physical card element
+        function handleCardClick(index) {
+            const card = document.getElementById(`card-${index}`);
+            if (card.classList.contains('card-inactive')) {
+                switchCard(index);
+            }
+        }
+
+        // --- 3. DATABASE: TASKS ---
         async function loadTasks() {
-            // Now ordering by the new 'position' column
-            const { data, error } = await supabaseClient
-                .from('tasks')
-                .select('*')
-                .order('position', { ascending: true }) 
-                .order('id', { ascending: false });
-                
-            if (!error) { tasks = data; renderTasks(); }
+            const { data, error } = await supabaseClient.from('tasks').select('*').order('position', { ascending: true }).order('id', { ascending: false });
+            if (!error) { tasks = data; renderList(tasks, 'taskListContainer', 'tasks'); }
         }
 
         async function addTask() {
-            const input = document.getElementById('taskInput');
-            const text = input.value.trim();
+            const text = document.getElementById('taskInput').value.trim();
             if (text) {
-                // Generate a negative timestamp so new tasks naturally fall to the very top of the list
-                const newPosition = -Date.now();
-                
-                const { data, error } = await supabaseClient
-                    .from('tasks')
-                    .insert([{ task_text: text, is_done: false, position: newPosition }])
-                    .select();
-                    
-                if (!error && data) { 
-                    tasks.unshift(data[0]); 
-                    input.value = ''; 
-                    renderTasks(); 
+                const { data, error } = await supabaseClient.from('tasks').insert([{ task_text: text, is_done: false, position: -Date.now() }]).select();
+                if (!error) { tasks.unshift(data[0]); document.getElementById('taskInput').value = ''; renderList(tasks, 'taskListContainer', 'tasks'); }
+            }
+        }
+
+        // --- 4. DATABASE: SONGS ---
+        async function loadSongs() {
+            const { data, error } = await supabaseClient.from('songs').select('*').order('position', { ascending: true }).order('id', { ascending: false });
+            if (!error) { songs = data; renderList(songs, 'songListContainer', 'songs'); }
+        }
+
+        async function addSong() {
+            const title = document.getElementById('songTitleInput').value.trim();
+            const desc = document.getElementById('songDescInput').value.trim();
+            
+            // Get the selected color
+            const selectedColorElement = document.querySelector('input[name="songColor"]:checked');
+            const color = selectedColorElement ? selectedColorElement.value : colorStages[0];
+
+            if (title) {
+                const { data, error } = await supabaseClient.from('songs').insert([{ title: title, description: desc, is_done: false, color: color, position: -Date.now() }]).select();
+                if (!error) { 
+                    songs.unshift(data[0]); 
+                    document.getElementById('songTitleInput').value = ''; 
+                    document.getElementById('songDescInput').value = ''; 
+                    // Reset color selector to first option
+                    document.querySelector('input[name="songColor"][value="#2196F3"]').checked = true;
+                    renderList(songs, 'songListContainer', 'songs'); 
+                } else {
+                    console.error(error);
                 }
             }
         }
 
-        async function editTask(id, currentText) {
-            const newText = prompt("Edit your task:", currentText);
-            if (newText !== null && newText.trim() !== "" && newText !== currentText) {
-                const { error } = await supabaseClient.from('tasks').update({ task_text: newText.trim() }).eq('id', id);
-                if (!error) {
-                    const taskIndex = tasks.findIndex(t => t.id === id);
-                    if (taskIndex !== -1) { tasks[taskIndex].task_text = newText.trim(); renderTasks(); }
-                }
-            }
-        }
+        // Cycle through colors by clicking the dot directly on the list
+        async function cycleSongColor(e, id, currentColor) {
+            e.stopPropagation(); // Prevents marking the song as "done" when clicking the dot
+            
+            const currentIndex = colorStages.indexOf(currentColor);
+            const nextIndex = (currentIndex + 1) % colorStages.length;
+            const newColor = colorStages[nextIndex];
 
-        async function toggleTask(id, currentStatus) {
-            const newStatus = !currentStatus;
-            const { error } = await supabaseClient.from('tasks').update({ is_done: newStatus }).eq('id', id);
+            const { error } = await supabaseClient.from('songs').update({ color: newColor }).eq('id', id);
             if (!error) {
-                const taskIndex = tasks.findIndex(t => t.id === id);
-                if (taskIndex !== -1) { tasks[taskIndex].is_done = newStatus; renderTasks(); }
+                const index = songs.findIndex(t => t.id === id);
+                if (index !== -1) { 
+                    songs[index].color = newColor; 
+                    renderList(songs, 'songListContainer', 'songs'); 
+                }
             }
         }
 
-        async function deleteTask(id) {
-            const { error } = await supabaseClient.from('tasks').delete().eq('id', id);
-            if (!error) { tasks = tasks.filter(t => t.id !== id); renderTasks(); }
+        // --- 5. SHARED CRUD & EDIT LOGIC ---
+        async function editItem(id, table) {
+            const array = table === 'tasks' ? tasks : songs;
+            const index = array.findIndex(t => t.id === id);
+            if (index === -1) return;
+            const item = array[index];
+
+            if (table === 'tasks') {
+                const newText = prompt("Edit your task:", item.task_text);
+                if (newText !== null && newText.trim() !== "" && newText !== item.task_text) {
+                    const { error } = await supabaseClient.from('tasks').update({ task_text: newText.trim() }).eq('id', id);
+                    if (!error) { item.task_text = newText.trim(); renderList(tasks, 'taskListContainer', 'tasks'); }
+                }
+            } else {
+                const newTitle = prompt("Edit Project Title:", item.title);
+                if (newTitle !== null && newTitle.trim() !== "") {
+                    const newDesc = prompt("Edit Notes/Description:", item.description || "");
+                    if (newDesc !== null) {
+                        const { error } = await supabaseClient.from('songs').update({ title: newTitle.trim(), description: newDesc.trim() }).eq('id', id);
+                        if (!error) { 
+                            item.title = newTitle.trim(); 
+                            item.description = newDesc.trim(); 
+                            renderList(songs, 'songListContainer', 'songs'); 
+                        }
+                    }
+                }
+            }
         }
 
-        // --- 3. UI RENDERING & DRAG LOGIC ---
-        function createTaskElement(task) {
+        async function toggleItem(id, currentStatus, table) {
+            const newStatus = !currentStatus;
+            const { error } = await supabaseClient.from(table).update({ is_done: newStatus }).eq('id', id);
+            if (!error) {
+                const array = table === 'tasks' ? tasks : songs;
+                const index = array.findIndex(t => t.id === id);
+                if (index !== -1) { array[index].is_done = newStatus; renderList(array, table === 'tasks' ? 'taskListContainer' : 'songListContainer', table); }
+            }
+        }
+
+        async function deleteItem(id, table) {
+            const { error } = await supabaseClient.from(table).delete().eq('id', id);
+            if (!error) {
+                if(table === 'tasks') { tasks = tasks.filter(t => t.id !== id); renderList(tasks, 'taskListContainer', 'tasks'); }
+                else { songs = songs.filter(t => t.id !== id); renderList(songs, 'songListContainer', 'songs'); }
+            }
+        }
+
+        // --- 6. SHARED UI RENDERING ---
+        function createItemElement(item, table) {
             const li = document.createElement('li');
             li.className = 'task-item';
-            li.dataset.id = task.id; // Store ID on the HTML element for dragging
+            li.dataset.id = item.id; 
             
-            const span = document.createElement('span');
-            span.className = `task-text ${task.is_done ? 'done' : ''}`;
-            span.textContent = task.task_text;
-            span.onclick = () => toggleTask(task.id, task.is_done);
+            const textContainer = document.createElement('div');
+            textContainer.className = `text-container ${item.is_done ? 'done' : ''}`;
+            textContainer.onclick = () => toggleItem(item.id, item.is_done, table);
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'task-text';
+            titleSpan.textContent = table === 'tasks' ? item.task_text : item.title;
+            textContainer.appendChild(titleSpan);
+
+            // Setup the secondary row (for Description + Dots)
+            if (table === 'songs') {
+                const descRow = document.createElement('div');
+                descRow.className = 'task-desc-row';
+                
+                // The Color Dot
+                const itemColor = item.color || colorStages[0];
+                const dot = document.createElement('span');
+                dot.className = 'status-dot-small';
+                dot.style.background = itemColor;
+                dot.title = "Click to change stage";
+                dot.onclick = (e) => cycleSongColor(e, item.id, itemColor);
+                descRow.appendChild(dot);
+
+                // The Description Text
+                const descSpan = document.createElement('span');
+                descSpan.className = 'task-desc';
+                descSpan.textContent = item.description || "No notes.";
+                descRow.appendChild(descSpan);
+
+                textContainer.appendChild(descRow);
+            } else if (item.description) {
+                // Failsafe for normal tasks with descriptions (if you ever add them)
+                const descSpan = document.createElement('span');
+                descSpan.className = 'task-desc';
+                descSpan.textContent = item.description;
+                textContainer.appendChild(descSpan);
+            }
 
             const actions = document.createElement('div');
             actions.className = 'action-btns';
-
-            if (!task.is_done) {
+            
+            if (!item.is_done) {
                 const editBtn = document.createElement('button');
                 editBtn.className = 'icon-btn edit';
                 editBtn.innerHTML = '<i class="fas fa-pen"></i>';
-                editBtn.onclick = () => editTask(task.id, task.task_text);
+                editBtn.onclick = () => editItem(item.id, table);
                 actions.appendChild(editBtn);
             }
 
             const delBtn = document.createElement('button');
             delBtn.className = 'icon-btn delete';
             delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            delBtn.onclick = () => deleteTask(task.id);
+            delBtn.onclick = () => deleteItem(item.id, table);
             actions.appendChild(delBtn);
 
-            li.appendChild(span);
+            li.appendChild(textContainer);
             li.appendChild(actions);
             return li;
         }
 
-        function renderTasks() {
-            const container = document.getElementById('taskListContainer');
+        function renderList(dataArray, containerId, table) {
+            const container = document.getElementById(containerId);
             container.innerHTML = ''; 
             
-            const pendingTasks = tasks.filter(t => !t.is_done);
-            const doneTasks = tasks.filter(t => t.is_done);
+            const pending = dataArray.filter(t => !t.is_done);
+            const done = dataArray.filter(t => t.is_done);
 
-            // Render Pending Tasks (Draggable)
-            if (pendingTasks.length > 0) {
+            if (pending.length > 0) {
                 const pendingList = document.createElement('ul');
-                pendingList.id = "pendingList";
-                pendingTasks.forEach(task => pendingList.appendChild(createTaskElement(task)));
+                pending.forEach(item => pendingList.appendChild(createItemElement(item, table)));
                 container.appendChild(pendingList);
 
-                // Initialize SortableJS on the pending list
-                sortableInstance = new Sortable(pendingList, {
-                    animation: 150,
-                    delay: 200, // 200ms long press to drag
-                    delayOnTouchOnly: true, // Only require long press on touch screens
-                    ghostClass: 'sortable-ghost',
+                new Sortable(pendingList, {
+                    animation: 150, delay: 200, delayOnTouchOnly: true, ghostClass: 'sortable-ghost',
                     onEnd: async function () {
-                        // When drag ends, update the position in the database
                         const items = Array.from(pendingList.children);
                         for (let i = 0; i < items.length; i++) {
-                            const taskId = parseInt(items[i].dataset.id);
-                            const task = tasks.find(t => t.id === taskId);
-                            if (task && task.position !== i) {
-                                task.position = i;
-                                // Silently update Supabase in the background
-                                await supabaseClient.from('tasks').update({ position: i }).eq('id', taskId);
+                            const itemId = parseInt(items[i].dataset.id);
+                            const item = dataArray.find(t => t.id === itemId);
+                            if (item && item.position !== i) {
+                                item.position = i;
+                                await supabaseClient.from(table).update({ position: i }).eq('id', itemId);
                             }
                         }
                     }
                 });
             }
 
-            // Render Completed Tasks (Not Draggable)
-            if (doneTasks.length > 0) {
-                if (pendingTasks.length > 0) {
-                    const divider = document.createElement('hr');
-                    divider.className = 'divider';
-                    container.appendChild(divider);
+            if (done.length > 0) {
+                if (pending.length > 0) {
+                    const divider = document.createElement('hr'); divider.className = 'divider'; container.appendChild(divider);
                 }
-                
-                const label = document.createElement('div');
-                label.className = 'done-label';
-                label.textContent = 'Completed';
-                container.appendChild(label);
-
+                const label = document.createElement('div'); label.className = 'done-label'; label.textContent = 'Completed'; container.appendChild(label);
                 const doneList = document.createElement('ul');
-                doneTasks.forEach(task => doneList.appendChild(createTaskElement(task)));
+                done.forEach(item => doneList.appendChild(createItemElement(item, table)));
                 container.appendChild(doneList);
             }
         }
 
-        function handleKeyPress(event) { if (event.key === 'Enter') addTask(); }
+        function handleTaskKey(e) { if (e.key === 'Enter') addTask(); }
+        function handleSongKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addSong(); } }
 
-        // --- 4. CURSOR LOGIC ---
+        // Cursor
         if (window.innerWidth > 768) {
             const cursor = document.getElementById('cursor');
-            document.addEventListener('mousemove', e => {
-                cursor.style.left = e.clientX - 15 + 'px';
-                cursor.style.top = e.clientY - 15 + 'px';
-            });
-            document.body.addEventListener('mouseenter', (e) => {
-                if(e.target.closest('button, input, .task-text, .icon-btn')) cursor.classList.add('hover');
-            }, true);
-            document.body.addEventListener('mouseleave', (e) => {
-                if(e.target.closest('button, input, .task-text, .icon-btn')) cursor.classList.remove('hover');
-            }, true);
+            document.addEventListener('mousemove', e => { cursor.style.left = e.clientX - 15 + 'px'; cursor.style.top = e.clientY - 15 + 'px'; });
+            document.body.addEventListener('mouseenter', (e) => { if(e.target.closest('button, input, textarea, .text-container, .icon-btn, .nav-btn, .status-dot-small, .color-option, .liquid-box')) cursor.classList.add('hover'); }, true);
+            document.body.addEventListener('mouseleave', (e) => { if(e.target.closest('button, input, textarea, .text-container, .icon-btn, .nav-btn, .status-dot-small, .color-option, .liquid-box')) cursor.classList.remove('hover'); }, true);
         }
 
-        // Initialize
+        // Init
         loadTasks();
+        loadSongs();
     </script>
 </body>
 </html>

@@ -82,7 +82,7 @@
             transform-style: preserve-3d;
         }
 
-        .scroll-area { flex-grow: 1; overflow-y: auto; min-height: 0; padding-bottom: 20px; }
+        .scroll-area { flex-grow: 1; overflow-y: auto; min-height: 0; padding-bottom: 20px; scroll-behavior: smooth; }
         .scroll-area::-webkit-scrollbar { display: none; }
 
         .card-active { 
@@ -92,12 +92,10 @@
         
         /* THE PEEKING INACTIVE CARD */
         .card-inactive { 
-            /* Pushed back, scaled down slightly, and shifted to the right */
             transform: translateZ(-100px) translateX(15%) scale(0.95); 
             opacity: 0.5; z-index: 5; pointer-events: auto; box-shadow: none; 
             cursor: pointer; 
         }
-        /* Prevents accidentally clicking buttons inside the inactive card */
         .card-inactive * { pointer-events: none; }
 
         /* --- DYNAMIC ISLAND BOTTOM NAV --- */
@@ -151,7 +149,10 @@
         .btn-inverted:hover { background: transparent; color: var(--text-dark); }
         .btn-small { width: auto; padding: 0 20px; display: flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; }
 
+        /* --- LIST & DIVIDERS --- */
         ul { list-style: none; padding: 0; margin: 0; }
+        .sortable-list { padding-bottom: 15px; } 
+
         .task-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; margin-bottom: 12px; border-radius: 18px; background-color: color-mix(in srgb, var(--c-glass) 40%, transparent); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0px 4px 10px rgba(0,0,0,0.03); transition: all 0.3s ease; touch-action: manipulation; }
         
         .text-container { flex-grow: 1; padding-right: 15px; }
@@ -173,6 +174,20 @@
         .divider { height: 1px; border: none; background: color-mix(in srgb, var(--text-grey) 20%, transparent); margin: 25px 0; flex-shrink: 0;}
         .done-label { text-align: center; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-grey); margin-bottom: 15px; flex-shrink: 0;}
 
+        /* Song Stage Dividers */
+        .stage-label {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 15px 0 10px 0;
+            font-weight: 900;
+            padding-left: 8px;
+            border-left: 3px solid currentColor;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+        .stage-label:first-child { margin-top: 0; }
+
         @media(max-width: 768px) {
             * { cursor: auto; }
             .cursor { display: none; }
@@ -182,7 +197,7 @@
             .bottom-island { justify-content: space-around; }
             .nav-btn { flex-grow: 1; justify-content: center; }
             .btn-small { padding: 0 15px; } 
-            .card-inactive { transform: translateZ(-100px) translateX(12%) scale(0.95); } /* Slightly less peek on mobile */
+            .card-inactive { transform: translateZ(-100px) translateX(12%) scale(0.95); } 
         }
     </style>
 </head>
@@ -208,28 +223,28 @@
         </div>
 
         <div class="liquid-box liquid-glass card-inactive" id="card-1" onclick="handleCardClick(1)">
-            <h2><i  style="color:var(--accent);"></i> Songs</h2>
+            <h2><i style="color:var(--accent);"></i> Songs</h2>
             <div class="input-group">
                 <input type="text" id="songTitleInput" placeholder="Project / Song Title...">
                 
                 <div class="color-picker-container">
-                    <label class="color-option" title="Just recorded a sample">
+                    <label class="color-option" title="Just recorded a sample" onclick="scrollToStage('#2196F3')">
                         <input type="radio" name="songColor" value="#2196F3" checked>
                         <span class="color-dot-large" style="background: #2196F3;"></span>
                     </label>
-                    <label class="color-option" title="Recording instruments">
+                    <label class="color-option" title="Recording instruments" onclick="scrollToStage('#FFC107')">
                         <input type="radio" name="songColor" value="#FFC107">
                         <span class="color-dot-large" style="background: #FFC107;"></span>
                     </label>
-                    <label class="color-option" title="Vocals and instruments">
+                    <label class="color-option" title="Vocals and instruments" onclick="scrollToStage('#FF9800')">
                         <input type="radio" name="songColor" value="#FF9800">
                         <span class="color-dot-large" style="background: #FF9800;"></span>
                     </label>
-                    <label class="color-option" title="Mix and master">
+                    <label class="color-option" title="Mix and master" onclick="scrollToStage('#8BC34A')">
                         <input type="radio" name="songColor" value="#8BC34A">
                         <span class="color-dot-large" style="background: #8BC34A;"></span>
                     </label>
-                    <label class="color-option" title="Done">
+                    <label class="color-option" title="Done" onclick="scrollToStage('#4CAF50')">
                         <input type="radio" name="songColor" value="#4CAF50">
                         <span class="color-dot-large" style="background: #4CAF50;"></span>
                     </label>
@@ -258,19 +273,36 @@
         let tasks = [];
         let songs = [];
         
-        // The stages flow
+        // The stages flow and labels
         const colorStages = ['#2196F3', '#FFC107', '#FF9800', '#8BC34A', '#4CAF50'];
+        const stageLabels = {
+            '#2196F3': 'Idea / Sample',
+            '#FFC107': 'Recording Instruments',
+            '#FF9800': 'Vocals & Instruments',
+            '#8BC34A': 'Mix & Master',
+            '#4CAF50': 'Ready / Done'
+        };
 
-        // --- 2. CARD SWITCHING LOGIC ---
+        // Fix for sorting glitch. Orders array correctly before every render.
+        function sortData(arr) {
+            arr.sort((a, b) => {
+                if (a.position !== b.position) return (a.position || 0) - (b.position || 0);
+                return b.id - a.id;
+            });
+        }
+
+        // --- 2. CARD SWITCHING & SCROLL LOGIC ---
         function switchCard(index) {
             document.getElementById('card-0').className = index === 0 ? 'liquid-box liquid-glass card-active' : 'liquid-box liquid-glass card-inactive';
             document.getElementById('card-1').className = index === 1 ? 'liquid-box liquid-glass card-active' : 'liquid-box liquid-glass card-inactive';
             
             document.getElementById('btn-nav-0').className = index === 0 ? 'nav-btn active' : 'nav-btn';
             document.getElementById('btn-nav-1').className = index === 1 ? 'nav-btn active' : 'nav-btn';
+
+            // Save the current card to LocalStorage to remember it on refresh
+            localStorage.setItem('liros_active_card', index);
         }
 
-        // Triggered when clicking the physical card element
         function handleCardClick(index) {
             const card = document.getElementById(`card-${index}`);
             if (card.classList.contains('card-inactive')) {
@@ -278,31 +310,46 @@
             }
         }
 
+        function scrollToStage(colorHex) {
+            // Slight timeout to let the radio button visual state update first
+            setTimeout(() => {
+                const sectionId = 'stage-' + colorHex.replace('#', '');
+                const targetSection = document.getElementById(sectionId);
+                const scrollContainer = document.getElementById('songListContainer');
+                
+                if (targetSection && scrollContainer) {
+                    scrollContainer.scrollTo({
+                        top: targetSection.offsetTop - scrollContainer.offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 50);
+        }
+
         // --- 3. DATABASE: TASKS ---
         async function loadTasks() {
             const { data, error } = await supabaseClient.from('tasks').select('*').order('position', { ascending: true }).order('id', { ascending: false });
-            if (!error) { tasks = data; renderList(tasks, 'taskListContainer', 'tasks'); }
+            if (!error) { tasks = data; renderTasks(); }
         }
 
         async function addTask() {
             const text = document.getElementById('taskInput').value.trim();
             if (text) {
                 const { data, error } = await supabaseClient.from('tasks').insert([{ task_text: text, is_done: false, position: -Date.now() }]).select();
-                if (!error) { tasks.unshift(data[0]); document.getElementById('taskInput').value = ''; renderList(tasks, 'taskListContainer', 'tasks'); }
+                if (!error) { tasks.unshift(data[0]); document.getElementById('taskInput').value = ''; renderTasks(); }
             }
         }
 
         // --- 4. DATABASE: SONGS ---
         async function loadSongs() {
             const { data, error } = await supabaseClient.from('songs').select('*').order('position', { ascending: true }).order('id', { ascending: false });
-            if (!error) { songs = data; renderList(songs, 'songListContainer', 'songs'); }
+            if (!error) { songs = data; renderSongs(); }
         }
 
         async function addSong() {
             const title = document.getElementById('songTitleInput').value.trim();
             const desc = document.getElementById('songDescInput').value.trim();
             
-            // Get the selected color
             const selectedColorElement = document.querySelector('input[name="songColor"]:checked');
             const color = selectedColorElement ? selectedColorElement.value : colorStages[0];
 
@@ -312,19 +359,17 @@
                     songs.unshift(data[0]); 
                     document.getElementById('songTitleInput').value = ''; 
                     document.getElementById('songDescInput').value = ''; 
-                    // Reset color selector to first option
                     document.querySelector('input[name="songColor"][value="#2196F3"]').checked = true;
-                    renderList(songs, 'songListContainer', 'songs'); 
-                } else {
-                    console.error(error);
+                    renderSongs(); 
+                    
+                    // Automatically scroll to the newly added stage section
+                    scrollToStage(color);
                 }
             }
         }
 
-        // Cycle through colors by clicking the dot directly on the list
         async function cycleSongColor(e, id, currentColor) {
-            e.stopPropagation(); // Prevents marking the song as "done" when clicking the dot
-            
+            e.stopPropagation(); 
             const currentIndex = colorStages.indexOf(currentColor);
             const nextIndex = (currentIndex + 1) % colorStages.length;
             const newColor = colorStages[nextIndex];
@@ -332,10 +377,7 @@
             const { error } = await supabaseClient.from('songs').update({ color: newColor }).eq('id', id);
             if (!error) {
                 const index = songs.findIndex(t => t.id === id);
-                if (index !== -1) { 
-                    songs[index].color = newColor; 
-                    renderList(songs, 'songListContainer', 'songs'); 
-                }
+                if (index !== -1) { songs[index].color = newColor; renderSongs(); }
             }
         }
 
@@ -350,7 +392,7 @@
                 const newText = prompt("Edit your task:", item.task_text);
                 if (newText !== null && newText.trim() !== "" && newText !== item.task_text) {
                     const { error } = await supabaseClient.from('tasks').update({ task_text: newText.trim() }).eq('id', id);
-                    if (!error) { item.task_text = newText.trim(); renderList(tasks, 'taskListContainer', 'tasks'); }
+                    if (!error) { item.task_text = newText.trim(); table === 'tasks' ? renderTasks() : renderSongs(); }
                 }
             } else {
                 const newTitle = prompt("Edit Project Title:", item.title);
@@ -359,9 +401,8 @@
                     if (newDesc !== null) {
                         const { error } = await supabaseClient.from('songs').update({ title: newTitle.trim(), description: newDesc.trim() }).eq('id', id);
                         if (!error) { 
-                            item.title = newTitle.trim(); 
-                            item.description = newDesc.trim(); 
-                            renderList(songs, 'songListContainer', 'songs'); 
+                            item.title = newTitle.trim(); item.description = newDesc.trim(); 
+                            table === 'tasks' ? renderTasks() : renderSongs(); 
                         }
                     }
                 }
@@ -374,19 +415,19 @@
             if (!error) {
                 const array = table === 'tasks' ? tasks : songs;
                 const index = array.findIndex(t => t.id === id);
-                if (index !== -1) { array[index].is_done = newStatus; renderList(array, table === 'tasks' ? 'taskListContainer' : 'songListContainer', table); }
+                if (index !== -1) { array[index].is_done = newStatus; table === 'tasks' ? renderTasks() : renderSongs(); }
             }
         }
 
         async function deleteItem(id, table) {
             const { error } = await supabaseClient.from(table).delete().eq('id', id);
             if (!error) {
-                if(table === 'tasks') { tasks = tasks.filter(t => t.id !== id); renderList(tasks, 'taskListContainer', 'tasks'); }
-                else { songs = songs.filter(t => t.id !== id); renderList(songs, 'songListContainer', 'songs'); }
+                if(table === 'tasks') { tasks = tasks.filter(t => t.id !== id); renderTasks(); }
+                else { songs = songs.filter(t => t.id !== id); renderSongs(); }
             }
         }
 
-        // --- 6. SHARED UI RENDERING ---
+        // --- 6. SHARED UI ELEMENT CREATION ---
         function createItemElement(item, table) {
             const li = document.createElement('li');
             li.className = 'task-item';
@@ -401,12 +442,10 @@
             titleSpan.textContent = table === 'tasks' ? item.task_text : item.title;
             textContainer.appendChild(titleSpan);
 
-            // Setup the secondary row (for Description + Dots)
             if (table === 'songs') {
                 const descRow = document.createElement('div');
                 descRow.className = 'task-desc-row';
                 
-                // The Color Dot
                 const itemColor = item.color || colorStages[0];
                 const dot = document.createElement('span');
                 dot.className = 'status-dot-small';
@@ -415,7 +454,6 @@
                 dot.onclick = (e) => cycleSongColor(e, item.id, itemColor);
                 descRow.appendChild(dot);
 
-                // The Description Text
                 const descSpan = document.createElement('span');
                 descSpan.className = 'task-desc';
                 descSpan.textContent = item.description || "No notes.";
@@ -423,7 +461,6 @@
 
                 textContainer.appendChild(descRow);
             } else if (item.description) {
-                // Failsafe for normal tasks with descriptions (if you ever add them)
                 const descSpan = document.createElement('span');
                 descSpan.className = 'task-desc';
                 descSpan.textContent = item.description;
@@ -452,16 +489,19 @@
             return li;
         }
 
-        function renderList(dataArray, containerId, table) {
-            const container = document.getElementById(containerId);
+        // --- 7. RENDERING LOGIC ---
+        function renderTasks() {
+            sortData(tasks);
+            const container = document.getElementById('taskListContainer');
             container.innerHTML = ''; 
             
-            const pending = dataArray.filter(t => !t.is_done);
-            const done = dataArray.filter(t => t.is_done);
+            const pending = tasks.filter(t => !t.is_done);
+            const done = tasks.filter(t => t.is_done);
 
             if (pending.length > 0) {
                 const pendingList = document.createElement('ul');
-                pending.forEach(item => pendingList.appendChild(createItemElement(item, table)));
+                pendingList.className = 'sortable-list';
+                pending.forEach(item => pendingList.appendChild(createItemElement(item, 'tasks')));
                 container.appendChild(pendingList);
 
                 new Sortable(pendingList, {
@@ -470,10 +510,10 @@
                         const items = Array.from(pendingList.children);
                         for (let i = 0; i < items.length; i++) {
                             const itemId = parseInt(items[i].dataset.id);
-                            const item = dataArray.find(t => t.id === itemId);
+                            const item = tasks.find(t => t.id === itemId);
                             if (item && item.position !== i) {
                                 item.position = i;
-                                await supabaseClient.from(table).update({ position: i }).eq('id', itemId);
+                                await supabaseClient.from('tasks').update({ position: i }).eq('id', itemId);
                             }
                         }
                     }
@@ -486,7 +526,73 @@
                 }
                 const label = document.createElement('div'); label.className = 'done-label'; label.textContent = 'Completed'; container.appendChild(label);
                 const doneList = document.createElement('ul');
-                done.forEach(item => doneList.appendChild(createItemElement(item, table)));
+                done.forEach(item => doneList.appendChild(createItemElement(item, 'tasks')));
+                container.appendChild(doneList);
+            }
+        }
+
+        function renderSongs() {
+            sortData(songs);
+            const container = document.getElementById('songListContainer');
+            container.innerHTML = ''; 
+            
+            const pending = songs.filter(t => !t.is_done);
+            const done = songs.filter(t => t.is_done);
+
+            colorStages.forEach(color => {
+                const stageSongs = pending.filter(s => (s.color || colorStages[0]) === color);
+                
+                const stageWrapper = document.createElement('div');
+                // Set dynamic ID based on the hex color for smooth scrolling targets
+                stageWrapper.id = 'stage-' + color.replace('#', '');
+                stageWrapper.style.marginBottom = "15px";
+
+                const label = document.createElement('div');
+                label.className = 'stage-label';
+                label.style.color = color;
+                label.textContent = stageLabels[color];
+                stageWrapper.appendChild(label);
+
+                const ul = document.createElement('ul');
+                ul.className = 'sortable-list';
+                ul.dataset.color = color; 
+                
+                stageSongs.forEach(song => ul.appendChild(createItemElement(song, 'songs')));
+                stageWrapper.appendChild(ul);
+                container.appendChild(stageWrapper);
+
+                new Sortable(ul, {
+                    group: 'songs', 
+                    animation: 150, delay: 200, delayOnTouchOnly: true, ghostClass: 'sortable-ghost',
+                    onEnd: async function (evt) {
+                        const newColor = evt.to.dataset.color; 
+                        const items = Array.from(evt.to.children);
+                        
+                        for (let i = 0; i < items.length; i++) {
+                            const itemId = parseInt(items[i].dataset.id);
+                            const item = songs.find(t => t.id === itemId);
+                            if (item) {
+                                let updates = {};
+                                let needsUpdate = false;
+                                
+                                if (item.position !== i) { item.position = i; updates.position = i; needsUpdate = true; }
+                                if (item.color !== newColor) { item.color = newColor; updates.color = newColor; needsUpdate = true; }
+                                
+                                if (needsUpdate) {
+                                    supabaseClient.from('songs').update(updates).eq('id', itemId).then(); 
+                                }
+                            }
+                        }
+                        if (evt.from !== evt.to) { renderSongs(); }
+                    }
+                });
+            });
+
+            if (done.length > 0) {
+                const divider = document.createElement('hr'); divider.className = 'divider'; container.appendChild(divider);
+                const label = document.createElement('div'); label.className = 'done-label'; label.textContent = 'Completed'; container.appendChild(label);
+                const doneList = document.createElement('ul');
+                done.forEach(item => doneList.appendChild(createItemElement(item, 'songs')));
                 container.appendChild(doneList);
             }
         }
@@ -502,7 +608,15 @@
             document.body.addEventListener('mouseleave', (e) => { if(e.target.closest('button, input, textarea, .text-container, .icon-btn, .nav-btn, .status-dot-small, .color-option, .liquid-box')) cursor.classList.remove('hover'); }, true);
         }
 
-        // Init
+        // --- 8. INITIALIZATION LOGIC ---
+        // Read memory on load to open the correct card automatically
+        const savedCard = localStorage.getItem('liros_active_card');
+        if (savedCard !== null) {
+            switchCard(parseInt(savedCard));
+        } else {
+            switchCard(0); // Default to Tasks if it's the first time
+        }
+
         loadTasks();
         loadSongs();
     </script>

@@ -77,11 +77,11 @@
             pointer-events: auto;
         }
 
-        /* Virtual Joystick Zone */
-        #joystick-zone {
+
+        /* Shared Joystick Styles */
+        #joystick-zone, #aim-zone {
             position: absolute;
             bottom: 30px;
-            left: 30px;
             width: 120px;
             height: 120px;
             background: rgba(255, 255, 255, 0.1);
@@ -92,13 +92,16 @@
             align-items: center;
         }
 
-        #joystick-knob {
+        #joystick-zone { left: 30px; }
+        #aim-zone { right: 30px; } /* Anchored to the right side */
+
+        #joystick-knob, #aim-knob {
             width: 50px;
             height: 50px;
             background: rgba(255, 255, 255, 0.5);
             border-radius: 50%;
             position: relative;
-            pointer-events: none; /* Let the zone handle touches */
+            pointer-events: none;
         }
     </style>
 </head>
@@ -114,6 +117,10 @@
 
     <div id="joystick-zone">
         <div id="joystick-knob"></div>
+    </div>
+
+    <div id="aim-zone">
+        <div id="aim-knob"></div>
     </div>
 
     <script>
@@ -192,53 +199,78 @@
         const playerSprite = new Image();
         playerSprite.src = 'walk.png'; // Make sure this is the exact filename
 
-        // --- JOYSTICK LOGIC ---
+        // --- TWIN STICK LOGIC ---
         const joystickZone = document.getElementById('joystick-zone');
         const joystickKnob = document.getElementById('joystick-knob');
-        let isDragging = false;
-        let joyCenterX = 0;
-        let joyCenterY = 0;
+        const aimZone = document.getElementById('aim-zone');
+        const aimKnob = document.getElementById('aim-knob');
 
-        // Get the absolute center of the joystick zone
-        function updateJoystickCenter() {
-            const rect = joystickZone.getBoundingClientRect();
-            joyCenterX = rect.left + rect.width / 2;
-            joyCenterY = rect.top + rect.height / 2;
-        }
-
-        function handleTouch(e) {
-            e.preventDefault(); // Stop scrolling
-            if (e.touches.length === 0) return;
+        // A reusable function to handle moving the visual knob and calculating the math
+        function processJoystick(e, zoneElement, knobElement, maxDist) {
+            const rect = zoneElement.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
             
-            updateJoystickCenter();
-            const touch = e.touches[0];
-            
-            // Calculate distance and angle from center
-            let dx = touch.clientX - joyCenterX;
-            let dy = touch.clientY - joyCenterY;
-            let distance = Math.sqrt(dx * dx + dy * dy);
-            let maxDistance = 35; // How far the knob can move
+            // We loop through e.changedTouches instead of e.touches[0] 
+            // to handle true multitouch properly
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                
+                let dx = touch.clientX - centerX;
+                let dy = touch.clientY - centerY;
+                let distance = Math.sqrt(dx * dx + dy * dy);
 
-            if (distance > maxDistance) {
-                dx = (dx / distance) * maxDistance;
-                dy = (dy / distance) * maxDistance;
+                if (distance > maxDist) {
+                    dx = (dx / distance) * maxDist;
+                    dy = (dy / distance) * maxDist;
+                }
+
+                knobElement.style.transform = `translate(${dx}px, ${dy}px)`;
+                
+                // Return normalized values (-1.0 to 1.0) so you can apply them to movement or aiming
+                return { x: dx / maxDist, y: dy / maxDist };
             }
-
-            // Move the knob visually
-            joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-
-            // Set player velocity based on joystick position (normalized -1 to 1)
-            player.vx = (dx / maxDistance) * player.speed;
-            player.vy = (dy / maxDistance) * player.speed;
         }
 
-        joystickZone.addEventListener('touchstart', (e) => { isDragging = true; handleTouch(e); }, {passive: false});
-        joystickZone.addEventListener('touchmove', (e) => { if(isDragging) handleTouch(e); }, {passive: false});
-        joystickZone.addEventListener('touchend', () => {
-            isDragging = false;
+        // --- LEFT JOYSTICK (MOVEMENT) LISTENERS ---
+        joystickZone.addEventListener('touchstart', (e) => { 
+            e.stopPropagation(); // PREVENTS ZOOM CONFLICT
+            const vectors = processJoystick(e, joystickZone, joystickKnob, 35);
+            player.vx = vectors.x * player.speed;
+            player.vy = vectors.y * player.speed;
+        }, {passive: false});
+
+        joystickZone.addEventListener('touchmove', (e) => { 
+            e.stopPropagation(); // PREVENTS ZOOM CONFLICT
+            const vectors = processJoystick(e, joystickZone, joystickKnob, 35);
+            player.vx = vectors.x * player.speed;
+            player.vy = vectors.y * player.speed;
+        }, {passive: false});
+
+        joystickZone.addEventListener('touchend', (e) => {
+            e.stopPropagation();
             joystickKnob.style.transform = `translate(0px, 0px)`;
             player.vx = 0;
             player.vy = 0;
+        });
+
+        // --- RIGHT JOYSTICK (AIMING) LISTENERS ---
+        aimZone.addEventListener('touchstart', (e) => { 
+            e.stopPropagation(); // PREVENTS ZOOM CONFLICT
+            const vectors = processJoystick(e, aimZone, aimKnob, 35);
+            // TODO: Apply vectors.x and vectors.y to your shooting/aiming logic!
+        }, {passive: false});
+
+        aimZone.addEventListener('touchmove', (e) => { 
+            e.stopPropagation(); // PREVENTS ZOOM CONFLICT
+            const vectors = processJoystick(e, aimZone, aimKnob, 35);
+            // TODO: Apply vectors.x and vectors.y to your shooting/aiming logic!
+        }, {passive: false});
+
+        aimZone.addEventListener('touchend', (e) => {
+            e.stopPropagation();
+            aimKnob.style.transform = `translate(0px, 0px)`;
+            // TODO: Stop aiming/shooting
         });
 
        // --- CHAT LOGIC ---

@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Overhead Chat Demo</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #222; touch-action: none; font-family: sans-serif; -webkit-touch-callout: none; /* Disables the long-press popup on iOS */
-    -webkit-user-select: none;   /* Safari */
-    -moz-user-select: none;      /* Firefox */
-    -ms-user-select: none;       /* IE/Edge */
-    user-select: none;           /* Standard syntax */ }
+        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #222; touch-action: none; font-family: sans-serif; }
         canvas { display: block; }
         
        /* Expanding Chat UI */
@@ -57,8 +53,6 @@
             padding: 0 10px;
             opacity: 0;
             transition: opacity 0.2s ease;
-            -webkit-user-select: auto;
-            user-select: auto;
         }
         
         #chat-container.expanded #chat-input {
@@ -130,11 +124,6 @@
     </div>
 
     <script>
-        // Disable the right-click / long-press context menu everywhere
-        window.addEventListener('contextmenu', function (e) { 
-            e.preventDefault(); 
-        }, false);
-        
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -190,6 +179,7 @@
         window.addEventListener('resize', resize);
         resize();
 
+        // Update the player object to track movement state and current image
         const player = {
             worldX: 0,
             worldY: 0,
@@ -200,15 +190,23 @@
             messageTimer: 0,
             
             // Animation variables
-            frameX: 0,      // Column (0 to 7)
-            frameY: 0,      // Row (0 to 5, based on your list)
-            tickCount: 0,   // Controls animation speed
-            ticksPerFrame: 5 // Lower is faster
+            frameX: 0,      
+            frameY: 0,      
+            tickCount: 0,   
+            ticksPerFrame: 5, 
+            isMoving: false,          // NEW: Tracks if we are currently walking
+            currentImage: null        // NEW: Will hold either walkSprite or idleSprite
         };
+
+        // Load BOTH sprites
+        const walkSprite = new Image();
+        walkSprite.src = 'walk.png'; // Added cache bust number
+
+        const idleSprite = new Image();
+        idleSprite.src = 'idle.png'; 
         
-        // Load your sprite
-        const playerSprite = new Image();
-        playerSprite.src = 'walk.png'; // Make sure this is the exact filename
+        // Set default to idle
+        player.currentImage = idleSprite;
 
         // --- TWIN STICK LOGIC ---
         const joystickZone = document.getElementById('joystick-zone');
@@ -360,35 +358,45 @@
         }
 
         function updatePlayerDirection() {
-            // If we aren't moving, reset to the standing frame (column 0) and stop
-            if (player.vx === 0 && player.vy === 0) {
+            // Check if we are moving this frame
+            const currentlyMoving = (player.vx !== 0 || player.vy !== 0);
+
+            // If we just started or stopped moving, reset the animation frame to 0
+            if (currentlyMoving !== player.isMoving) {
                 player.frameX = 0;
-                return; 
+                player.tickCount = 0;
+                player.isMoving = currentlyMoving;
             }
-        
-            // Determine the angle of the joystick using atan2
-            // This gives us a value between -PI and PI
-            const angle = Math.atan2(player.vy, player.vx);
-            const deg = angle * (180 / Math.PI); // Convert to degrees for easier logic
-        
-            // Map degrees to your 6 rows:
-            // Top: Down(0), 2nd: Left(1), 3rd: Up-Left(2), 4th: Up(3), 5th: Up-Right(4), 6th: Right(5)
+
+            if (player.isMoving) {
+                // WE ARE WALKING
+                player.currentImage = walkSprite;
+                
+                // Calculate the angle to determine which row (direction) to use
+                const angle = Math.atan2(player.vy, player.vx);
+                const deg = angle * (180 / Math.PI); 
             
-            if (deg >= 45 && deg <= 135) {
-                player.frameY = 0; // Walking Down
-            } else if (deg > 135 || deg < -150) {
-                player.frameY = 1; // Walking Left
-            } else if (deg >= -150 && deg < -105) {
-                player.frameY = 2; // Walking Up-Left
-            } else if (deg >= -105 && deg <= -75) {
-                player.frameY = 3; // Walking Up
-            } else if (deg > -75 && deg <= -30) {
-                player.frameY = 4; // Walking Up-Right
-            } else if (deg > -30 && deg < 45) {
-                player.frameY = 5; // Walking Right
+                if (deg >= 45 && deg <= 135) {
+                    player.frameY = 0; // Down
+                } else if (deg > 135 || deg < -150) {
+                    player.frameY = 1; // Left
+                } else if (deg >= -150 && deg < -105) {
+                    player.frameY = 2; // Up-Left
+                } else if (deg >= -105 && deg <= -75) {
+                    player.frameY = 3; // Up
+                } else if (deg > -75 && deg <= -30) {
+                    player.frameY = 4; // Up-Right
+                } else if (deg > -30 && deg < 45) {
+                    player.frameY = 5; // Right
+                }
+            } else {
+                // WE ARE IDLE
+                player.currentImage = idleSprite;
+                // Notice we DO NOT change player.frameY here.
+                // This forces the character to stay facing the last direction they walked!
             }
         
-            // Advance the animation frame
+            // Advance the animation frame for BOTH walking and idling
             player.tickCount++;
             if (player.tickCount > player.ticksPerFrame) {
                 player.tickCount = 0;
@@ -411,22 +419,21 @@
             drawGrid(-player.worldX, -player.worldY);
             updatePlayerDirection();
             
-            const frameWidth = playerSprite.width / 8;
-            const frameHeight = playerSprite.height / 6;
+            // 6. Calculate the size of a single frame dynamically using currentImage
+            const frameWidth = player.currentImage.width / 8;
+            const frameHeight = player.currentImage.height / 6;
+
+            
             const cropX = player.frameX * frameWidth;
             const cropY = player.frameY * frameHeight;
-            
-           // Calculate final drawing sizes
             const scaledWidth = frameWidth * zoomLevel;
             const scaledHeight = frameHeight * zoomLevel;
-            
-            // Math.round keeps the pixel art perfectly sharp on fractional zooms
-            // Notice the Y axis calculation no longer has the extra offset!
             const drawX = Math.round(screenCenterX - (scaledWidth / 2));
             const drawY = Math.round(screenCenterY - (scaledHeight / 2));
-            
+
+            // 8. Draw the cropped frame using currentImage
             ctx.drawImage(
-                playerSprite,
+                player.currentImage,
                 cropX, cropY, frameWidth, frameHeight,
                 drawX, drawY, 
                 scaledWidth, scaledHeight

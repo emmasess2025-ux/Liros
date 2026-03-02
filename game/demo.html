@@ -89,7 +89,50 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // --- ZOOM LOGIC ---
+        let zoomLevel = 2; // Start at 2x zoom
+        const MIN_ZOOM = 1;
+        const MAX_ZOOM = 4;
+        let initialPinchDistance = null;
         
+        canvas.addEventListener('touchstart', (e) => {
+            // Detect two fingers for pinching
+            if (e.touches.length === 2) {
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, {passive: false});
+        
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPinchDistance) {
+                e.preventDefault(); // Stop the whole browser page from zooming
+                
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+        
+                const pinchDiff = currentDistance - initialPinchDistance;
+        
+                // Snap the zoom in or out if fingers moved more than 40 pixels
+                if (pinchDiff > 40 && zoomLevel < MAX_ZOOM) { 
+                    zoomLevel++;
+                    initialPinchDistance = currentDistance; // Reset baseline
+                } else if (pinchDiff < -40 && zoomLevel > MIN_ZOOM) { 
+                    zoomLevel--;
+                    initialPinchDistance = currentDistance; // Reset baseline
+                }
+            }
+        }, {passive: false});
+        
+        canvas.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                initialPinchDistance = null;
+            }
+        });
         // Fullscreen setup
         function resize() {
             canvas.width = window.innerWidth;
@@ -186,18 +229,25 @@
         });
 
         // --- GAME LOOP ---
-        function drawGrid(offsetX, offsetY) {
+       function drawGrid(offsetX, offsetY) {
             ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
             ctx.lineWidth = 1;
-            const gridSize = 50;
             
-            const startX = offsetX % gridSize;
-            const startY = offsetY % gridSize;
-
-            for (let x = startX; x < canvas.width; x += gridSize) {
+            // Scale the grid up by our zoom level
+            const gridSize = 50 * zoomLevel; 
+            
+            // Scale the movement offset so the floor slides at the correct speed
+            const scaledOffsetX = offsetX * zoomLevel;
+            const scaledOffsetY = offsetY * zoomLevel;
+        
+            const startX = scaledOffsetX % gridSize;
+            const startY = scaledOffsetY % gridSize;
+        
+            // Draw lines (starting slightly off-screen to prevent popping)
+            for (let x = startX - gridSize; x < canvas.width; x += gridSize) {
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
             }
-            for (let y = startY; y < canvas.height; y += gridSize) {
+            for (let y = startY - gridSize; y < canvas.height; y += gridSize) {
                 ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
             }
         }
@@ -240,57 +290,55 @@
         }
 
         function update() {
-            // 1. Update world position
             player.worldX += player.vx;
             player.worldY += player.vy;
-
-            // 2. Clear screen (so it doesn't smear)
+        
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 3. Define the center of the screen
+            
+            // THE SECRET SAUCE: Prevents pixel art from getting blurry when scaled
+            ctx.imageSmoothingEnabled = false; 
+        
             const screenCenterX = canvas.width / 2;
             const screenCenterY = canvas.height / 2;
-
-            // 4. Draw the moving background grid
+        
             drawGrid(-player.worldX, -player.worldY);
-
-            // 5. Calculate direction and advance the animation timer
             updatePlayerDirection();
             
-            // 6. Calculate the size of a single frame dynamically
             const frameWidth = playerSprite.width / 8;
             const frameHeight = playerSprite.height / 6;
-            
-            // 7. Calculate exactly where to crop the sprite sheet
             const cropX = player.frameX * frameWidth;
             const cropY = player.frameY * frameHeight;
             
-            // 8. Draw the cropped frame to the canvas center
+            // Multiply the final drawing size by our zoomLevel
+            const scaledWidth = frameWidth * zoomLevel;
+            const scaledHeight = frameHeight * zoomLevel;
+            
             ctx.drawImage(
                 playerSprite,
                 cropX, cropY, frameWidth, frameHeight,
-                screenCenterX - (frameWidth / 2),
-                screenCenterY - (frameHeight / 2) - 20, 
-                frameWidth, frameHeight
+                screenCenterX - (scaledWidth / 2),
+                screenCenterY - (scaledHeight / 2) - (15 * zoomLevel), 
+                scaledWidth, scaledHeight
             );
-
-            // 9. Draw Overhead Chat Bubble
+        
+            // Keep the chat bubble floating above the scaled character
             if (player.messageTimer > 0) {
                 ctx.fillStyle = "white";
                 ctx.font = "bold 16px Arial";
                 ctx.textAlign = "center";
                 
-                // Add a small background box for the text
                 const textWidth = ctx.measureText(player.message).width;
+                const bubbleY = screenCenterY - (scaledHeight / 2) - (25 * zoomLevel);
+                
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-                ctx.fillRect(screenCenterX - (textWidth/2) - 10, screenCenterY - 60, textWidth + 20, 30);
+                ctx.fillRect(screenCenterX - (textWidth/2) - 10, bubbleY - 20, textWidth + 20, 30);
                 
                 ctx.fillStyle = "white";
-                ctx.fillText(player.message, screenCenterX, screenCenterY - 40);
+                ctx.fillText(player.message, screenCenterX, bubbleY);
                 
                 player.messageTimer--;
             }
-
+        
             requestAnimationFrame(update);
         }
 

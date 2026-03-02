@@ -240,29 +240,41 @@
         }
 
         function update() {
-            // 1. Calculate direction and advance the animation timer
+            // 1. Update world position
+            player.worldX += player.vx;
+            player.worldY += player.vy;
+
+            // 2. Clear screen (so it doesn't smear)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 3. Define the center of the screen
+            const screenCenterX = canvas.width / 2;
+            const screenCenterY = canvas.height / 2;
+
+            // 4. Draw the moving background grid
+            drawGrid(-player.worldX, -player.worldY);
+
+            // 5. Calculate direction and advance the animation timer
             updatePlayerDirection();
             
-            // 2. Calculate the size of a single frame dynamically
-            // (Total width divided by 8 columns, total height divided by 6 rows)
+            // 6. Calculate the size of a single frame dynamically
             const frameWidth = playerSprite.width / 8;
             const frameHeight = playerSprite.height / 6;
             
-            // 3. Calculate exactly where to crop the sprite sheet
+            // 7. Calculate exactly where to crop the sprite sheet
             const cropX = player.frameX * frameWidth;
             const cropY = player.frameY * frameHeight;
             
-            // 4. Draw the cropped frame to the canvas center
-            // ctx.drawImage(image, sourceX, sourceY, sourceW, sourceH, destX, destY, destW, destH)
+            // 8. Draw the cropped frame to the canvas center
             ctx.drawImage(
                 playerSprite,
-                cropX, cropY, frameWidth, frameHeight,            // The crop from the sprite sheet
-                screenCenterX - (frameWidth / 2),                 // Center it on the X axis
-                screenCenterY - (frameHeight / 2) - 20,           // Center on Y (bumped up slightly so it stands on the grid)
-                frameWidth, frameHeight                           // Draw it at its native size
+                cropX, cropY, frameWidth, frameHeight,
+                screenCenterX - (frameWidth / 2),
+                screenCenterY - (frameHeight / 2) - 20, 
+                frameWidth, frameHeight
             );
 
-            // Draw Overhead Chat Bubble
+            // 9. Draw Overhead Chat Bubble
             if (player.messageTimer > 0) {
                 ctx.fillStyle = "white";
                 ctx.font = "bold 16px Arial";

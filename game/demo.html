@@ -5,7 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Overhead Chat Demo</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #222; touch-action: none; font-family: sans-serif; }
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background-color: #222; 
+            touch-action: none; 
+            font-family: sans-serif; 
+            
+            /* Stops Safari/Chrome from highlighting elements */
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none;   
+            -moz-user-select: none;      
+            -ms-user-select: none;       
+            user-select: none;           
+        }        
+        
         canvas { display: block; }
         
        /* Expanding Chat UI */
@@ -53,6 +68,8 @@
             padding: 0 10px;
             opacity: 0;
             transition: opacity 0.2s ease;
+            -webkit-user-select: auto;
+            user-select: auto;
         }
         
         #chat-container.expanded #chat-input {
@@ -126,6 +143,11 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // Disable the right-click / long-press context menu everywhere
+        window.addEventListener('contextmenu', function (e) { 
+            e.preventDefault(); 
+        }, false);
 
         // --- ZOOM LOGIC ---
         let zoomLevel = 2; 

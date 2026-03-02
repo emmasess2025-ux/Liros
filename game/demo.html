@@ -98,6 +98,12 @@
         window.addEventListener('resize', resize);
         resize();
 
+        // Load the character sprite
+        const playerSprite = new Image();
+        // Point this to a .png file in your GitHub repository. 
+        // I'm using a placeholder sprite URL here so it works immediately!
+        playerSprite.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/132.png';
+
         // Player State
         const player = {
             worldX: 0,
@@ -209,14 +215,18 @@
             // Draw a moving background grid to give the illusion of movement
             drawGrid(-player.worldX, -player.worldY);
 
-            // Draw Player
-            ctx.fillStyle = "#4facfe";
-            ctx.beginPath();
-            ctx.arc(screenCenterX, screenCenterY, player.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "#fff";
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            // Draw Sprite (ADD THIS BLOCK)
+            const spriteWidth = 64;  // Adjust this to make your character bigger or smaller
+            const spriteHeight = 64; 
+            
+            // We subtract half the width/height so the sprite is perfectly centered on the screen
+            ctx.drawImage(
+                playerSprite, 
+                screenCenterX - (spriteWidth / 2), 
+                screenCenterY - (spriteHeight / 2), 
+                spriteWidth, 
+                spriteHeight
+            );
 
             // Draw Overhead Chat Bubble
             if (player.messageTimer > 0) {

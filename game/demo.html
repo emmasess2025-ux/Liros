@@ -98,23 +98,25 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Load the character sprite
-        const playerSprite = new Image();
-        // Point this to a .png file in your GitHub repository. 
-        // I'm using a placeholder sprite URL here so it works immediately!
-        playerSprite.src = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/132.png';
-
-        // Player State
         const player = {
             worldX: 0,
             worldY: 0,
             speed: 4,
             vx: 0,
             vy: 0,
-            radius: 20,
             message: "",
-            messageTimer: 0
+            messageTimer: 0,
+            
+            // Animation variables
+            frameX: 0,      // Column (0 to 7)
+            frameY: 0,      // Row (0 to 5, based on your list)
+            tickCount: 0,   // Controls animation speed
+            ticksPerFrame: 5 // Lower is faster
         };
+        
+        // Load your sprite
+        const playerSprite = new Image();
+        playerSprite.src = 'walk.png'; // Make sure this is the exact filename
 
         // --- JOYSTICK LOGIC ---
         const joystickZone = document.getElementById('joystick-zone');
@@ -200,32 +202,64 @@
             }
         }
 
-        function update() {
-            // Update world position
-            player.worldX += player.vx;
-            player.worldY += player.vy;
-
-            // Clear screen
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // The camera follows the player. So the player is always screen-center.
-            const screenCenterX = canvas.width / 2;
-            const screenCenterY = canvas.height / 2;
-
-            // Draw a moving background grid to give the illusion of movement
-            drawGrid(-player.worldX, -player.worldY);
-
-            // Draw Sprite (ADD THIS BLOCK)
-            const spriteWidth = 64;  // Adjust this to make your character bigger or smaller
-            const spriteHeight = 64; 
+        function updatePlayerDirection() {
+            // If we aren't moving, reset to the standing frame (column 0) and stop
+            if (player.vx === 0 && player.vy === 0) {
+                player.frameX = 0;
+                return; 
+            }
+        
+            // Determine the angle of the joystick using atan2
+            // This gives us a value between -PI and PI
+            const angle = Math.atan2(player.vy, player.vx);
+            const deg = angle * (180 / Math.PI); // Convert to degrees for easier logic
+        
+            // Map degrees to your 6 rows:
+            // Top: Down(0), 2nd: Left(1), 3rd: Up-Left(2), 4th: Up(3), 5th: Up-Right(4), 6th: Right(5)
             
-            // We subtract half the width/height so the sprite is perfectly centered on the screen
+            if (deg >= 45 && deg <= 135) {
+                player.frameY = 0; // Walking Down
+            } else if (deg > 135 || deg < -150) {
+                player.frameY = 1; // Walking Left
+            } else if (deg >= -150 && deg < -105) {
+                player.frameY = 2; // Walking Up-Left
+            } else if (deg >= -105 && deg <= -75) {
+                player.frameY = 3; // Walking Up
+            } else if (deg > -75 && deg <= -30) {
+                player.frameY = 4; // Walking Up-Right
+            } else if (deg > -30 && deg < 45) {
+                player.frameY = 5; // Walking Right
+            }
+        
+            // Advance the animation frame
+            player.tickCount++;
+            if (player.tickCount > player.ticksPerFrame) {
+                player.tickCount = 0;
+                player.frameX = (player.frameX + 1) % 8; // Loop through the 8 columns
+            }
+        }
+
+        function update() {
+            // 1. Calculate direction and advance the animation timer
+            updatePlayerDirection();
+            
+            // 2. Calculate the size of a single frame dynamically
+            // (Total width divided by 8 columns, total height divided by 6 rows)
+            const frameWidth = playerSprite.width / 8;
+            const frameHeight = playerSprite.height / 6;
+            
+            // 3. Calculate exactly where to crop the sprite sheet
+            const cropX = player.frameX * frameWidth;
+            const cropY = player.frameY * frameHeight;
+            
+            // 4. Draw the cropped frame to the canvas center
+            // ctx.drawImage(image, sourceX, sourceY, sourceW, sourceH, destX, destY, destW, destH)
             ctx.drawImage(
-                playerSprite, 
-                screenCenterX - (spriteWidth / 2), 
-                screenCenterY - (spriteHeight / 2), 
-                spriteWidth, 
-                spriteHeight
+                playerSprite,
+                cropX, cropY, frameWidth, frameHeight,            // The crop from the sprite sheet
+                screenCenterX - (frameWidth / 2),                 // Center it on the X axis
+                screenCenterY - (frameHeight / 2) - 20,           // Center on Y (bumped up slightly so it stands on the grid)
+                frameWidth, frameHeight                           // Draw it at its native size
             );
 
             // Draw Overhead Chat Bubble

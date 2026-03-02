@@ -210,6 +210,7 @@
             vy: 0,
             message: "",
             messageTimer: 0,
+            isTyping: false,
             
             // Animation variables
             frameX: 0,      
@@ -264,6 +265,7 @@
                     op.isMoving = data.player.isMoving;
                     op.message = data.player.message;
                     op.messageTimer = data.player.messageTimer;
+                    op.isTyping = data.player.isTyping; // <-- ADD THIS LINE
                     
                     // ...but set TARGETS for their movement so we can slide them smoothly
                     op.targetX = data.player.worldX;
@@ -274,21 +276,46 @@
             }
         };
 
-        // Send our state to the server 20 times a second
+        // Send our state to the server ONLY when something changes
+        let lastNetworkString = ""; 
+
         setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'update',
-                    player: {
-                        worldX: player.worldX,
-                        worldY: player.worldY,
-                        frameX: player.frameX,
-                        frameY: player.frameY,
-                        isMoving: player.isMoving,
-                        message: player.message,
-                        messageTimer: player.messageTimer
-                    }
-                }));
+                
+                // 1. Create a tiny snapshot of our current state
+                const currentState = {
+                    x: Math.round(player.worldX), 
+                    y: Math.round(player.worldY),
+                    dir: player.frameY,
+                    moving: player.isMoving,
+                    typing: player.isTyping,
+                    msg: player.message,
+                    // We turn the timer into a simple true/false so it doesn't trigger an update 60 times a second while counting down!
+                    isChatting: player.messageTimer > 0, 
+                    frame: player.frameX
+                };
+                
+                const currentString = JSON.stringify(currentState);
+
+                // 2. Only send to the server if the snapshot changed!
+                if (currentString !== lastNetworkString) {
+                    ws.send(JSON.stringify({
+                        type: 'update',
+                        player: {
+                            worldX: player.worldX,
+                            worldY: player.worldY,
+                            frameX: player.frameX,
+                            frameY: player.frameY,
+                            isMoving: player.isMoving,
+                            message: player.message,
+                            messageTimer: player.messageTimer,
+                            isTyping: player.isTyping 
+                        }
+                    }));
+                    
+                    // 3. Update the memory so we don't send this exact state again
+                    lastNetworkString = currentString; 
+                }
             }
         }, 50);
 
@@ -370,6 +397,9 @@
         const chatContainer = document.getElementById('chat-container');
         const chatToggle = document.getElementById('chat-toggle');
         const chatInput = document.getElementById('chat-input');
+        // Detect when the user opens/closes their keyboard
+        chatInput.addEventListener('focus', () => { player.isTyping = true; });
+        chatInput.addEventListener('blur', () => { player.isTyping = false; });
         const sendBtn = document.getElementById('send-btn');
         
         // Open the chat bar and trigger keyboard
@@ -397,7 +427,7 @@
         function sendMessage() {
             if (chatInput.value.trim() !== "") {
                 player.message = chatInput.value;
-                player.messageTimer = 180;
+                player.messageTimer = 420;
             }
             closeChat(); // Always close after sending
         }
@@ -488,6 +518,52 @@
             }
         }
 
+       // A helper function to draw perfectly scaled chat bubbles
+        function drawDynamicBubble(text, timer, isTyping, x, y, scaledWidth) {
+            // If they aren't chatting and aren't typing, do nothing
+            if (timer <= 0 && !isTyping) return; 
+
+            // 1. Scale the font size to be a bit smaller (changed from 14 to 12)
+            const fontSize = 7 * zoomLevel;
+            ctx.font = `bold ${fontSize}px Arial`;
+            
+            // 2. Scale the outline thickness slightly down for the smaller text
+            ctx.lineJoin = "round";
+            ctx.lineWidth = 2.5 * zoomLevel; 
+            ctx.strokeStyle = "black";
+            
+            // 3. Anchor it perfectly above the head
+            const bubbleY = y + (15 * zoomLevel); 
+            const centerX = x + (scaledWidth / 2);
+            
+            if (timer > 0) {
+                // --- ACTUAL CHAT MESSAGE ---
+                // Keep standard messages centered
+                ctx.textAlign = "center";
+                
+                ctx.strokeText(text, centerX, bubbleY);
+                ctx.fillStyle = "white";
+                ctx.fillText(text, centerX, bubbleY);
+                
+            } else if (isTyping) {
+                // --- TYPING INDICATOR ---
+                // Lock alignment to the left so the dots don't wiggle back and forth
+                ctx.textAlign = "left";
+                
+                // Animate the dots (1 to 3)
+                const dotCount = (Math.floor(Date.now() / 400) % 3) + 1;
+                const displayText = ".".repeat(dotCount);
+                
+                // Pre-measure the maximum width of "..." so we can center the whole block
+                const maxTextWidth = ctx.measureText("...").width;
+                const startX = centerX - (maxTextWidth / 2);
+
+                ctx.strokeText(displayText, startX, bubbleY);
+                ctx.fillStyle = "white";
+                ctx.fillText(displayText, startX, bubbleY);
+            }
+        }
+
         function update() {
             player.worldX += player.vx;
             player.worldY += player.vy;
@@ -550,26 +626,8 @@
                     pScaledWidth, pScaledHeight
                 );
 
-                // Draw their chat bubble
-                if (p.messageTimer > 0) {
-                    ctx.font = "bold 14px Arial"; // Made text slightly smaller
-                    ctx.textAlign = "center";
-                    
-                    // Lowered the bubble closer to the head (changed from pDrawY - 20)
-                    const bubbleY = pDrawY + 30; 
-                    
-                    // Set up the thick black outline
-                    ctx.lineJoin = "round"; // Makes the text outline smooth
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = "black";
-                    
-                    // Draw the black outline first
-                    ctx.strokeText(p.message, pDrawX + (pScaledWidth/2), bubbleY);
-                    
-                    // Draw the white text on top of the outline
-                    ctx.fillStyle = "white";
-                    ctx.fillText(p.message, pDrawX + (pScaledWidth/2), bubbleY);
-                }
+                // Draw their chat bubble or typing indicator
+                drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pDrawX, pDrawY, pScaledWidth);
             }
             
             // 8. Draw the cropped frame using currentImage
@@ -580,28 +638,10 @@
                 scaledWidth, scaledHeight
             );
             
-           // Keep the chat bubble floating above the newly centered character
-            if (player.messageTimer > 0) {
-                ctx.font = "bold 14px Arial"; // Made text slightly smaller
-                ctx.textAlign = "center";
-                
-                // Lowered the bubble closer to the head (changed from drawY - 20)
-                const bubbleY = drawY + 30; // Adjusted to be closer to the character's head
-                
-                // Set up the thick black outline
-                ctx.lineJoin = "round"; // Makes the text outline smooth
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = "black";
-                
-                // Draw the black outline first
-                ctx.strokeText(player.message, screenCenterX, bubbleY);
-                
-                // Draw the white text on top of the outline
-                ctx.fillStyle = "white";
-                ctx.fillText(player.message, screenCenterX, bubbleY);
-                
-                player.messageTimer--;
-            }
+           // Draw your own chat bubble or typing indicator
+            drawDynamicBubble(player.message, player.messageTimer, player.isTyping, drawX, drawY, scaledWidth);
+            
+            if (player.messageTimer > 0) player.messageTimer--;
         
             requestAnimationFrame(update);
         }

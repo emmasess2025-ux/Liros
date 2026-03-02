@@ -8,24 +8,41 @@
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #222; touch-action: none; font-family: sans-serif; }
         canvas { display: block; }
         
-        /* Liquid Glass UI Overlay for Chat */
+       /* Expanding Chat UI */
         #chat-container {
             position: absolute;
             top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
+            left: 20px; /* Moved to Top Left */
+            height: 45px;
+            width: 45px; /* Starts as a small circle */
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            padding: 10px;
+            border-radius: 25px;
             display: flex;
+            align-items: center;
+            overflow: hidden;
+            transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1); /* Smooth snap expansion */
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
+        
+        #chat-container.expanded {
+            width: calc(100vw - 40px); /* Expands across the screen */
+            max-width: 400px;
+        }
+        
+        #chat-toggle {
+            min-width: 45px;
+            height: 45px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            outline: none;
+        }
+        
         #chat-input {
             flex-grow: 1;
             background: transparent;
@@ -33,19 +50,31 @@
             color: white;
             outline: none;
             font-size: 16px;
-            padding: 5px 10px;
+            padding: 0 10px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
-
-        #chat-input::placeholder { color: rgba(255,255,255,0.7); }
-
+        
+        #chat-container.expanded #chat-input {
+            opacity: 1;
+        }
+        
         #send-btn {
             background: rgba(255, 255, 255, 0.3);
             border: none;
             color: white;
-            padding: 8px 15px;
+            padding: 8px 12px;
+            margin-right: 5px;
             border-radius: 15px;
             font-weight: bold;
             cursor: pointer;
+            opacity: 0;
+            pointer-events: none; /* Can't click when hidden */
+        }
+        
+        #chat-container.expanded #send-btn {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         /* Virtual Joystick Zone */
@@ -78,8 +107,9 @@
     <canvas id="gameCanvas"></canvas>
 
     <div id="chat-container">
-        <input type="text" id="chat-input" placeholder="Tap to chat..." autocomplete="off">
-        <button id="send-btn">Send</button>
+        <button id="chat-toggle">💬</button>
+        <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
+        <button id="send-btn">➔</button>
     </div>
 
     <div id="joystick-zone">
@@ -91,9 +121,10 @@
         const ctx = canvas.getContext('2d');
 
         // --- ZOOM LOGIC ---
-        let zoomLevel = 2; // Start at 2x zoom
+        let zoomLevel = 2; 
         const MIN_ZOOM = 1;
-        const MAX_ZOOM = 4;
+        const MAX_ZOOM = 6;     // Increased maximum zoom
+        const ZOOM_STEP = 0.5;  // Allows half-steps for finer zooming
         let initialPinchDistance = null;
         
         canvas.addEventListener('touchstart', (e) => {
@@ -119,11 +150,11 @@
         
                 // Snap the zoom in or out if fingers moved more than 40 pixels
                 if (pinchDiff > 40 && zoomLevel < MAX_ZOOM) { 
-                    zoomLevel++;
-                    initialPinchDistance = currentDistance; // Reset baseline
+                    zoomLevel += ZOOM_STEP;
+                    initialPinchDistance = currentDistance; 
                 } else if (pinchDiff < -40 && zoomLevel > MIN_ZOOM) { 
-                    zoomLevel--;
-                    initialPinchDistance = currentDistance; // Reset baseline
+                    zoomLevel -= ZOOM_STEP;
+                    initialPinchDistance = currentDistance; 
                 }
             }
         }, {passive: false});
@@ -210,23 +241,56 @@
             player.vy = 0;
         });
 
-        // --- CHAT LOGIC ---
+       // --- CHAT LOGIC ---
+        const chatContainer = document.getElementById('chat-container');
+        const chatToggle = document.getElementById('chat-toggle');
         const chatInput = document.getElementById('chat-input');
         const sendBtn = document.getElementById('send-btn');
-
+        
+        // Open the chat bar and trigger keyboard
+        chatToggle.addEventListener('click', () => {
+            chatContainer.classList.add('expanded');
+            chatToggle.style.display = 'none'; // Hide the chat icon
+            
+            // Slight delay ensures the CSS animation starts before pulling up the keyboard
+            setTimeout(() => {
+                chatInput.focus(); 
+            }, 100);
+        });
+        
+        function closeChat() {
+            chatInput.value = "";
+            chatInput.blur(); // Hides the keyboard
+            chatContainer.classList.remove('expanded');
+            
+            // Wait for the collapse animation before showing the icon again
+            setTimeout(() => {
+                chatToggle.style.display = 'block';
+            }, 300);
+        }
+        
         function sendMessage() {
             if (chatInput.value.trim() !== "") {
                 player.message = chatInput.value;
-                player.messageTimer = 180; // Show for approx 3 seconds (at 60fps)
-                chatInput.value = "";
-                chatInput.blur(); // Hide the keyboard
+                player.messageTimer = 180;
             }
+            closeChat(); // Always close after sending
         }
-
+        
         sendBtn.addEventListener('click', sendMessage);
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
+        
+        // If the user taps the game screen while chat is open, close it
+        canvas.addEventListener('touchstart', (e) => {
+            if (chatContainer.classList.contains('expanded') && e.touches.length === 1) {
+                // Only close if they didn't tap inside the chat box
+                if (e.touches[0].clientY > 80) { 
+                    closeChat();
+                }
+            }
+        }, {passive: false});
 
         // --- GAME LOOP ---
        function drawGrid(offsetX, offsetY) {
@@ -309,26 +373,30 @@
             const cropX = player.frameX * frameWidth;
             const cropY = player.frameY * frameHeight;
             
-            // Multiply the final drawing size by our zoomLevel
+           // Calculate final drawing sizes
             const scaledWidth = frameWidth * zoomLevel;
             const scaledHeight = frameHeight * zoomLevel;
+            
+            // Math.round keeps the pixel art perfectly sharp on fractional zooms
+            // Notice the Y axis calculation no longer has the extra offset!
+            const drawX = Math.round(screenCenterX - (scaledWidth / 2));
+            const drawY = Math.round(screenCenterY - (scaledHeight / 2));
             
             ctx.drawImage(
                 playerSprite,
                 cropX, cropY, frameWidth, frameHeight,
-                screenCenterX - (scaledWidth / 2),
-                screenCenterY - (scaledHeight / 2) - (15 * zoomLevel), 
+                drawX, drawY, 
                 scaledWidth, scaledHeight
             );
-        
-            // Keep the chat bubble floating above the scaled character
+            
+            // Keep the chat bubble floating above the newly centered character
             if (player.messageTimer > 0) {
                 ctx.fillStyle = "white";
                 ctx.font = "bold 16px Arial";
                 ctx.textAlign = "center";
                 
                 const textWidth = ctx.measureText(player.message).width;
-                const bubbleY = screenCenterY - (scaledHeight / 2) - (25 * zoomLevel);
+                const bubbleY = drawY - 20; // Anchor it just above the sprite's head
                 
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
                 ctx.fillRect(screenCenterX - (textWidth/2) - 10, bubbleY - 20, textWidth + 20, 30);

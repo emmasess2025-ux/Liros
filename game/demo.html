@@ -208,6 +208,68 @@
         // Set default to idle
         player.currentImage = idleSprite;
 
+        // --- MULTIPLAYER LOGIC ---
+        const otherPlayers = {};
+        let myId = null;
+        
+        // Connect to the live cloud server
+        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'init') {
+                myId = data.id;
+                for (let id in data.players) {
+                    if (id !== myId) {
+                        otherPlayers[id] = data.players[id];
+                        // Initialize target coordinates with fallbacks to prevent NaN crashes
+                        otherPlayers[id].targetX = data.players[id].worldX || 0;
+                        otherPlayers[id].targetY = data.players[id].worldY || 0;
+                    }
+                }
+            } else if (data.type === 'joined' || data.type === 'update') {
+                if (!otherPlayers[data.id]) {
+                    // First time seeing this player
+                    otherPlayers[data.id] = data.player;
+                    otherPlayers[data.id].targetX = data.player.worldX;
+                    otherPlayers[data.id].targetY = data.player.worldY;
+                } else {
+                    // Update their animations and text instantly...
+                    const op = otherPlayers[data.id];
+                    op.frameX = data.player.frameX;
+                    op.frameY = data.player.frameY;
+                    op.isMoving = data.player.isMoving;
+                    op.message = data.player.message;
+                    op.messageTimer = data.player.messageTimer;
+                    
+                    // ...but set TARGETS for their movement so we can slide them smoothly
+                    op.targetX = data.player.worldX;
+                    op.targetY = data.player.worldY;
+                }
+            } else if (data.type === 'left') {
+                delete otherPlayers[data.id];
+            }
+        };
+
+        // Send our state to the server 20 times a second
+        setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'update',
+                    player: {
+                        worldX: player.worldX,
+                        worldY: player.worldY,
+                        frameX: player.frameX,
+                        frameY: player.frameY,
+                        isMoving: player.isMoving,
+                        message: player.message,
+                        messageTimer: player.messageTimer
+                    }
+                }));
+            }
+        }, 50);
+
         // --- TWIN STICK LOGIC ---
         const joystickZone = document.getElementById('joystick-zone');
         const joystickKnob = document.getElementById('joystick-knob');
@@ -431,6 +493,63 @@
             const drawX = Math.round(screenCenterX - (scaledWidth / 2));
             const drawY = Math.round(screenCenterY - (scaledHeight / 2));
 
+            // --- DRAW OTHER PLAYERS ---
+            for (let id in otherPlayers) {
+                const p = otherPlayers[id];
+                
+                // THE LERP MAGIC: Smoothly slide actual X/Y towards target X/Y
+                // 0.3 means it moves 30% of the distance to the target every frame.
+                p.worldX += (p.targetX - p.worldX) * 0.3; 
+                p.worldY += (p.targetY - p.worldY) * 0.3;
+                
+                // Calculate where they are on the screen relative to YOU
+                const offsetX = p.worldX - player.worldX;
+                const offsetY = p.worldY - player.worldY;
+                
+                const pScaledWidth = frameWidth * zoomLevel;
+                const pScaledHeight = frameHeight * zoomLevel;
+                
+                const pDrawX = Math.round(screenCenterX + (offsetX * zoomLevel) - (pScaledWidth / 2));
+                const pDrawY = Math.round(screenCenterY + (offsetY * zoomLevel) - (pScaledHeight / 2));
+                
+                // Choose their sprite based on if they are moving
+                const pImage = p.isMoving ? walkSprite : idleSprite;
+                
+                // Ensure frame sizes are based on the correct sprite sheet
+                const pFrameW = pImage.width / 8;
+                const pFrameH = pImage.height / 6;
+                const pCropX = p.frameX * pFrameW;
+                const pCropY = p.frameY * pFrameH;
+
+                ctx.drawImage(
+                    pImage,
+                    pCropX, pCropY, pFrameW, pFrameH,
+                    pDrawX, pDrawY,
+                    pScaledWidth, pScaledHeight
+                );
+
+                // Draw their chat bubble
+                if (p.messageTimer > 0) {
+                    ctx.font = "bold 14px Arial"; // Made text slightly smaller
+                    ctx.textAlign = "center";
+                    
+                    // Lowered the bubble closer to the head (changed from pDrawY - 20)
+                    const bubbleY = pDrawY + 30; 
+                    
+                    // Set up the thick black outline
+                    ctx.lineJoin = "round"; // Makes the text outline smooth
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = "black";
+                    
+                    // Draw the black outline first
+                    ctx.strokeText(p.message, pDrawX + (pScaledWidth/2), bubbleY);
+                    
+                    // Draw the white text on top of the outline
+                    ctx.fillStyle = "white";
+                    ctx.fillText(p.message, pDrawX + (pScaledWidth/2), bubbleY);
+                }
+            }
+            
             // 8. Draw the cropped frame using currentImage
             ctx.drawImage(
                 player.currentImage,
@@ -439,18 +558,23 @@
                 scaledWidth, scaledHeight
             );
             
-            // Keep the chat bubble floating above the newly centered character
+           // Keep the chat bubble floating above the newly centered character
             if (player.messageTimer > 0) {
-                ctx.fillStyle = "white";
-                ctx.font = "bold 16px Arial";
+                ctx.font = "bold 14px Arial"; // Made text slightly smaller
                 ctx.textAlign = "center";
                 
-                const textWidth = ctx.measureText(player.message).width;
-                const bubbleY = drawY - 20; // Anchor it just above the sprite's head
+                // Lowered the bubble closer to the head (changed from drawY - 20)
+                const bubbleY = drawY + 30; // Adjusted to be closer to the character's head
                 
-                ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-                ctx.fillRect(screenCenterX - (textWidth/2) - 10, bubbleY - 20, textWidth + 20, 30);
+                // Set up the thick black outline
+                ctx.lineJoin = "round"; // Makes the text outline smooth
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "black";
                 
+                // Draw the black outline first
+                ctx.strokeText(player.message, screenCenterX, bubbleY);
+                
+                // Draw the white text on top of the outline
                 ctx.fillStyle = "white";
                 ctx.fillText(player.message, screenCenterX, bubbleY);
                 

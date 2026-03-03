@@ -193,10 +193,21 @@
                 initialPinchDistance = null;
             }
         });
-        // Fullscreen setup
+        // Fullscreen & Retina Screen setup
         function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            // Get the pixel density of the screen (iPhones are usually 2 or 3)
+            const dpr = window.devicePixelRatio || 1;
+            
+            // Set the visual CSS size to match the screen perfectly
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            
+            // Multiply the internal canvas resolution by the pixel density to make it sharp
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            
+            // Tell the canvas to scale all of our math up to match the new resolution
+            ctx.scale(dpr, dpr);
         }
         window.addEventListener('resize', resize);
         resize();
@@ -463,11 +474,11 @@
             const startY = scaledOffsetY % gridSize;
         
             // Draw lines (starting slightly off-screen to prevent popping)
-            for (let x = startX - gridSize; x < canvas.width; x += gridSize) {
-                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            for (let x = startX - gridSize; x < window.innerWidth; x += gridSize) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, window.innerHeight); ctx.stroke();
             }
-            for (let y = startY - gridSize; y < canvas.height; y += gridSize) {
-                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            for (let y = startY - gridSize; y < window.innerHeight; y += gridSize) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(window.innerWidth, y); ctx.stroke();
             }
         }
 
@@ -568,13 +579,16 @@
             player.worldX += player.vx;
             player.worldY += player.vy;
         
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Clear the screen using window dimensions
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
             
-            // THE SECRET SAUCE: Prevents pixel art from getting blurry when scaled
+            // THE SECRET SAUCE: Prevents pixel art from getting blurry
             ctx.imageSmoothingEnabled = false; 
+            ctx.webkitImageSmoothingEnabled = false; // Forces Safari iOS to respect pixels!
         
-            const screenCenterX = canvas.width / 2;
-            const screenCenterY = canvas.height / 2;
+            // Calculate center using window dimensions instead of raw canvas dimensions
+            const screenCenterX = window.innerWidth / 2;
+            const screenCenterY = window.innerHeight / 2;   
         
             drawGrid(-player.worldX, -player.worldY);
             updatePlayerDirection();

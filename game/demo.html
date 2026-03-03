@@ -20,8 +20,14 @@
             -ms-user-select: none;       
             user-select: none;           
         }        
+
+        /* Universal iOS Lockdown */
+        * {
+            -webkit-tap-highlight-color: transparent; /* Kills the grey flash when tapping */
+        }
         
-        canvas { display: block; }
+        canvas { display: block; 
+                    touch-action: none; /* Double-secures no native zooming */ }
         
        /* Expanding Chat UI */
         #chat-container {
@@ -157,6 +163,9 @@
         let initialPinchDistance = null;
         
         canvas.addEventListener('touchstart', (e) => {
+            // Kills the iOS double-tap magnifier bubble instantly
+            e.preventDefault(); 
+            
             // Detect two fingers for pinching
             if (e.touches.length === 2) {
                 initialPinchDistance = Math.hypot(

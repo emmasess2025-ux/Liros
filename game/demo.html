@@ -113,6 +113,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            touch-action: none;
         }
 
         #joystick-zone { left: 30px; }
@@ -374,6 +375,7 @@
 
         // --- LEFT JOYSTICK (MOVEMENT) LISTENERS ---
         joystickZone.addEventListener('touchstart', (e) => { 
+            e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE JOYSTICK
             e.stopPropagation(); // PREVENTS ZOOM CONFLICT
             const vectors = processJoystick(e, joystickZone, joystickKnob, 35);
             player.vx = vectors.x * player.speed;
@@ -381,6 +383,7 @@
         }, {passive: false});
 
         joystickZone.addEventListener('touchmove', (e) => { 
+            e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE JOYSTICK
             e.stopPropagation(); // PREVENTS ZOOM CONFLICT
             const vectors = processJoystick(e, joystickZone, joystickKnob, 35);
             player.vx = vectors.x * player.speed;
@@ -388,6 +391,7 @@
         }, {passive: false});
 
         joystickZone.addEventListener('touchend', (e) => {
+            e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE JOYSTICK
             e.stopPropagation();
             joystickKnob.style.transform = `translate(0px, 0px)`;
             player.vx = 0;
@@ -396,18 +400,21 @@
 
         // --- RIGHT JOYSTICK (AIMING) LISTENERS ---
         aimZone.addEventListener('touchstart', (e) => { 
+            e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE AIMING JOYSTICK
             e.stopPropagation(); // PREVENTS ZOOM CONFLICT
             const vectors = processJoystick(e, aimZone, aimKnob, 35);
             // TODO: Apply vectors.x and vectors.y to your shooting/aiming logic!
         }, {passive: false});
 
         aimZone.addEventListener('touchmove', (e) => { 
+            e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE AIMING JOYSTICK
             e.stopPropagation(); // PREVENTS ZOOM CONFLICT
             const vectors = processJoystick(e, aimZone, aimKnob, 35);
             // TODO: Apply vectors.x and vectors.y to your shooting/aiming logic!
         }, {passive: false});
 
         aimZone.addEventListener('touchend', (e) => {
+            e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE AIMING JOYSTICK
             e.stopPropagation();
             aimKnob.style.transform = `translate(0px, 0px)`;
             // TODO: Stop aiming/shooting

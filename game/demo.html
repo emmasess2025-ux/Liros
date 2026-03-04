@@ -127,16 +127,326 @@
             position: relative;
             pointer-events: none;
         }
+
+        /* --- AUTH SCREEN STYLES --- */
+        #auth-overlay {
+            display: none; /* Start hidden, will be shown when server connects */
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.75); /* Darkens the game behind it */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Forces it above everything else */
+            transition: opacity 0.3s ease;
+        }
+
+        #auth-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            width: 80%;
+            max-width: 320px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #auth-box input {
+            width: 90%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            border: 1px solid transparent;
+        }
+
+        #auth-box input:focus { border: 1px solid rgba(255,255,255,0.5); }
+
+        .auth-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.3);
+            transition: background 0.2s;
+        }
+
+        .auth-btn:active { background: rgba(255, 255, 255, 0.5); }
+
+        #auth-message {
+            color: #ff6b6b; /* Soft red for errors */
+            font-size: 14px;
+            margin-bottom: 15px;
+            min-height: 20px;
+        }
+
+        #menu-toggle {
+            position: absolute;
+            top: 75px; /* Sits right below the chat bubble */
+            left: 20px;
+            width: 45px; height: 45px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        /* --- APP TRAY STYLES (SIDEWAYS POP) --- */
+        #app-tray {
+            position: absolute;
+            top: 75px;  /* Aligns perfectly with the top of the gear/toggle button */
+            left: 75px; /* Pushes it to the right of the button */
+            width: 160px; /* Wide enough for the 2x2 grid */
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px; 
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px 15px;
+            opacity: 0;
+            pointer-events: none;
+            
+            /* The Sideways Spring Animation */
+            transform-origin: left top; /* Makes it grow outward from the button */
+            transform: scale(0.8) translateX(-20px); /* Starts smaller and tucked behind the button */
+            transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1.2), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1.2);
+            z-index: 99;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #app-tray.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateX(0); /* Slides and scales into its natural place */
+        }
+
+        /* Individual App Icons */
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .app-bg {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px; /* The classic iOS app curve */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            margin-bottom: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: transform 0.1s, filter 0.1s;
+        }
+
+        /* The squish effect when you physically tap an app */
+        .app-icon:active .app-bg {
+            transform: scale(0.85); 
+            filter: brightness(0.8);
+        }
+
+        .app-icon span {
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            letter-spacing: 0.5px;
+        }
+
+        /* --- TILE PALETTE STYLES ---*/
+        #tile-palette {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 80vh;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        #palette-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #tile-grid {
+            flex: 1;
+            overflow: auto; /* Allows infinite scrolling horizontally and vertically */
+            padding: 10px;
+        }
+
+        .palette-tile {
+            width: 24px; /* Fixed size so they are easy to tap on mobile */
+            height: 24px;
+            cursor: pointer;
+            image-rendering: pixelated; 
+            box-sizing: border-box;
+        }
+
+        .palette-tile.selected {
+            border: 2px solid #f1c40f;
+            box-shadow: 0 0 10px #f1c40f;
+            position: relative;
+            z-index: 2; /* Makes the highlight pop over other tiles */
+        }
+
+        /* --- PALETTE RESIZER --- */
+        #palette-resizer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 100%;
+            cursor: ew-resize; /* Shows the left-right stretch cursor */
+            background: rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none; /* Crucial so dragging it doesn't accidentally scroll */
+        }
+
+        #palette-resizer::after {
+            content: "⋮";
+            color: white;
+            font-size: 20px;
+            opacity: 0.5;
+        }
+
+        /* --- TILE INSPECTOR STYLES --- */    
+        #tile-inspector {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 15px;
+            width: 120px;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            z-index: 1001;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        /* Inspector Buttons */
+        .layer-btn {
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;
+            font-size: 12px; font-weight: bold; flex: 1;
+        }
+        .layer-btn.active {
+            background: #f1c40f; color: black; border-color: white;
+        }
+        .tool-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;
+        }
+        .tool-btn.active { background: #3498db; border-color: white; }
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
 
+<div id="auth-overlay">
+        <div id="auth-box">
+            <button id="close-auth-btn" style="float: right; background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+            
+            <div id="auth-login-view">
+                <h2 style="margin-top: 0; font-family: sans-serif;">Welcome</h2>
+                <div id="auth-message"></div>
+                
+                <input type="text" id="auth-username" placeholder="Username" autocomplete="off" maxlength="12">
+                <input type="password" id="auth-password" placeholder="Password">
+                
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button id="login-btn" class="auth-btn">Log In</button>
+                    <button id="register-btn" class="auth-btn" style="background: rgba(255,255,255,0.1);">Sign Up</button>
+                </div>
+            </div>
+
+            <div id="auth-signout-view" style="display: none;">
+                <h2 style="margin-top: 0; font-family: sans-serif;">Sign Out</h2>
+                <p style="color: white; font-size: 15px; margin-bottom: 20px;">Are you sure you want to sign out? Your location will be saved securely.</p>
+                
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button id="confirm-signout-btn" class="auth-btn" style="background: rgba(255, 107, 107, 0.5);">Yes, Sign Out</button>
+                    <button id="cancel-signout-btn" class="auth-btn" style="background: rgba(255,255,255,0.1);">Cancel</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <div id="chat-container">
         <button id="chat-toggle">💬</button>
         <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
         <button id="send-btn">➔</button>
+    </div>
+
+    <button id="menu-toggle" style="font-size: 20px;">📱</button>
+    
+    <div id="app-tray">
+        <div class="app-icon" id="app-auth">
+            <div class="app-bg" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);">🔑</div>
+            <span>Log In</span>
+        </div>
+        
+        <div class="app-icon" id="app-inventory">
+            <div class="app-bg" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🎒</div>
+            <span>Bag</span>
+        </div>
+
+        <div class="app-icon" id="app-friends">
+            <div class="app-bg" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">👥</div>
+            <span>Friends</span>
+        </div>
+
+        <div class="app-icon" id="app-house">
+            <div class="app-bg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">🏠</div>
+            <span>House</span>
+        </div>
+
+        <div class="app-icon" id="app-edit-mode">
+            <div class="app-bg" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🎨</div>
+            <span>Edit Mode</span>
+        </div>
     </div>
 
     <div id="joystick-zone">
@@ -147,9 +457,52 @@
         <div id="aim-knob"></div>
     </div>
 
+<div id="tile-palette">
+        <div id="palette-resizer"></div>
+        <div id="palette-header" style="padding-left: 25px;">
+            <span>Tile Picker</span>
+            <button id="close-palette">✖</button>
+        </div>
+        
+        <div id="layer-controls" style="display: flex; gap: 5px; padding: 10px 10px 0 25px;">
+            <button class="layer-btn active" data-layer="0">L0</button>
+            <button class="layer-btn" data-layer="1">L1</button>
+            <button class="layer-btn" data-layer="2">L2</button>
+            <button class="layer-btn" data-layer="3">L3</button>
+            <button class="layer-btn" data-layer="4">L4</button>
+        </div>
+
+        <div style="display: flex; gap: 5px; padding: 10px 10px 10px 25px; justify-content: space-between;">
+            <button id="tool-pan" class="tool-btn active">🖐️ Pan</button>
+            <button id="tool-select" class="tool-btn">🔲 Select</button>
+            <button id="eraser-btn" class="tool-btn" style="background: rgba(255, 107, 107, 0.4);">🗑️ Eraser</button>
+        </div>
+
+        <div id="tile-grid" style="overflow: auto; flex: 1; padding: 0 10px 10px 25px; background: rgba(0,0,0,0.3); touch-action: pan-x pan-y;">
+            <canvas id="palette-canvas" style="image-rendering: pixelated;"></canvas>
+        </div>
+    </div>
+
+    <div id="tile-inspector">
+        <div style="font-size: 10px; opacity: 0.6; margin-bottom: 8px;">TILE SETTINGS</div>
+        <button id="inspect-delete" class="tray-btn" style="background: rgba(255,107,107,0.4); margin-bottom: 10px;">🗑 Delete Tile</button>
+        <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+            <span style="font-size: 12px;">Collisions:</span>
+            <input type="checkbox" id="inspect-collision" style="width: 18px; height: 18px;">
+        </div>
+    </div>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        const tilesetImage = new Image();
+        tilesetImage.src = 'All_Tilesets.png';
+        
+        let editMode = false;
+        let selectedTileId = 0;
+        const TILE_SIZE = 16; // Your tileset looks like a 16px grid
+        const worldMap = {};  // Stores "x,y": tileId
 
         // Disable the right-click / long-press context menu everywhere
         window.addEventListener('contextmenu', function (e) { 
@@ -255,24 +608,161 @@
         // --- MULTIPLAYER LOGIC ---
         const otherPlayers = {};
         let myId = null;
+
+        // Auth UI Elements
+        const authOverlay = document.getElementById('auth-overlay');
+        const authUsername = document.getElementById('auth-username');
+        const authPassword = document.getElementById('auth-password');
+        const authMessage = document.getElementById('auth-message');
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
+
+        // UI Elements
+        const menuToggle = document.getElementById('menu-toggle');
+        const appTray = document.getElementById('app-tray');
+        const appAuth = document.getElementById('app-auth'); // The Login App Icon
+        const closeAuthBtn = document.getElementById('close-auth-btn'); // The X on the card
+        let isLoggedIn = false; // Tracks if we should log in or log out
+        const authLoginView = document.getElementById('auth-login-view');
+        const authSignoutView = document.getElementById('auth-signout-view');
+        const confirmSignoutBtn = document.getElementById('confirm-signout-btn');
+        const cancelSignoutBtn = document.getElementById('cancel-signout-btn');
+
+        // 1. Toggle the iOS app tray (Slides out sideways)
+        menuToggle.addEventListener('click', () => {
+            appTray.classList.toggle('open');
+        });
+
+        // 2. Click the Login App -> Opens Card, Chooses View
+        appAuth.addEventListener('click', () => {
+            // Sledgehammer force the glass card to open
+            authOverlay.style.display = 'flex';       
+            authOverlay.style.opacity = '1';          
+            authOverlay.style.pointerEvents = 'auto'; 
+            appTray.classList.remove('open');         
+
+            // Decide which text to show inside the card!
+            if (!isLoggedIn) {
+                authLoginView.style.display = 'block';
+                authSignoutView.style.display = 'none';
+            } else {
+                authLoginView.style.display = 'none';
+                authSignoutView.style.display = 'block';
+            }
+        });
+
+        // --- Sign Out Confirmation Buttons ---
+        confirmSignoutBtn.addEventListener('click', () => {
+            // DESTROY THE SAVED VIP TOKEN!
+            localStorage.removeItem('liros_game_token');
+            
+            // Refresh the page to drop back in as a Guest
+            window.location.reload(); 
+        }); 
+
+        cancelSignoutBtn.addEventListener('click', () => {
+            // They changed their mind. Just close the glass card!
+            authOverlay.style.display = 'none';
+            authOverlay.style.opacity = '0';
+            authOverlay.style.pointerEvents = 'none';
+        });
+
+        // 3. Close Auth screen if they click the 'X'
+        closeAuthBtn.addEventListener('click', () => {
+            authOverlay.style.display = 'none';
+            authOverlay.style.opacity = '0';
+            authOverlay.style.pointerEvents = 'none';
+        });
         
+        // (Optional but nice) Close the app tray if they click the canvas
+        canvas.addEventListener('touchstart', (e) => {
+            if (appTray.classList.contains('open') && e.touches.length === 1) {
+                appTray.classList.remove('open');
+            }
+        }, {passive: false});
+        
+
         // Connect to the live cloud server
-        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+
+        // Connect locally for testing the database
+        const ws = new WebSocket('ws://localhost:8080');
+
+        // --- WEBSOCKET CONNECTION STATE ---
+        authMessage.style.color = '#f1c40f'; // Yellow
+        authMessage.innerText = "Connecting to server...";
         
+        ws.onopen = () => { 
+            authMessage.style.color = 'white';
+            authMessage.innerText = "Server connected! Please log in.";
+
+            // --- AUTO LOGIN CHECK ---
+            // Look inside the browser's secret pocket for a VIP token
+            const savedToken = localStorage.getItem('liros_game_token');
+            if (savedToken) {
+                // If we have one, quietly slip it to the server
+                ws.send(JSON.stringify({ type: 'auto_login', token: savedToken }));
+            }
+        };
+
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             
-            if (data.type === 'init') {
+            // --- NEW: AUTHENTICATION RESPONSES ---
+            if (data.type === 'auth_error') {
+                authMessage.style.color = '#ff6b6b'; // Red
+                authMessage.innerText = data.message;
+            } else if (data.type === 'register_success') {
+                authMessage.style.color = '#4cd137'; // Green
+                authMessage.innerText = data.message;
+            }
+// --- EXISTING: GAME INITIALIZATION ---
+            else if (data.type === 'init') {
+                authOverlay.style.pointerEvents = 'none';
+                authOverlay.style.opacity = '0'; 
+                
                 myId = data.id;
+                player.worldX = data.players[myId].worldX;
+                player.worldY = data.players[myId].worldY;
+                player.username = data.players[myId].username;
+
                 for (let id in data.players) {
                     if (id !== myId) {
                         otherPlayers[id] = data.players[id];
-                        // Initialize target coordinates with fallbacks to prevent NaN crashes
                         otherPlayers[id].targetX = data.players[id].worldX || 0;
                         otherPlayers[id].targetY = data.players[id].worldY || 0;
                     }
                 }
-            } else if (data.type === 'joined' || data.type === 'update') {
+                
+                // 🔄 NEW: Store tiles as objects with layer and collision data!
+                if (data.worldMap) {
+                    data.worldMap.forEach(t => {
+                        const l = t.l || 0;
+                        worldMap[`${t.x},${t.y},${l}`] = { 
+                            tileId: t.tileId, l: l, hasCollision: t.hasCollision || false 
+                        };
+                    });
+                }
+            } 
+            else if (data.type === 'tile_update') {
+               if (data.tileId === -1) {
+                        delete worldMap[`${data.x},${data.y},${data.l}`]; 
+                    } else {
+                        const existing = worldMap[`${data.x},${data.y},${data.l}`] || { hasCollision: false };
+                        worldMap[`${data.x},${data.y},${data.l}`] = { 
+                            tileId: data.tileId, l: data.l, hasCollision: existing.hasCollision 
+                        };
+                    }
+            }
+            else if (data.type === 'tile_meta_update') {
+                // Someone changed a tile using the Inspector
+                if (worldMap[`${data.x},${data.y}`]) {
+                    worldMap[`${data.x},${data.y}`].layer = data.layer;
+                    worldMap[`${data.x},${data.y}`].hasCollision = data.hasCollision;
+                    worldMap[`${data.x},${data.y}`].overlayTileId = data.overlayTileId; // <--- NEW
+                }
+            }
+            else if (data.type === 'joined' || data.type === 'update') {
                 if (!otherPlayers[data.id]) {
                     // First time seeing this player
                     otherPlayers[data.id] = data.player;
@@ -294,16 +784,74 @@
                 }
             } else if (data.type === 'left') {
                 delete otherPlayers[data.id];
+            } else if (data.type === 'login_success') {
+                // SAVE THE TOKEN TO THE BROWSER!
+                localStorage.setItem('liros_game_token', data.token);
+
+                // SLEDGEHAMMER HIDE THE LOGIN SCREEN
+                authOverlay.style.display = 'none';
+                authOverlay.style.opacity = '0';
+                authOverlay.style.pointerEvents = 'none';
+                
+                // MORPH THE TRAY BUTTON INTO "SIGN OUT"
+                isLoggedIn = true;
+                const authBg = appAuth.querySelector('.app-bg');
+                const authText = appAuth.querySelector('span');
+                
+                authBg.innerText = '🚪'; 
+                authBg.style.background = 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'; // Red logout gradient
+                authText.innerText = 'Sign Out';
+                
+                // Update our local character with the DB memory
+                player.username = data.player.username;
+                player.worldX = data.player.worldX;
+                player.worldY = data.player.worldY;
+                
+                // Force an immediate camera update
+                lastNetworkString = ""; 
             }
         };
+
+        // Button Listeners
+        loginBtn.addEventListener('click', () => {
+            if (ws.readyState !== WebSocket.OPEN) {
+                authMessage.style.color = '#f1c40f';
+                authMessage.innerText = "Still connecting... please wait.";
+                return;
+            }
+            
+            if (authUsername.value && authPassword.value) {
+                ws.send(JSON.stringify({
+                    type: 'login',
+                    username: authUsername.value.trim(),
+                    password: authPassword.value
+                }));
+            }
+        });
+
+        registerBtn.addEventListener('click', () => {
+            if (ws.readyState !== WebSocket.OPEN) {
+                authMessage.style.color = '#f1c40f';
+                authMessage.innerText = "Still connecting... please wait.";
+                return;
+            }
+
+            if (authUsername.value && authPassword.value) {
+                ws.send(JSON.stringify({
+                    type: 'register',
+                    username: authUsername.value.trim(),
+                    password: authPassword.value
+                }));
+            }
+        });
 
         // Send our state to the server ONLY when something changes
         let lastNetworkString = ""; 
 
         setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
+            // ONLY send updates if the socket is open AND we are fully logged in
+            if (ws.readyState === WebSocket.OPEN && player.username) {
                 
-                // 1. Create a tiny snapshot of our current state
                 const currentState = {
                     x: Math.round(player.worldX), 
                     y: Math.round(player.worldY),
@@ -311,18 +859,17 @@
                     moving: player.isMoving,
                     typing: player.isTyping,
                     msg: player.message,
-                    // We turn the timer into a simple true/false so it doesn't trigger an update 60 times a second while counting down!
                     isChatting: player.messageTimer > 0, 
                     frame: player.frameX
                 };
                 
                 const currentString = JSON.stringify(currentState);
 
-                // 2. Only send to the server if the snapshot changed!
                 if (currentString !== lastNetworkString) {
                     ws.send(JSON.stringify({
                         type: 'update',
                         player: {
+                            username: player.username, // <--- ADD THIS LINE
                             worldX: player.worldX,
                             worldY: player.worldY,
                             frameX: player.frameX,
@@ -334,7 +881,6 @@
                         }
                     }));
                     
-                    // 3. Update the memory so we don't send this exact state again
                     lastNetworkString = currentString; 
                 }
             }
@@ -591,7 +1137,314 @@
             }
         }
 
+        // Helper function to draw player nametags below the player
+        function drawNametag(name, x, y, scaledWidth, scaledHeight) {
+            if (!name) return; 
+
+            const fontSize = 10 * zoomLevel; 
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.textAlign = "center";
+            
+            // Push it down below the sprite's feet
+            const tagY = y + scaledHeight + (12 * zoomLevel); 
+            const centerX = x + (scaledWidth / 2);
+            
+            // Make the text 70% transparent so it doesn't block the floor heavily
+            ctx.globalAlpha = 0.7; 
+            
+            ctx.lineJoin = "round";
+            ctx.lineWidth = 2.5 * zoomLevel;
+            ctx.strokeStyle = "black";
+            ctx.strokeText(name, centerX, tagY);
+            
+            ctx.fillStyle = "#f1c40f"; 
+            ctx.fillText(name, centerX, tagY);
+            
+            // ALWAYS reset alpha to 1.0 afterwards so the rest of the game doesn't turn transparent!
+            ctx.globalAlpha = 1.0; 
+        }
+
+// --- 1. UI ELEMENT GRABBERS ---
+        const appEditMode = document.getElementById('app-edit-mode');
+        const tilePalette = document.getElementById('tile-palette');
+        const closePalette = document.getElementById('close-palette');
+        
+        const tileInspector = document.getElementById('tile-inspector');
+        const inspectDelete = document.getElementById('inspect-delete');
+        const inspectCollision = document.getElementById('inspect-collision');
+        const eraserBtn = document.getElementById('eraser-btn'); 
+        const paletteResizer = document.getElementById('palette-resizer');
+        
+        let isResizingPalette = false;
+        let inspectingCoord = null; 
+        let pCanvas, pCtx, PALETTE_SCALE, cols;
+
+        // --- 2. PALETTE RESIZING LOGIC ---
+        paletteResizer.addEventListener('touchstart', (e) => {
+            isResizingPalette = true; e.preventDefault(); 
+        }, {passive: false});
+        paletteResizer.addEventListener('mousedown', (e) => {
+            isResizingPalette = true; e.preventDefault();
+        });
+
+        function handlePaletteDrag(clientX) {
+            if (!isResizingPalette) return;
+            let newWidth = window.innerWidth - clientX;
+            if (newWidth < 150) newWidth = 150; 
+            if (newWidth > window.innerWidth - 60) newWidth = window.innerWidth - 60;
+            tilePalette.style.width = newWidth + 'px';
+        }
+
+        window.addEventListener('touchmove', (e) => { if (isResizingPalette) handlePaletteDrag(e.touches[0].clientX); });
+        window.addEventListener('mousemove', (e) => { if (isResizingPalette) handlePaletteDrag(e.clientX); });
+        window.addEventListener('touchend', () => isResizingPalette = false);
+        window.addEventListener('mouseup', () => isResizingPalette = false);
+
+        // --- 3. LAYER & TOOL LOGIC ---
+        let activeLayer = 0;
+        let paletteTool = 'pan'; // 'pan' or 'select'
+        let selectStart = null, selectEnd = null, isDraggingBox = false;
+        let selectedGrid = { w: 1, h: 1, tiles: [[0]] }; 
+
+        document.querySelectorAll('.layer-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                activeLayer = parseInt(e.target.dataset.layer);
+            };
+        });
+
+        document.getElementById('tool-pan').onclick = (e) => {
+            paletteTool = 'pan';
+            e.target.classList.add('active');
+            document.getElementById('tool-select').classList.remove('active');
+            document.getElementById('tile-grid').style.touchAction = 'pan-x pan-y'; 
+        };
+
+        document.getElementById('tool-select').onclick = (e) => {
+            paletteTool = 'select';
+            e.target.classList.add('active');
+            document.getElementById('tool-pan').classList.remove('active');
+            document.getElementById('tile-grid').style.touchAction = 'none'; 
+        };
+
+        // --- 4. MULTI-SELECT PALETTE ---
+        function getPaletteGridXY(e) {
+            const rect = pCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const scaledSize = TILE_SIZE * PALETTE_SCALE;
+            return {
+                c: Math.floor((clientX - rect.left) / scaledSize),
+                r: Math.floor((clientY - rect.top) / scaledSize)
+            };
+        }
+
+        function handlePaletteDown(e) {
+            if (paletteTool !== 'select') return;
+            isDraggingBox = true;
+            selectStart = getPaletteGridXY(e);
+            selectEnd = selectStart;
+            drawPalette();
+        }
+
+        function handlePaletteMove(e) {
+            if (!isDraggingBox || paletteTool !== 'select') return;
+            e.preventDefault(); 
+            selectEnd = getPaletteGridXY(e);
+            drawPalette();
+        }
+
+        function handlePaletteUp(e) {
+            if (!isDraggingBox || paletteTool !== 'select') return;
+            isDraggingBox = false;
+            
+            const minC = Math.min(selectStart.c, selectEnd.c);
+            const maxC = Math.max(selectStart.c, selectEnd.c);
+            const minR = Math.min(selectStart.r, selectEnd.r);
+            const maxR = Math.max(selectStart.r, selectEnd.r);
+            
+            selectedGrid.w = (maxC - minC) + 1;
+            selectedGrid.h = (maxR - minR) + 1;
+            selectedGrid.tiles = [];
+
+            for (let r = 0; r < selectedGrid.h; r++) {
+                let rowArray = [];
+                for (let c = 0; c < selectedGrid.w; c++) {
+                    rowArray.push((minR + r) * cols + (minC + c));
+                }
+                selectedGrid.tiles.push(rowArray);
+            }
+            
+            eraserBtn.style.borderColor = "transparent"; 
+            selectedTileId = selectedGrid.tiles[0][0]; 
+        }
+
+        function attachPaletteListeners() {
+            pCanvas.onmousedown = handlePaletteDown;
+            pCanvas.onmousemove = handlePaletteMove;
+            window.addEventListener('mouseup', () => { if(isDraggingBox) handlePaletteUp(); });
+            pCanvas.ontouchstart = handlePaletteDown;
+            pCanvas.ontouchmove = handlePaletteMove;
+            window.addEventListener('touchend', () => { if(isDraggingBox) handlePaletteUp(); });
+        }
+
+        function drawPalette() {
+            if (!pCtx) return;
+            pCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+            pCtx.imageSmoothingEnabled = false;
+            pCtx.drawImage(tilesetImage, 0, 0, pCanvas.width, pCanvas.height);
+
+            if (selectStart && selectEnd && paletteTool === 'select') {
+                const scaledSize = TILE_SIZE * PALETTE_SCALE;
+                const minC = Math.min(selectStart.c, selectEnd.c);
+                const maxC = Math.max(selectStart.c, selectEnd.c);
+                const minR = Math.min(selectStart.r, selectEnd.r);
+                const maxR = Math.max(selectStart.r, selectEnd.r);
+
+                const w = (maxC - minC + 1) * scaledSize;
+                const h = (maxR - minR + 1) * scaledSize;
+
+                pCtx.strokeStyle = '#f1c40f';
+                pCtx.lineWidth = 2;
+                pCtx.strokeRect(minC * scaledSize, minR * scaledSize, w, h);
+                pCtx.fillStyle = 'rgba(241, 196, 15, 0.3)';
+                pCtx.fillRect(minC * scaledSize, minR * scaledSize, w, h);
+            }
+        }
+
+        // --- 5. INITIALIZE TOGGLES ---
+        appEditMode.addEventListener('click', () => {
+            editMode = !editMode;
+            tilePalette.style.display = editMode ? 'flex' : 'none';
+            appTray.classList.remove('open');
+            if (!editMode) tileInspector.style.display = 'none'; 
+            if (editMode && !pCanvas) initPalette();
+        });
+
+        closePalette.addEventListener('click', () => {
+            editMode = false;
+            tilePalette.style.display = 'none';
+            tileInspector.style.display = 'none';
+        });
+
+        function initPalette() {
+            if (!tilesetImage.complete || tilesetImage.naturalWidth === 0) {
+                tilesetImage.onload = () => initPalette();
+                return;
+            }
+            pCanvas = document.getElementById('palette-canvas');
+            if (!pCanvas) return;
+            
+            pCtx = pCanvas.getContext('2d');
+            PALETTE_SCALE = 1.5; 
+            cols = Math.floor(tilesetImage.naturalWidth / TILE_SIZE);
+
+            pCanvas.width = tilesetImage.naturalWidth * PALETTE_SCALE;
+            pCanvas.height = tilesetImage.naturalHeight * PALETTE_SCALE;
+            
+            attachPaletteListeners(); // ACTIVATE THE MULTI-SELECT DRAG
+            drawPalette();
+        }
+
+        eraserBtn.addEventListener('click', () => {
+            selectedTileId = selectedTileId === -1 ? 0 : -1;
+            eraserBtn.style.borderColor = selectedTileId === -1 ? "#f1c40f" : "transparent"; 
+            drawPalette();
+        });
+
+        // --- 6. GAME CANVAS PAINTING & INSPECTING ---
+        canvas.addEventListener('touchstart', (e) => {
+            if (!editMode || e.touches.length > 1) return;
+            
+            const touch = e.touches[0];
+            const worldClickX = (touch.clientX - (window.innerWidth / 2)) / zoomLevel + player.worldX;
+            const worldClickY = (touch.clientY - (window.innerHeight / 2)) / zoomLevel + player.worldY;
+            
+            const originGridX = Math.floor(worldClickX / TILE_SIZE);
+            const originGridY = Math.floor(worldClickY / TILE_SIZE);
+            const centerKey = `${originGridX},${originGridY},${activeLayer}`;
+
+            if (selectedTileId === -1) {
+                // ERASER
+                tileInspector.style.display = 'none';
+                delete worldMap[centerKey];
+                ws.send(JSON.stringify({ type: 'place_tile', x: originGridX, y: originGridY, l: activeLayer, tileId: -1 }));
+                return;
+            }
+
+            // INSPECT EXISTING TILE (Only if 1x1 selected)
+            if (worldMap[centerKey] && selectedGrid.w === 1 && selectedGrid.h === 1) {
+                inspectingCoord = centerKey;
+                tileInspector.style.display = 'flex';
+                tileInspector.style.left = `${touch.clientX + 20}px`;
+                tileInspector.style.top = `${touch.clientY - 50}px`;
+                inspectCollision.checked = worldMap[centerKey].hasCollision;
+                return;
+            }
+
+            // BULK PAINTING
+            tileInspector.style.display = 'none';
+            for (let r = 0; r < selectedGrid.h; r++) {
+                for (let c = 0; c < selectedGrid.w; c++) {
+                    const paintX = originGridX + c;
+                    const paintY = originGridY + r;
+                    const tId = selectedGrid.tiles[r][c];
+                    
+                    worldMap[`${paintX},${paintY},${activeLayer}`] = { tileId: tId, l: activeLayer, hasCollision: false };
+                    ws.send(JSON.stringify({ type: 'place_tile', x: paintX, y: paintY, l: activeLayer, tileId: tId }));
+                }
+            }
+        }, {passive: false});
+
+        // --- 7. INSPECTOR UPDATES ---
+        inspectCollision.onchange = () => {
+            if (!inspectingCoord) return;
+            const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
+            
+            worldMap[inspectingCoord].hasCollision = inspectCollision.checked;
+            
+            ws.send(JSON.stringify({
+                type: 'update_tile_metadata', 
+                x: gx, y: gy, layer: gl,
+                hasCollision: inspectCollision.checked
+            }));
+        };
+
+        inspectDelete.onclick = () => {
+            if (!inspectingCoord) return;
+            const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
+            ws.send(JSON.stringify({ type: 'place_tile', x: gx, y: gy, l: gl, tileId: -1 })); 
+            delete worldMap[inspectingCoord];
+            tileInspector.style.display = 'none';
+            inspectingCoord = null;
+        };
+        
         function update() {
+            // --- COLLISION CHECK (MULTI-LAYER) ---
+            let nextX = player.worldX + player.vx;
+            let nextY = player.worldY + player.vy;
+
+            const gridX = Math.floor(nextX / TILE_SIZE);
+            const gridY = Math.floor(nextY / TILE_SIZE);
+            
+            // Loop through all 5 layers to see if ANY tile at this X,Y has a collision wall
+            let hitWall = false;
+            for (let l = 0; l <= 4; l++) {
+                if (worldMap[`${gridX},${gridY},${l}`] && worldMap[`${gridX},${gridY},${l}`].hasCollision) {
+                    hitWall = true;
+                    break;
+                }
+            }
+
+            if (hitWall) {
+                // Hit a wall! Stop momentum.
+                player.vx = 0;
+                player.vy = 0;
+            }
+
+            // Apply movement
             player.worldX += player.vx;
             player.worldY += player.vy;
         
@@ -607,6 +1460,46 @@
             const screenCenterY = window.innerHeight / 2;   
         
             drawGrid(-player.worldX, -player.worldY);
+
+           // --- DRAW THE WORLD (LAYER BY LAYER) ---
+            const tilesPerRow = Math.floor(tilesetImage.width / TILE_SIZE);
+            
+            // Draw from bottom (0) to top (4)
+            for (let currentLayer = 0; currentLayer <= 4; currentLayer++) {
+                
+                // THE LAYER FADE EFFECT
+                if (editMode) {
+                    ctx.globalAlpha = (currentLayer === activeLayer) ? 1.0 : 0.3; // Faint inactive layers
+                } else {
+                    ctx.globalAlpha = 1.0; // Normal game view
+                }
+
+                for (let key in worldMap) {
+                    const tileData = worldMap[key];
+                    if (!tileData || tileData.l !== currentLayer) continue; // Only draw current layer
+                    
+                    const parts = key.split(',');
+                    const tx = Number(parts[0]);
+                    const ty = Number(parts[1]);
+                    
+                    const drawX = Math.round(screenCenterX + (tx * TILE_SIZE - player.worldX) * zoomLevel);
+                    const drawY = Math.round(screenCenterY + (ty * TILE_SIZE - player.worldY) * zoomLevel);
+                    const scaledSize = TILE_SIZE * zoomLevel;
+
+                    const sx = (tileData.tileId % tilesPerRow) * TILE_SIZE;
+                    const sy = Math.floor(tileData.tileId / tilesPerRow) * TILE_SIZE;
+                    ctx.drawImage(tilesetImage, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, scaledSize, scaledSize);
+
+                    // Draw Selection Box if Inspecting
+                    if (editMode && inspectingCoord === key && currentLayer === activeLayer) {
+                        ctx.strokeStyle = '#f1c40f';
+                        ctx.lineWidth = 2 * zoomLevel;
+                        ctx.strokeRect(drawX, drawY, scaledSize, scaledSize);
+                    }
+                }
+            }
+            ctx.globalAlpha = 1.0; // ALWAYS reset alpha before drawing players!
+
             updatePlayerDirection();
             
             // 6. Calculate the size of a single frame dynamically using currentImage
@@ -624,7 +1517,7 @@
             // --- DRAW OTHER PLAYERS ---
             for (let id in otherPlayers) {
                 const p = otherPlayers[id];
-                
+                if (!p || p.worldX === undefined || !p.username) continue;
                 // THE LERP MAGIC: Smoothly slide actual X/Y towards target X/Y
                 // 0.3 means it moves 30% of the distance to the target every frame.
                 p.worldX += (p.targetX - p.worldX) * 0.3; 
@@ -658,6 +1551,8 @@
 
                 // Draw their chat bubble or typing indicator
                 drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pDrawX, pDrawY, pScaledWidth);
+              // Draw their nametag
+                drawNametag(p.username, pDrawX, pDrawY, pScaledWidth);
             }
             
             // 8. Draw the cropped frame using currentImage
@@ -671,6 +1566,9 @@
            // Draw your own chat bubble or typing indicator
             drawDynamicBubble(player.message, player.messageTimer, player.isTyping, drawX, drawY, scaledWidth);
             
+            // Draw your own nametag (Notice it uses 'player', not 'p'!)
+            drawNametag(player.username, drawX, drawY, scaledWidth, scaledHeight);
+
             if (player.messageTimer > 0) player.messageTimer--;
         
             requestAnimationFrame(update);

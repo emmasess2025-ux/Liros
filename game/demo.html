@@ -378,6 +378,135 @@
             color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;
         }
         .tool-btn.active { background: #3498db; border-color: white; }
+
+        /* --- FLOATING EDITOR TOOLBAR --- */
+        #editor-toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%); 
+            width: 95vw; /* Made slightly wider to give more breathing room */
+            max-width: 600px;
+            height: 45px; /* SHRUNK from 55px */
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px; /* Slightly tighter corners */
+            display: flex; 
+            align-items: center;
+            z-index: 1002;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            padding: 0 5px;
+            box-sizing: border-box;
+        }
+
+        #toolbar-drag-handle {
+            color: rgba(255,255,255,0.4);
+            font-size: 18px; /* SHRUNK */
+            padding: 0 5px; /* SHRUNK */
+            cursor: grab;
+            touch-action: none; 
+            display: flex;
+            align-items: center;
+        }
+
+        #toolbar-controls {
+            display: flex;
+            flex: 1;
+            gap: 4px; /* SHRUNK gap between buttons */
+            overflow-x: auto; 
+            align-items: center;
+            height: 100%;
+            padding: 0 5px;
+            scrollbar-width: none; 
+        }
+        #toolbar-controls::-webkit-scrollbar { display: none; } 
+
+        .toolbar-divider {
+            width: 2px;
+            height: 24px; /* SHRUNK */
+            background: rgba(255,255,255,0.15);
+            margin: 0 2px;
+            flex-shrink: 0;
+            border-radius: 2px;
+        }
+
+        /* THE COMPACT BUTTON STYLES */
+        #editor-toolbar .tool-btn, #editor-toolbar .layer-btn {
+            flex-shrink: 0; 
+            white-space: nowrap;
+            padding: 6px 8px; /* SHRUNK padding */
+            font-size: 11px;  /* SHRUNK font size */
+            border-radius: 8px;
+        }
+
+        /* --- MAP BUTTON & MODAL --- */
+        #map-toggle {
+            position: absolute;
+            top: 135px; /* Sits perfectly beneath the phone button */
+            left: 20px;
+            width: 45px; height: 45px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        #map-modal {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Forces it above the edit tray */
+        }
+
+        #map-container {
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #minimap-canvas {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            image-rendering: pixelated; /* Keeps tiles sharp when shrunk */
+        }
+
+        /* Mini-Map Overlay Buttons */
+        .map-ctrl-btn {
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .map-ctrl-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -392,7 +521,8 @@
                 <h2 style="margin-top: 0; font-family: sans-serif;">Welcome</h2>
                 <div id="auth-message"></div>
                 
-                <input type="text" id="auth-username" placeholder="Username" autocomplete="off" maxlength="12">
+                <input type="email" id="auth-email" placeholder="Email Address" autocomplete="off">
+                <input type="text" id="auth-username" placeholder="Display Name (For Sign Up)">
                 <input type="password" id="auth-password" placeholder="Password">
                 
                 <div style="display: flex; gap: 10px; margin-top: 15px;">
@@ -418,6 +548,32 @@
         <button id="chat-toggle">💬</button>
         <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
         <button id="send-btn">➔</button>
+    </div>
+
+    <div id="notif-btn-container" style="display: none; position: absolute; top: 20px; left: 75px; width: 45px; height: 45px; z-index: 100;">
+        <button id="notif-toggle" style="width: 100%; height: 100%; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 50%; cursor: pointer; padding: 0; overflow: hidden; position: relative;">
+            <canvas id="notif-canvas" width="45" height="45" style="image-rendering: pixelated;"></canvas>
+        </button>
+        <div id="notif-badge" style="position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #222;">1</div>
+    </div>
+
+    <div id="notif-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); justify-content: center; align-items: center; z-index: 2000;">
+        <div style="width: 320px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 20px; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
+            
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                <div style="width: 45px; height: 45px; background: rgba(0,0,0,0.4); border-radius: 8px; display: flex; justify-content: center; align-items: flex-end; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                    <canvas id="modal-avatar-canvas" width="45" height="45" style="image-rendering: pixelated;"></canvas>
+                </div>
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 16px; color: #f1c40f;">Private Message</h3>
+            </div>
+
+            <p id="notif-text" style="font-size: 14px; margin-top: 0; margin-bottom: 25px; font-family: sans-serif; line-height: 1.5; color: #eee;"></p>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="notif-yes-btn" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: bold; cursor: pointer;">Yes</button>
+                <button id="notif-no-btn" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: bold; cursor: pointer;">No</button>
+            </div>
+        </div>
     </div>
 
     <button id="menu-toggle" style="font-size: 20px;">📱</button>
@@ -449,6 +605,55 @@
         </div>
     </div>
 
+    <button id="map-toggle" style="font-size: 20px;">🗺️</button>
+
+    <div id="map-modal" style="display: none;">
+        <div id="map-container" style="position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0; color: white; font-family: sans-serif;">World Map</h3>
+                <button id="close-map" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+            </div>
+            
+            <div id="map-player-count" style="position: absolute; top: 50px; left: 30px; background: rgba(0,0,0,0.6); color: white; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; font-family: sans-serif; border: 1px solid rgba(255,255,255,0.2); pointer-events: none;">
+                Players: 1
+            </div>
+
+            <div style="position: absolute; bottom: 30px; right: 30px; display: flex; flex-direction: column; gap: 8px;">
+                <button id="map-recenter" class="map-ctrl-btn">🎯</button>
+                <button id="map-zoom-in" class="map-ctrl-btn">➕</button>
+                <button id="map-zoom-out" class="map-ctrl-btn">➖</button>
+            </div>
+
+            <canvas id="minimap-canvas" width="500" height="300"></canvas>
+        </div>
+    </div>
+
+    <div id="profile-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); justify-content: center; align-items: center; z-index: 2000;">
+        <div style="width: 500px; height: 300px; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; display: flex; overflow: hidden; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            
+            <button id="close-profile" style="position: absolute; top: 10px; right: 15px; background: none; border: none; color: white; font-size: 20px; cursor: pointer; z-index: 10;">✖</button>
+
+            <div style="width: 45%; background: rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; border-right: 1px solid rgba(255,255,255,0.1);">
+                <canvas id="profile-canvas" width="150" height="200" style="image-rendering: pixelated;"></canvas>
+            </div>
+
+            <div style="width: 55%; padding: 30px; display: flex; flex-direction: column; justify-content: center;">
+                <h2 id="profile-name-display" style="color: white; margin: 0 0 5px 0; font-family: sans-serif; font-size: 28px;">Username</h2>
+                <p style="color: #aaa; margin: 0 0 20px 0; font-family: sans-serif; font-size: 14px;">Lv. 1 Musician</p>
+
+                <div id="profile-edit-controls" style="display: none; flex-direction: column; gap: 10px;">
+                    <input type="text" id="edit-name-input" placeholder="New Display Name" style="padding: 10px; border-radius: 8px; border: none; background: rgba(0,0,0,0.3); color: white; outline: none;">
+                    <button id="save-name-btn" style="padding: 10px; border-radius: 8px; border: none; background: #f1c40f; font-weight: bold; cursor: pointer;">Save Name</button>
+                </div>
+
+                <div id="profile-other-controls" style="display: none; flex-direction: column; gap: 10px;">
+                    <button id="add-friend-btn" style="padding: 10px; border-radius: 8px; border: none; background: #3498db; color: white; font-weight: bold; cursor: pointer;">➕ Add Friend</button>
+                    <button style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; cursor: pointer;">💬 Message</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="joystick-zone">
         <div id="joystick-knob"></div>
     </div>
@@ -457,35 +662,52 @@
         <div id="aim-knob"></div>
     </div>
 
-<div id="tile-palette">
-        <div id="palette-resizer"></div>
-        <div id="palette-header" style="padding-left: 25px;">
-            <span>Tile Picker</span>
-            <button id="close-palette">✖</button>
-        </div>
+<div id="editor-toolbar" style="display: none;">
+        <div id="toolbar-drag-handle">⋮⋮</div>
         
-        <div id="layer-controls" style="display: flex; gap: 5px; padding: 10px 10px 0 25px;">
-            <button class="layer-btn active" data-layer="0">L0</button>
+        <div id="toolbar-controls">
+            <button id="undo-btn" class="tool-btn" disabled>↩️</button>
+            <button id="redo-btn" class="tool-btn" disabled>↪️</button>
+            <div class="toolbar-divider"></div>
+
+            <button id="world-paint-btn" class="tool-btn active" style="background: #27ae60;">🖌️ Paint</button>
+            <button id="world-select-btn" class="tool-btn">🔲 Select</button>
+            <button id="eraser-btn" class="tool-btn" style="background: rgba(255, 107, 107, 0.4);">🗑️ Erase</button>
+            <div class="toolbar-divider"></div>
+
+            <button class="layer-btn active" data-layer="0">L0 ⬇</button>
             <button class="layer-btn" data-layer="1">L1</button>
             <button class="layer-btn" data-layer="2">L2</button>
             <button class="layer-btn" data-layer="3">L3</button>
-            <button class="layer-btn" data-layer="4">L4</button>
-        </div>
+            <button class="layer-btn" data-layer="4">L4 ⬆</button>
+            <button class="layer-btn" data-layer="5">L5</button>
+            <button class="layer-btn" data-layer="6">L6</button>
+            <button class="layer-btn" data-layer="7">L7</button>
+            <div class="toolbar-divider"></div>
 
-        <div style="display: flex; gap: 5px; padding: 10px 10px 10px 25px; justify-content: space-between;">
             <button id="tool-pan" class="tool-btn active">🖐️ Pan</button>
             <button id="tool-select" class="tool-btn">🔲 Select</button>
-            <button id="eraser-btn" class="tool-btn" style="background: rgba(255, 107, 107, 0.4);">🗑️ Eraser</button>
         </div>
+    </div>
 
-        <div id="tile-grid" style="overflow: auto; flex: 1; padding: 0 10px 10px 25px; background: rgba(0,0,0,0.3); touch-action: pan-x pan-y;">
+    <div id="tile-palette">
+        <div id="palette-resizer"></div>
+        <div id="palette-header" style="padding-left: 25px; display: flex; justify-content: space-between;">
+            <span style="font-weight: bold; color: white;">Tile Picker</span>
+            <button id="close-palette" style="background: none; border: none; color: white; cursor: pointer; font-size: 16px;">✖</button>
+        </div>
+        
+        <div id="tile-grid" style="overflow: auto; flex: 1; padding: 10px 10px 10px 25px; background: rgba(0,0,0,0.3); touch-action: pan-x pan-y;">
             <canvas id="palette-canvas" style="image-rendering: pixelated;"></canvas>
         </div>
     </div>
 
     <div id="tile-inspector">
-        <div style="font-size: 10px; opacity: 0.6; margin-bottom: 8px;">TILE SETTINGS</div>
-        <button id="inspect-delete" class="tray-btn" style="background: rgba(255,107,107,0.4); margin-bottom: 10px;">🗑 Delete Tile</button>
+        <div style="font-size: 10px; opacity: 0.6; margin-bottom: 8px;">TILE ACTIONS</div>
+        
+        <button id="inspect-copy-btn" class="tray-btn" style="background: rgba(142, 68, 173, 0.6); margin-bottom: 10px; display: none;">📋 Copy Selection</button>
+        <button id="inspect-delete" class="tray-btn" style="background: rgba(255,107,107,0.4); margin-bottom: 10px;">🗑 Delete</button>
+        
         <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
             <span style="font-size: 12px;">Collisions:</span>
             <input type="checkbox" id="inspect-collision" style="width: 18px; height: 18px;">
@@ -611,6 +833,7 @@
 
         // Auth UI Elements
         const authOverlay = document.getElementById('auth-overlay');
+        const authEmail = document.getElementById('auth-email'); // <--- NEW: Grab the email box
         const authUsername = document.getElementById('auth-username');
         const authPassword = document.getElementById('auth-password');
         const authMessage = document.getElementById('auth-message');
@@ -653,12 +876,12 @@
 
         // --- Sign Out Confirmation Buttons ---
         confirmSignoutBtn.addEventListener('click', () => {
-            // DESTROY THE SAVED VIP TOKEN!
-            localStorage.removeItem('liros_game_token');
+            // FIX: Destroy the correct token name!
+            localStorage.removeItem('gameToken');
             
             // Refresh the page to drop back in as a Guest
             window.location.reload(); 
-        }); 
+        });
 
         cancelSignoutBtn.addEventListener('click', () => {
             // They changed their mind. Just close the glass card!
@@ -683,10 +906,10 @@
         
 
         // Connect to the live cloud server
-        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
-        // const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket('ws://localhost:8080');
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow
@@ -696,13 +919,15 @@
             authMessage.style.color = 'white';
             authMessage.innerText = "Server connected! Please log in.";
 
-            // --- AUTO LOGIN CHECK ---
-            // Look inside the browser's secret pocket for a VIP token
-            const savedToken = localStorage.getItem('liros_game_token');
+            // Check if we have a saved session token!
+            const savedToken = localStorage.getItem('gameToken');
             if (savedToken) {
-                // If we have one, quietly slip it to the server
+                authMessage.style.color = '#f1c40f';
+                authMessage.innerText = "Resuming session...";
                 ws.send(JSON.stringify({ type: 'auto_login', token: savedToken }));
-            }
+            } else {
+                authMessage.innerText = ""; // Clear the "connecting" message
+            }   
         };
 
         ws.onmessage = (event) => {
@@ -716,6 +941,7 @@
                 authMessage.style.color = '#4cd137'; // Green
                 authMessage.innerText = data.message;
             }
+
 // --- EXISTING: GAME INITIALIZATION ---
             else if (data.type === 'init') {
                 authOverlay.style.pointerEvents = 'none';
@@ -763,6 +989,9 @@
                 }
             }
             else if (data.type === 'joined' || data.type === 'update') {
+                // Ignore messages about our own character!
+                if (data.id === myId) return; 
+                
                 if (!otherPlayers[data.id]) {
                     // First time seeing this player
                     otherPlayers[data.id] = data.player;
@@ -771,12 +1000,16 @@
                 } else {
                     // Update their animations and text instantly...
                     const op = otherPlayers[data.id];
+                    
+                    // --- THE FIX: ALWAYS UPDATE THEIR USERNAME! ---
+                    op.username = data.player.username; 
+                    
                     op.frameX = data.player.frameX;
                     op.frameY = data.player.frameY;
                     op.isMoving = data.player.isMoving;
                     op.message = data.player.message;
                     op.messageTimer = data.player.messageTimer;
-                    op.isTyping = data.player.isTyping; // <-- ADD THIS LINE
+                    op.isTyping = data.player.isTyping; 
                     
                     // ...but set TARGETS for their movement so we can slide them smoothly
                     op.targetX = data.player.worldX;
@@ -785,13 +1018,17 @@
             } else if (data.type === 'left') {
                 delete otherPlayers[data.id];
             } else if (data.type === 'login_success') {
-                // SAVE THE TOKEN TO THE BROWSER!
-                localStorage.setItem('liros_game_token', data.token);
-
                 // SLEDGEHAMMER HIDE THE LOGIN SCREEN
                 authOverlay.style.display = 'none';
                 authOverlay.style.opacity = '0';
                 authOverlay.style.pointerEvents = 'none';
+                
+                // SAVE THE TOKEN TO BROWSER MEMORY!
+                if (data.token) {
+                    localStorage.setItem('gameToken', data.token);
+                }
+                // --- THE FIX: Load the friends array from the server into your local player! ---
+                player.friends = data.friends || [];
                 
                 // MORPH THE TRAY BUTTON INTO "SIGN OUT"
                 isLoggedIn = true;
@@ -809,10 +1046,44 @@
                 
                 // Force an immediate camera update
                 lastNetworkString = ""; 
+            }// --- NEW: RECEIVE A FRIEND REQUEST ---
+            else if (data.type === 'friend_request') {
+                // Only react if the request is actually for YOU!
+                if (data.targetUsername === player.username) {
+                    pendingRequests.push(data);
+                    
+                    // Show the button and update the red badge number
+                    notifBtnContainer.style.display = 'block';
+                    notifBadge.innerText = pendingRequests.length;
+
+                    // Paint their upper-body onto the button!
+                    if (nCtx) {
+                        nCtx.clearRect(0, 0, notifCanvas.width, notifCanvas.height);
+                        const pFrameW = idleSprite.width / 8; 
+                        const pFrameH = idleSprite.height / 6;
+                        
+                        // Crop to their upper half
+                        const cropW = pFrameW;
+                        const cropH = pFrameH / 2; 
+                        const cropX = data.senderFrameX * pFrameW;
+                        const cropY = data.senderFrameY * pFrameH;
+                        
+                        // Scale it up nicely to fit the 45x45 circle
+                        const drawW = 32;
+                        const drawH = 32 * (cropH / cropW);
+                        
+                        nCtx.drawImage(
+                            idleSprite, 
+                            cropX, cropY, cropW, cropH,
+                            (notifCanvas.width - drawW) / 2, (notifCanvas.height - drawH) / 2 + 3, 
+                            drawW, drawH
+                        );
+                    }
+                }
             }
         };
 
-        // Button Listeners
+        // --- UPDATED LOGIN BUTTON ---
         loginBtn.addEventListener('click', () => {
             if (ws.readyState !== WebSocket.OPEN) {
                 authMessage.style.color = '#f1c40f';
@@ -820,15 +1091,18 @@
                 return;
             }
             
-            if (authUsername.value && authPassword.value) {
+            if (authEmail.value && authPassword.value) {
                 ws.send(JSON.stringify({
                     type: 'login',
-                    username: authUsername.value.trim(),
+                    email: authEmail.value.trim().toLowerCase(), // Send email instead of username
                     password: authPassword.value
                 }));
+            } else {
+                authMessage.innerText = "Please enter your email and password.";
             }
         });
 
+        // --- UPDATED REGISTER BUTTON ---
         registerBtn.addEventListener('click', () => {
             if (ws.readyState !== WebSocket.OPEN) {
                 authMessage.style.color = '#f1c40f';
@@ -836,12 +1110,16 @@
                 return;
             }
 
-            if (authUsername.value && authPassword.value) {
+            if (authEmail.value && authUsername.value && authPassword.value) {
                 ws.send(JSON.stringify({
                     type: 'register',
-                    username: authUsername.value.trim(),
+                    email: authEmail.value.trim().toLowerCase(), // Add email
+                    username: authUsername.value.trim(),         // Add display name
                     password: authPassword.value
                 }));
+            } else {
+                authMessage.style.color = '#ff6b6b';
+                authMessage.innerText = "Please fill out Email, Display Name, and Password to sign up.";
             }
         });
 
@@ -1137,30 +1415,42 @@
             }
         }
 
-        // Helper function to draw player nametags below the player
-        function drawNametag(name, x, y, scaledWidth, scaledHeight) {
+        // --- NEW: Helper to pick a consistent color based on a player's name ---
+        function getColorForString(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash) % 360;
+            return `hsl(${hue}, 80%, 65%)`; // Returns a nice, bright, readable color!
+        }
+
+        // --- UPDATED: Nametag Drawer ---
+        // Notice we added 'textColor' to the end of the parameters!
+        function drawNametag(name, x, y, scaledWidth, scaledHeight, textColor) {
             if (!name) return; 
 
-            const fontSize = 10 * zoomLevel; 
+            const fontSize = 7 * zoomLevel; 
             ctx.font = `bold ${fontSize}px Arial`;
             ctx.textAlign = "center";
             
-            // Push it down below the sprite's feet
-            const tagY = y + scaledHeight + (12 * zoomLevel); 
+            // THE GAP FIX: Changed from (12 * zoomLevel) to (3 * zoomLevel)
+            const tagY = y + scaledHeight + (-12 * zoomLevel); 
             const centerX = x + (scaledWidth / 2);
             
-            // Make the text 70% transparent so it doesn't block the floor heavily
-            ctx.globalAlpha = 0.7; 
+            // Set transparency to 70%
+            ctx.globalAlpha = 0.5; 
             
             ctx.lineJoin = "round";
             ctx.lineWidth = 2.5 * zoomLevel;
             ctx.strokeStyle = "black";
             ctx.strokeText(name, centerX, tagY);
             
-            ctx.fillStyle = "#f1c40f"; 
+            // Use the custom color we pass in
+            ctx.fillStyle = textColor; 
             ctx.fillText(name, centerX, tagY);
             
-            // ALWAYS reset alpha to 1.0 afterwards so the rest of the game doesn't turn transparent!
+            // ALWAYS reset alpha to 1.0 afterwards!
             ctx.globalAlpha = 1.0; 
         }
 
@@ -1174,10 +1464,160 @@
         const inspectCollision = document.getElementById('inspect-collision');
         const eraserBtn = document.getElementById('eraser-btn'); 
         const paletteResizer = document.getElementById('palette-resizer');
-        
+
         let isResizingPalette = false;
         let inspectingCoord = null; 
         let pCanvas, pCtx, PALETTE_SCALE, cols;
+
+        // --- UPGRADED: MAP UI & PHYSICS ---
+        const mapToggle = document.getElementById('map-toggle');
+        const mapModal = document.getElementById('map-modal');
+        const closeMap = document.getElementById('close-map');
+        const minimapCanvas = document.getElementById('minimap-canvas');
+        const mapPlayerCount = document.getElementById('map-player-count');
+        const mCtx = minimapCanvas ? minimapCanvas.getContext('2d') : null;
+        
+        let isMapOpen = false;
+        
+        // Map Camera Variables
+        let minimapZoom = 4; // Acts as our MINI_TILE size
+        let mapOffsetX = 0;
+        let mapOffsetY = 0;
+        let isDraggingMap = false;
+        let lastMapTouchX = 0;
+        let lastMapTouchY = 0;
+
+        mapToggle.addEventListener('click', () => {
+            isMapOpen = true;
+            mapModal.style.display = 'flex';
+            // Auto-center the map when opening
+            mapOffsetX = 0; mapOffsetY = 0; 
+        });
+
+        closeMap.addEventListener('click', () => {
+            isMapOpen = false;
+            mapModal.style.display = 'none';
+        });
+
+        // Zoom Controls
+        document.getElementById('map-zoom-in').onclick = () => { if (minimapZoom < 12) minimapZoom += 2; };
+        document.getElementById('map-zoom-out').onclick = () => { if (minimapZoom > 2) minimapZoom -= 1; };
+        document.getElementById('map-recenter').onclick = () => { mapOffsetX = 0; mapOffsetY = 0; };
+
+        // Swiping/Panning the Map
+        minimapCanvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDraggingMap = true;
+                lastMapTouchX = e.touches[0].clientX;
+                lastMapTouchY = e.touches[0].clientY;
+            }
+        }, {passive: false});
+
+        minimapCanvas.addEventListener('touchmove', (e) => {
+            if (isDraggingMap && e.touches.length === 1) {
+                e.preventDefault(); // Stop screen scrolling
+                const dx = e.touches[0].clientX - lastMapTouchX;
+                const dy = e.touches[0].clientY - lastMapTouchY;
+                
+                // Move the camera offset (scaled to feel 1:1 with your finger)
+                mapOffsetX -= dx * (TILE_SIZE / minimapZoom);
+                mapOffsetY -= dy * (TILE_SIZE / minimapZoom);
+                
+                lastMapTouchX = e.touches[0].clientX;
+                lastMapTouchY = e.touches[0].clientY;
+            }
+        }, {passive: false});
+
+        minimapCanvas.addEventListener('touchend', () => isDraggingMap = false);
+
+        // --- NEW: NOTIFICATION SYSTEM GRABBERS ---
+        const notifBtnContainer = document.getElementById('notif-btn-container');
+        const notifToggle = document.getElementById('notif-toggle');
+        const notifBadge = document.getElementById('notif-badge');
+        const notifCanvas = document.getElementById('notif-canvas');
+        const nCtx = notifCanvas ? notifCanvas.getContext('2d') : null;
+        const notifModal = document.getElementById('notif-modal');
+        const notifText = document.getElementById('notif-text');
+        const notifYesBtn = document.getElementById('notif-yes-btn');
+        const notifNoBtn = document.getElementById('notif-no-btn');
+        
+        const pendingRequests = []; // A queue for incoming friend requests  
+        
+        // --- UPGRADED: NOTIFICATION BUTTON ACTIONS ---
+        const modalAvatarCanvas = document.getElementById('modal-avatar-canvas');
+        const modalCtx = modalAvatarCanvas ? modalAvatarCanvas.getContext('2d') : null;
+
+        notifToggle.addEventListener('click', () => {
+            if (pendingRequests.length > 0) {
+                const req = pendingRequests[0]; 
+                
+                // Set the generalized text
+                notifText.innerText = `${req.senderUsername} has added you to their friends list. Would you like to add them back?`;
+                
+                // Draw their STATIC forward-facing half-body!
+                if (modalCtx) {
+                    modalCtx.clearRect(0, 0, modalAvatarCanvas.width, modalAvatarCanvas.height);
+                    const pFrameW = idleSprite.width / 8; 
+                    const pFrameH = idleSprite.height / 6;
+                    
+                    const cropW = pFrameW;
+                    const cropH = pFrameH / 2; // Upper half
+                    const cropX = 0; // Column 0 (Idle)
+                    const cropY = 0; // Row 0 (Facing Forward/Down)
+                    
+                    const drawW = 40;
+                    const drawH = 40 * (cropH / cropW);
+                    
+                    // Draw them anchored to the bottom of the little 45x45 box
+                    modalCtx.drawImage(
+                        idleSprite, 
+                        cropX, cropY, cropW, cropH,
+                        (modalAvatarCanvas.width - drawW) / 2, modalAvatarCanvas.height - drawH, 
+                        drawW, drawH
+                    );
+                }
+
+                notifModal.style.display = 'flex';
+            }
+        });
+
+        // If you hit YES
+        notifYesBtn.addEventListener('click', () => {
+            if (pendingRequests.length > 0) {
+                const req = pendingRequests.shift(); 
+                
+                // --- THE LOOP KILLER: Add isReply: true ---
+                ws.send(JSON.stringify({ type: 'add_friend', friendName: req.senderUsername, isReply: true }));
+
+                if (!player.friends) player.friends = [];
+                if (!player.friends.includes(req.senderUsername)) {
+                    player.friends.push(req.senderUsername);
+                }
+
+                if (pendingRequests.length === 0) {
+                    notifBtnContainer.style.display = 'none';
+                    notifModal.style.display = 'none';
+                } else {
+                    notifBadge.innerText = pendingRequests.length;
+                    notifModal.style.display = 'none'; 
+                }
+            }
+        });
+
+        // If you hit NO
+        notifNoBtn.addEventListener('click', () => {
+             if (pendingRequests.length > 0) {
+                pendingRequests.shift(); 
+                
+                if (pendingRequests.length === 0) {
+                    notifBtnContainer.style.display = 'none';
+                    notifModal.style.display = 'none';
+                } else {
+                    notifBadge.innerText = pendingRequests.length;
+                    notifModal.style.display = 'none';
+                }
+            }
+        });
 
         // --- 2. PALETTE RESIZING LOGIC ---
         paletteResizer.addEventListener('touchstart', (e) => {
@@ -1202,9 +1642,15 @@
 
         // --- 3. LAYER & TOOL LOGIC ---
         let activeLayer = 0;
-        let paletteTool = 'pan'; // 'pan' or 'select'
+        let paletteTool = 'pan'; 
+        let worldMode = 'paint'; // 'paint' or 'select'
+        
         let selectStart = null, selectEnd = null, isDraggingBox = false;
         let selectedGrid = { w: 1, h: 1, tiles: [[0]] }; 
+        
+        // NEW: Map Selection Memory
+        let mapSelectStart = null, mapSelectEnd = null, isDraggingMapBox = false;
+        let mapSelectionBox = null; 
 
         document.querySelectorAll('.layer-btn').forEach(btn => {
             btn.onclick = (e) => {
@@ -1218,15 +1664,110 @@
             paletteTool = 'pan';
             e.target.classList.add('active');
             document.getElementById('tool-select').classList.remove('active');
-            document.getElementById('tile-grid').style.touchAction = 'pan-x pan-y'; 
+            if (pCanvas) pCanvas.style.touchAction = 'pan-x pan-y'; 
+            document.getElementById('tile-grid').style.touchAction = 'pan-x pan-y';
         };
 
         document.getElementById('tool-select').onclick = (e) => {
             paletteTool = 'select';
             e.target.classList.add('active');
             document.getElementById('tool-pan').classList.remove('active');
-            document.getElementById('tile-grid').style.touchAction = 'none'; 
+            if (pCanvas) pCanvas.style.touchAction = 'none'; 
+            document.getElementById('tile-grid').style.touchAction = 'none';
         };
+
+        const worldPaintBtn = document.getElementById('world-paint-btn');
+        const worldSelectBtn = document.getElementById('world-select-btn');
+        const inspectCopyBtn = document.getElementById('inspect-copy-btn');
+
+        worldPaintBtn.onclick = () => {
+            worldMode = 'paint';
+            worldPaintBtn.style.background = '#27ae60'; 
+            worldSelectBtn.style.background = 'rgba(255,255,255,0.1)';
+            eraserBtn.style.borderColor = "transparent";
+            tileInspector.style.display = 'none';
+            mapSelectionBox = null; // Clear selections
+        };
+
+        worldSelectBtn.onclick = () => {
+            worldMode = 'select';
+            worldSelectBtn.style.background = '#8e44ad'; // Purple
+            worldPaintBtn.style.background = 'rgba(255,255,255,0.1)';
+            eraserBtn.style.borderColor = "transparent";
+            tileInspector.style.display = 'none';
+            mapSelectionBox = null;
+        };
+
+        eraserBtn.addEventListener('click', () => {
+            worldPaintBtn.onclick(); 
+            selectedTileId = selectedTileId === -1 ? 0 : -1;
+            eraserBtn.style.borderColor = selectedTileId === -1 ? "#f1c40f" : "transparent"; 
+            drawPalette();
+        });
+
+        // --- NEW: UNDO & REDO HISTORY STACKS ---
+        const undoStack = [];
+        const redoStack = [];
+        const MAX_HISTORY = 50; // Remembers your last 50 actions
+
+        const undoBtn = document.getElementById('undo-btn');
+        const redoBtn = document.getElementById('redo-btn');
+
+        function updateHistoryButtons() {
+            undoBtn.style.opacity = undoStack.length > 0 ? '1' : '0.3';
+            undoBtn.disabled = undoStack.length === 0;
+            
+            redoBtn.style.opacity = redoStack.length > 0 ? '1' : '0.3';
+            redoBtn.disabled = redoStack.length === 0;
+        }
+
+        // ↩️ UNDO ACTION
+        undoBtn.addEventListener('click', () => {
+            if (undoStack.length === 0) return;
+            const action = undoStack.pop();
+            redoStack.push(action); // Save it so we can Redo it!
+            
+            action.forEach(change => {
+                const key = `${change.x},${change.y},${change.l}`;
+                if (change.prevId === -1) {
+                    delete worldMap[key];
+                } else {
+                    const hasCol = worldMap[key] ? worldMap[key].hasCollision : false;
+                    worldMap[key] = { tileId: change.prevId, l: change.l, hasCollision: hasCol };
+                }
+                ws.send(JSON.stringify({ type: 'place_tile', x: change.x, y: change.y, l: change.l, tileId: change.prevId }));
+            });
+            updateHistoryButtons();
+        });
+
+        // ↪️ REDO ACTION
+        redoBtn.addEventListener('click', () => {
+            if (redoStack.length === 0) return;
+            const action = redoStack.pop();
+            undoStack.push(action); // Put it back in Undo memory
+            
+            action.forEach(change => {
+                const key = `${change.x},${change.y},${change.l}`;
+                if (change.newId === -1) {
+                    delete worldMap[key];
+                } else {
+                    const hasCol = worldMap[key] ? worldMap[key].hasCollision : false;
+                    worldMap[key] = { tileId: change.newId, l: change.l, hasCollision: hasCol };
+                }
+                ws.send(JSON.stringify({ type: 'place_tile', x: change.x, y: change.y, l: change.l, tileId: change.newId }));
+            });
+            updateHistoryButtons();
+        });
+
+        // Helper function to save an action to memory
+        function recordHistory(actionArray) {
+            if (actionArray.length > 0) {
+                undoStack.push(actionArray);
+                if (undoStack.length > MAX_HISTORY) undoStack.shift(); // Forget oldest memory if we hit 50
+                redoStack.length = 0; // Branching timelines! Clear the redo stack.
+                updateHistoryButtons();
+            }
+        }
 
         // --- 4. MULTI-SELECT PALETTE ---
         function getPaletteGridXY(e) {
@@ -1314,18 +1855,68 @@
             }
         }
 
-        // --- 5. INITIALIZE TOGGLES ---
+        // --- 5. INITIALIZE TOGGLES & TOOLBAR PHYSICS ---
+        const editorToolbar = document.getElementById('editor-toolbar');
+        const toolbarDragHandle = document.getElementById('toolbar-drag-handle');
+        
+        // Toolbar Dragging State
+        let isDraggingToolbar = false;
+        let toolbarOffsetX = 0;
+        let toolbarOffsetY = 0;
+
+        // Start dragging the handle
+        toolbarDragHandle.addEventListener('touchstart', (e) => {
+            isDraggingToolbar = true;
+            const touch = e.touches[0];
+            const rect = editorToolbar.getBoundingClientRect();
+            
+            // Calculate where exactly on the handle we grabbed
+            toolbarOffsetX = touch.clientX - rect.left;
+            toolbarOffsetY = touch.clientY - rect.top;
+            
+            // Remove the CSS centering transform so our exact Left/Top math works
+            editorToolbar.style.transform = 'none'; 
+            e.preventDefault();
+        }, {passive: false});
+
+        // Move the toolbar
+        window.addEventListener('touchmove', (e) => {
+            if (!isDraggingToolbar) return;
+            const touch = e.touches[0];
+            
+            let newX = touch.clientX - toolbarOffsetX;
+            let newY = touch.clientY - toolbarOffsetY;
+            
+            // Keep it from dragging off the screen
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX + editorToolbar.offsetWidth > window.innerWidth) newX = window.innerWidth - editorToolbar.offsetWidth;
+            if (newY + editorToolbar.offsetHeight > window.innerHeight) newY = window.innerHeight - editorToolbar.offsetHeight;
+
+            editorToolbar.style.left = newX + 'px';
+            editorToolbar.style.top = newY + 'px';
+            editorToolbar.style.bottom = 'auto'; // Disable the default bottom CSS
+        }, {passive: false});
+
+        // Drop the toolbar
+        window.addEventListener('touchend', () => isDraggingToolbar = false);
+
+        // Edit Mode Toggle (Now opens both the Palette AND the Toolbar)
         appEditMode.addEventListener('click', () => {
             editMode = !editMode;
             tilePalette.style.display = editMode ? 'flex' : 'none';
+            editorToolbar.style.display = editMode ? 'flex' : 'none';
             appTray.classList.remove('open');
+            
             if (!editMode) tileInspector.style.display = 'none'; 
             if (editMode && !pCanvas) initPalette();
         });
 
+        // Close button on the Tile Picker (Closes everything)
         closePalette.addEventListener('click', () => {
             editMode = false;
             tilePalette.style.display = 'none';
+            editorToolbar.style.display = 'none';
             tileInspector.style.display = 'none';
         });
 
@@ -1344,7 +1935,7 @@
             pCanvas.width = tilesetImage.naturalWidth * PALETTE_SCALE;
             pCanvas.height = tilesetImage.naturalHeight * PALETTE_SCALE;
             
-            attachPaletteListeners(); // ACTIVATE THE MULTI-SELECT DRAG
+            attachPaletteListeners(); 
             drawPalette();
         }
 
@@ -1354,29 +1945,50 @@
             drawPalette();
         });
 
-        // --- 6. GAME CANVAS PAINTING & INSPECTING ---
+        // --- 6. GAME CANVAS SELECTOR ---
+        function getWorldGridXY(clientX, clientY) {
+            const worldClickX = (clientX - (window.innerWidth / 2)) / zoomLevel + player.worldX;
+            const worldClickY = (clientY - (window.innerHeight / 2)) / zoomLevel + player.worldY;
+            return {
+                x: Math.floor(worldClickX / TILE_SIZE),
+                y: Math.floor(worldClickY / TILE_SIZE)
+            };
+        }
+
+        // --- 6. GAME CANVAS SELECTOR & PAINTING ---
         canvas.addEventListener('touchstart', (e) => {
             if (!editMode || e.touches.length > 1) return;
-            
             const touch = e.touches[0];
-            const worldClickX = (touch.clientX - (window.innerWidth / 2)) / zoomLevel + player.worldX;
-            const worldClickY = (touch.clientY - (window.innerHeight / 2)) / zoomLevel + player.worldY;
-            
-            const originGridX = Math.floor(worldClickX / TILE_SIZE);
-            const originGridY = Math.floor(worldClickY / TILE_SIZE);
-            const centerKey = `${originGridX},${originGridY},${activeLayer}`;
+            const gridPos = getWorldGridXY(touch.clientX, touch.clientY);
+            const centerKey = `${gridPos.x},${gridPos.y},${activeLayer}`;
 
-            if (selectedTileId === -1) {
-                // ERASER
+            if (worldMode === 'select') {
+                isDraggingMapBox = true;
+                mapSelectStart = gridPos;
+                mapSelectEnd = gridPos;
+                mapSelectionBox = null;
                 tileInspector.style.display = 'none';
-                delete worldMap[centerKey];
-                ws.send(JSON.stringify({ type: 'place_tile', x: originGridX, y: originGridY, l: activeLayer, tileId: -1 }));
                 return;
             }
 
-            // INSPECT EXISTING TILE (Only if 1x1 selected)
+            // --- SINGLE ERASER ---
+            if (selectedTileId === -1) {
+                tileInspector.style.display = 'none';
+                const prevId = worldMap[centerKey] ? worldMap[centerKey].tileId : -1;
+                
+                if (prevId !== -1) {
+                    recordHistory([{ x: gridPos.x, y: gridPos.y, l: activeLayer, prevId: prevId, newId: -1 }]);
+                    delete worldMap[centerKey];
+                    ws.send(JSON.stringify({ type: 'place_tile', x: gridPos.x, y: gridPos.y, l: activeLayer, tileId: -1 }));
+                }
+                return;
+            }
+
+            // --- INSPECTING TILE ---
             if (worldMap[centerKey] && selectedGrid.w === 1 && selectedGrid.h === 1) {
                 inspectingCoord = centerKey;
+                mapSelectionBox = null;
+                inspectCopyBtn.style.display = 'none';
                 tileInspector.style.display = 'flex';
                 tileInspector.style.left = `${touch.clientX + 20}px`;
                 tileInspector.style.top = `${touch.clientY - 50}px`;
@@ -1384,198 +1996,507 @@
                 return;
             }
 
-            // BULK PAINTING
+            // --- BULK / SINGLE PAINTING ---
             tileInspector.style.display = 'none';
+            let currentAction = [];
+
             for (let r = 0; r < selectedGrid.h; r++) {
                 for (let c = 0; c < selectedGrid.w; c++) {
-                    const paintX = originGridX + c;
-                    const paintY = originGridY + r;
+                    const paintX = gridPos.x + c;
+                    const paintY = gridPos.y + r;
+                    const key = `${paintX},${paintY},${activeLayer}`;
                     const tId = selectedGrid.tiles[r][c];
                     
-                    worldMap[`${paintX},${paintY},${activeLayer}`] = { tileId: tId, l: activeLayer, hasCollision: false };
-                    ws.send(JSON.stringify({ type: 'place_tile', x: paintX, y: paintY, l: activeLayer, tileId: tId }));
+                    const prevId = worldMap[key] ? worldMap[key].tileId : -1;
+                    
+                    // Only update the database if the tile actually changed!
+                    if (prevId !== tId) {
+                        currentAction.push({ x: paintX, y: paintY, l: activeLayer, prevId: prevId, newId: tId });
+                        
+                        if (tId === -1) {
+                            delete worldMap[key];
+                            ws.send(JSON.stringify({ type: 'place_tile', x: paintX, y: paintY, l: activeLayer, tileId: -1 }));
+                        } else {
+                            worldMap[key] = { tileId: tId, l: activeLayer, hasCollision: false };
+                            ws.send(JSON.stringify({ type: 'place_tile', x: paintX, y: paintY, l: activeLayer, tileId: tId }));
+                        }
+                    }
                 }
             }
+            // Save this paint stroke to our time machine!
+            recordHistory(currentAction);
+            
         }, {passive: false});
 
-        // --- 7. INSPECTOR UPDATES ---
+        canvas.addEventListener('touchmove', (e) => {
+            if (!editMode || !isDraggingMapBox || worldMode !== 'select') return;
+            e.preventDefault(); 
+            mapSelectEnd = getWorldGridXY(e.touches[0].clientX, e.touches[0].clientY);
+        }, {passive: false});
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!editMode || !isDraggingMapBox || worldMode !== 'select') return;
+            isDraggingMapBox = false;
+
+            mapSelectionBox = {
+                minX: Math.min(mapSelectStart.x, mapSelectEnd.x),
+                maxX: Math.max(mapSelectStart.x, mapSelectEnd.x),
+                minY: Math.min(mapSelectStart.y, mapSelectEnd.y),
+                maxY: Math.max(mapSelectStart.y, mapSelectEnd.y)
+            };
+
+            // POP THE INSPECTOR FOR THE BULK AREA!
+            tileInspector.style.display = 'flex';
+            tileInspector.style.left = `${e.changedTouches[0].clientX + 20}px`;
+            tileInspector.style.top = `${e.changedTouches[0].clientY - 50}px`;
+            
+            // Show the copy button
+            inspectCopyBtn.style.display = 'block'; 
+            
+            // --- NEW: SCAN THE SELECTION TO SEE IF IT HAS COLLISIONS ---
+            let areaHasCollision = false;
+            for(let r = mapSelectionBox.minY; r <= mapSelectionBox.maxY; r++) {
+                for(let c = mapSelectionBox.minX; c <= mapSelectionBox.maxX; c++) {
+                    if (worldMap[`${c},${r},${activeLayer}`] && worldMap[`${c},${r},${activeLayer}`].hasCollision) {
+                        areaHasCollision = true;
+                    }
+                }
+            }
+            // Check the box if the area already has collision tiles!
+            inspectCollision.checked = areaHasCollision; 
+        });
+
+        // --- 7. INSPECTOR ACTIONS (Handles Single & Bulk) ---
+        inspectCopyBtn.onclick = () => {
+            if (!mapSelectionBox) return;
+            selectedGrid.w = (mapSelectionBox.maxX - mapSelectionBox.minX) + 1;
+            selectedGrid.h = (mapSelectionBox.maxY - mapSelectionBox.minY) + 1;
+            selectedGrid.tiles = [];
+
+            for (let r = 0; r < selectedGrid.h; r++) {
+                let rowArray = [];
+                for (let c = 0; c < selectedGrid.w; c++) {
+                    const key = `${mapSelectionBox.minX + c},${mapSelectionBox.minY + r},${activeLayer}`;
+                    rowArray.push(worldMap[key] ? worldMap[key].tileId : -1);
+                }
+                selectedGrid.tiles.push(rowArray);
+            }
+            worldPaintBtn.onclick(); // Switch to paint mode to paste it!
+        };
+
         inspectCollision.onchange = () => {
-            if (!inspectingCoord) return;
-            const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
-            
-            worldMap[inspectingCoord].hasCollision = inspectCollision.checked;
-            
-            ws.send(JSON.stringify({
-                type: 'update_tile_metadata', 
-                x: gx, y: gy, layer: gl,
-                hasCollision: inspectCollision.checked
-            }));
+            if (mapSelectionBox) { // BULK COLLISION
+                for(let r = mapSelectionBox.minY; r <= mapSelectionBox.maxY; r++) {
+                    for(let c = mapSelectionBox.minX; c <= mapSelectionBox.maxX; c++) {
+                        const key = `${c},${r},${activeLayer}`;
+                        if(worldMap[key]) {
+                            worldMap[key].hasCollision = inspectCollision.checked;
+                            ws.send(JSON.stringify({
+                                type: 'update_tile_metadata', x: c, y: r, layer: activeLayer, hasCollision: inspectCollision.checked
+                            }));
+                        }
+                    }
+                }
+            } else if (inspectingCoord) { // SINGLE COLLISION
+                const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
+                worldMap[inspectingCoord].hasCollision = inspectCollision.checked;
+                ws.send(JSON.stringify({
+                    type: 'update_tile_metadata', x: gx, y: gy, layer: gl, hasCollision: inspectCollision.checked
+                }));
+            }
         };
 
         inspectDelete.onclick = () => {
-            if (!inspectingCoord) return;
-            const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
-            ws.send(JSON.stringify({ type: 'place_tile', x: gx, y: gy, l: gl, tileId: -1 })); 
-            delete worldMap[inspectingCoord];
+            let currentAction = [];
+            
+            if (mapSelectionBox) { // BULK DELETE
+                for(let r = mapSelectionBox.minY; r <= mapSelectionBox.maxY; r++) {
+                    for(let c = mapSelectionBox.minX; c <= mapSelectionBox.maxX; c++) {
+                        const key = `${c},${r},${activeLayer}`;
+                        const prevId = worldMap[key] ? worldMap[key].tileId : -1;
+                        
+                        if (prevId !== -1) {
+                            currentAction.push({ x: c, y: r, l: activeLayer, prevId: prevId, newId: -1 });
+                            ws.send(JSON.stringify({ type: 'place_tile', x: c, y: r, l: activeLayer, tileId: -1 })); 
+                            delete worldMap[key];
+                        }
+                    }
+                }
+            } else if (inspectingCoord) { // SINGLE DELETE
+                const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
+                const prevId = worldMap[inspectingCoord] ? worldMap[inspectingCoord].tileId : -1;
+                
+                if (prevId !== -1) {
+                    currentAction.push({ x: gx, y: gy, l: gl, prevId: prevId, newId: -1 });
+                    ws.send(JSON.stringify({ type: 'place_tile', x: gx, y: gy, l: gl, tileId: -1 })); 
+                    delete worldMap[inspectingCoord];
+                }
+            }
+            
+            recordHistory(currentAction); // Save it to the time machine!
+
             tileInspector.style.display = 'none';
             inspectingCoord = null;
+            mapSelectionBox = null;
         };
-        
-        function update() {
-            // --- COLLISION CHECK (MULTI-LAYER) ---
-            let nextX = player.worldX + player.vx;
-            let nextY = player.worldY + player.vy;
 
-            const gridX = Math.floor(nextX / TILE_SIZE);
-            const gridY = Math.floor(nextY / TILE_SIZE);
+        // --- UPGRADED MINIMAP DRAW ENGINE ---
+        function drawMinimap() {
+            if (!mCtx) return;
+            mCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
             
-            // Loop through all 5 layers to see if ANY tile at this X,Y has a collision wall
-            let hitWall = false;
-            for (let l = 0; l <= 4; l++) {
-                if (worldMap[`${gridX},${gridY},${l}`] && worldMap[`${gridX},${gridY},${l}`].hasCollision) {
-                    hitWall = true;
-                    break;
+            // Update Player Count
+            const totalPlayers = Object.keys(otherPlayers).length + 1; // Others + You
+            mapPlayerCount.innerText = `Players: ${totalPlayers}`;
+
+            // Calculate Camera Center (Your position + swipe offsets)
+            const cameraX = player.worldX + mapOffsetX;
+            const cameraY = player.worldY + mapOffsetY;
+            
+            const scale = minimapZoom / TILE_SIZE; // Converts world pixels to mini-map pixels
+            
+            // Optimization bounds (don't draw tiles way off screen)
+            const mapRadiusX = (minimapCanvas.width / 2) / scale;
+            const mapRadiusY = (minimapCanvas.height / 2) / scale;
+
+            // 1. DRAW TILES
+            const tilesPerRow = Math.floor(tilesetImage.width / TILE_SIZE);
+            for (let currentLayer = 0; currentLayer <= 7; currentLayer++) {
+                for (let key in worldMap) {
+                    const tileData = worldMap[key];
+                    if (!tileData || tileData.l !== currentLayer) continue;
+                    
+                    const [tx, ty] = key.split(',').map(Number);
+                    const worldTileX = tx * TILE_SIZE;
+                    const worldTileY = ty * TILE_SIZE;
+                    
+                    // Culling: Skip if tile is off the mini-map canvas
+                    if (Math.abs(worldTileX - cameraX) > mapRadiusX + TILE_SIZE || 
+                        Math.abs(worldTileY - cameraY) > mapRadiusY + TILE_SIZE) continue;
+                    
+                    const drawX = (worldTileX - cameraX) * scale + (minimapCanvas.width / 2);
+                    const drawY = (worldTileY - cameraY) * scale + (minimapCanvas.height / 2);
+                    
+                    const sx = (tileData.tileId % tilesPerRow) * TILE_SIZE;
+                    const sy = Math.floor(tileData.tileId / tilesPerRow) * TILE_SIZE;
+                    
+                    mCtx.drawImage(tilesetImage, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, minimapZoom, minimapZoom);
                 }
             }
 
-            if (hitWall) {
-                // Hit a wall! Stop momentum.
-                player.vx = 0;
-                player.vy = 0;
+            // 1. ADD 'targetName' TO THE END OF THE PARAMETERS
+            function drawMinimapPlayer(pX, pY, pFrameX, pFrameY, pImage, color, targetName) {
+                const mX = (pX - cameraX) * scale + (minimapCanvas.width / 2);
+                const mY = (pY - cameraY) * scale + (minimapCanvas.height / 2);
+                
+                const pFrameW = pImage.width / 8;
+                const pFrameH = pImage.height / 6;
+                
+                const cropW = pFrameW;
+                const cropH = pFrameH / 2; 
+                const cropX = pFrameX * pFrameW;
+                const cropY = pFrameY * pFrameH; 
+                
+                const drawSizeW = 48; 
+                const drawSizeH = 48 * (cropH / cropW); 
+                
+                const glowRadius = drawSizeW * 0.03; 
+                const glowOffsetY = drawSizeH * 0.60; 
+                
+                // --- THE FIX: Use targetName instead of p.username ---
+                const isFriend = (player.friends && player.friends.includes(targetName)); 
+                
+                if (isFriend || color === "#f1c40f") { 
+                    mCtx.fillStyle = color;
+                    mCtx.beginPath();
+                    mCtx.arc(mX, mY + glowOffsetY, glowRadius, 0, Math.PI * 2); 
+                    mCtx.fill();
+                }
+
+                mCtx.drawImage(
+                    pImage,
+                    cropX, cropY, cropW, cropH,
+                    mX - (drawSizeW / 2), mY - (drawSizeH / 2),
+                    drawSizeW, drawSizeH
+                );
             }
 
-            // Apply movement
-            player.worldX += player.vx;
-            player.worldY += player.vy;
-        
-            // Clear the screen using window dimensions
-            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            // 3. DRAW OTHER PLAYERS (Pass p.username at the end)
+            for (let id in otherPlayers) {
+                const p = otherPlayers[id];
+                if (!p || p.worldX === undefined) continue;
+                const pImage = p.isMoving ? walkSprite : idleSprite;
+                drawMinimapPlayer(p.worldX, p.worldY, p.frameX, p.frameY, pImage, getColorForString(p.username), p.username);
+            }
+            // 4. DRAW LOCAL PLAYER (Pass player.username at the end)
+            drawMinimapPlayer(player.worldX, player.worldY, player.frameX, player.frameY, player.currentImage, "#f1c40f", player.username);
+            }
+
+        // --- PROFILE MODAL LOGIC ---
+        const profileModal = document.getElementById('profile-modal');
+        const closeProfile = document.getElementById('close-profile');
+        const profileCanvas = document.getElementById('profile-canvas');
+        const prCtx = profileCanvas.getContext('2d');
+        const profileNameDisplay = document.getElementById('profile-name-display');
+        const profileEditControls = document.getElementById('profile-edit-controls');
+        const profileOtherControls = document.getElementById('profile-other-controls');
+        const editNameInput = document.getElementById('edit-name-input');
+        const saveNameBtn = document.getElementById('save-name-btn');
+        const addFriendBtn = document.getElementById('add-friend-btn');
+
+        let isProfileOpen = false;
+        let profileTargetId = null; // 'self' or the ID of the other player
+        let profileAnimFrame = 0;
+
+        // 1. Detect Taps on Players in the Game World
+        canvas.addEventListener('touchstart', (e) => {
+            if (editMode || e.touches.length > 1) return; // Don't trigger if building
             
-            // THE SECRET SAUCE: Prevents pixel art from getting blurry
-            ctx.imageSmoothingEnabled = false; 
-            ctx.webkitImageSmoothingEnabled = false; // Forces Safari iOS to respect pixels!
+            const touch = e.touches[0];
+            const clickX = (touch.clientX - (window.innerWidth / 2)) / zoomLevel + player.worldX;
+            const clickY = (touch.clientY - (window.innerHeight / 2)) / zoomLevel + player.worldY;
+
+            const HIT_RADIUS = 20; // How close to the center of the sprite they have to tap
+
+            // Check if tapped SELF
+            if (Math.abs(clickX - player.worldX) < HIT_RADIUS && Math.abs(clickY - player.worldY) < HIT_RADIUS) {
+                openProfile('self', player.username);
+                return;
+            }
+
+            // Check if tapped OTHERS
+            for (let id in otherPlayers) {
+                if (Math.abs(clickX - otherPlayers[id].worldX) < HIT_RADIUS && Math.abs(clickY - otherPlayers[id].worldY) < HIT_RADIUS) {
+                    openProfile(id, otherPlayers[id].username);
+                    return;
+                }
+            }
+        });
+
+        // 2. Open the Modal & Setup UI
+        function openProfile(targetId, username) {
+            isProfileOpen = true;
+            profileTargetId = targetId;
+            profileNameDisplay.innerText = username;
+            profileModal.style.display = 'flex';
+
+            if (targetId === 'self') {
+                profileEditControls.style.display = 'flex';
+                profileOtherControls.style.display = 'none';
+                editNameInput.value = username;
+            } else {
+                profileEditControls.style.display = 'none';
+                profileOtherControls.style.display = 'flex';
+            }
+            
+            drawProfileAnimation(); // Kick off the loop
+        }
+
+        closeProfile.addEventListener('click', () => {
+            isProfileOpen = false;
+            profileModal.style.display = 'none';
+        });
+
+        // 3. The Isolated Walking Animation for the UI
+        function drawProfileAnimation() {
+            if (!isProfileOpen) return; // Stop loop when closed
+            
+            prCtx.clearRect(0, 0, profileCanvas.width, profileCanvas.height);
+            
+            // Advance fake animation frame
+            profileAnimFrame = (profileAnimFrame + 0.1) % 8; 
+            const fX = Math.floor(profileAnimFrame);
+            const fY = 0; // Always walk straight down towards the camera
+            
+            const pFrameW = walkSprite.width / 8;
+            const pFrameH = walkSprite.height / 6;
+            
+            // Draw them MASSIVE on the profile canvas
+            prCtx.drawImage(
+                walkSprite,
+                fX * pFrameW, fY * pFrameH, pFrameW, pFrameH,
+                10, 20, 130, 130 * (pFrameH/pFrameW)
+            );
+
+            requestAnimationFrame(drawProfileAnimation);
+        }
+
+        // 4. WebSockets Hooks
+        saveNameBtn.addEventListener('click', () => {
+            const newName = editNameInput.value.trim();
+            if (newName) {
+                ws.send(JSON.stringify({ type: 'change_username', newUsername: newName }));
+                profileNameDisplay.innerText = newName;
+                player.username = newName; // Update locally immediately
+            }
+        });
+
+        addFriendBtn.addEventListener('click', () => {
+            ws.send(JSON.stringify({ type: 'add_friend', friendName: profileNameDisplay.innerText }));
+            addFriendBtn.innerText = "✓ Friend Added";
+            addFriendBtn.style.background = "#27ae60";
+            
+            // Add to local array so the minimap dot appears instantly!
+            if (!player.friends) player.friends = [];
+            player.friends.push(profileNameDisplay.innerText);
+        });
         
-            // Calculate center using window dimensions instead of raw canvas dimensions
+        function update() {
+            // --- NEW: SLIDING COLLISION CHECK ---
+            // Helper function to quickly check if a specific pixel hits a wall
+            const checkWall = (x, y) => {
+                const gx = Math.floor(x / TILE_SIZE);
+                const gy = Math.floor(y / TILE_SIZE);
+                for (let l = 0; l <= 7; l++) {
+                    if (worldMap[`${gx},${gy},${l}`] && worldMap[`${gx},${gy},${l}`].hasCollision) return true;
+                }
+                return false;
+            };
+
+            // 1. Try moving X first
+            player.worldX += player.vx;
+            if (checkWall(player.worldX, player.worldY)) {
+                player.worldX -= player.vx; // Hit a wall horizontally? Undo X, keep Y moving!
+            }
+
+            // 2. Try moving Y second
+            player.worldY += player.vy;
+            if (checkWall(player.worldX, player.worldY)) {
+                player.worldY -= player.vy; // Hit a wall vertically? Undo Y, keep X moving!
+            }
+        
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            ctx.imageSmoothingEnabled = false; 
+            ctx.webkitImageSmoothingEnabled = false;
+        
             const screenCenterX = window.innerWidth / 2;
             const screenCenterY = window.innerHeight / 2;   
         
             drawGrid(-player.worldX, -player.worldY);
 
-           // --- DRAW THE WORLD (LAYER BY LAYER) ---
-            const tilesPerRow = Math.floor(tilesetImage.width / TILE_SIZE);
-            
-            // Draw from bottom (0) to top (4)
-            for (let currentLayer = 0; currentLayer <= 4; currentLayer++) {
-                
-                // THE LAYER FADE EFFECT
-                if (editMode) {
-                    ctx.globalAlpha = (currentLayer === activeLayer) ? 1.0 : 0.3; // Faint inactive layers
-                } else {
-                    ctx.globalAlpha = 1.0; // Normal game view
-                }
+            // HELPER FUNCTION: Draws a specific range of layers
+            function drawWorldLayers(startLayer, endLayer) {
+                const tilesPerRow = Math.floor(tilesetImage.width / TILE_SIZE);
+                for (let currentLayer = startLayer; currentLayer <= endLayer; currentLayer++) {
+                    if (editMode) ctx.globalAlpha = (currentLayer === activeLayer) ? 1.0 : 0.3;
+                    else ctx.globalAlpha = 1.0;
 
-                for (let key in worldMap) {
-                    const tileData = worldMap[key];
-                    if (!tileData || tileData.l !== currentLayer) continue; // Only draw current layer
-                    
-                    const parts = key.split(',');
-                    const tx = Number(parts[0]);
-                    const ty = Number(parts[1]);
-                    
-                    const drawX = Math.round(screenCenterX + (tx * TILE_SIZE - player.worldX) * zoomLevel);
-                    const drawY = Math.round(screenCenterY + (ty * TILE_SIZE - player.worldY) * zoomLevel);
-                    const scaledSize = TILE_SIZE * zoomLevel;
+                    for (let key in worldMap) {
+                        const tileData = worldMap[key];
+                        if (!tileData || tileData.l !== currentLayer) continue;
+                        
+                        const parts = key.split(',');
+                        const tx = Number(parts[0]);
+                        const ty = Number(parts[1]);
+                        
+                        const drawX = Math.round(screenCenterX + (tx * TILE_SIZE - player.worldX) * zoomLevel);
+                        const drawY = Math.round(screenCenterY + (ty * TILE_SIZE - player.worldY) * zoomLevel);
+                        const scaledSize = TILE_SIZE * zoomLevel;
 
-                    const sx = (tileData.tileId % tilesPerRow) * TILE_SIZE;
-                    const sy = Math.floor(tileData.tileId / tilesPerRow) * TILE_SIZE;
-                    ctx.drawImage(tilesetImage, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, scaledSize, scaledSize);
-
-                    // Draw Selection Box if Inspecting
-                    if (editMode && inspectingCoord === key && currentLayer === activeLayer) {
-                        ctx.strokeStyle = '#f1c40f';
-                        ctx.lineWidth = 2 * zoomLevel;
-                        ctx.strokeRect(drawX, drawY, scaledSize, scaledSize);
+                        const sx = (tileData.tileId % tilesPerRow) * TILE_SIZE;
+                        const sy = Math.floor(tileData.tileId / tilesPerRow) * TILE_SIZE;
+                        ctx.drawImage(tilesetImage, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, scaledSize, scaledSize);
                     }
                 }
+                ctx.globalAlpha = 1.0; 
             }
-            ctx.globalAlpha = 1.0; // ALWAYS reset alpha before drawing players!
 
+            // === 1. DRAW GROUND LAYERS (BELOW PLAYER: L0 - L3) ===
+            drawWorldLayers(0, 3);
+
+            // === 2. DRAW PLAYER SPRITES ===
             updatePlayerDirection();
-            
-            // 6. Calculate the size of a single frame dynamically using currentImage
             const frameWidth = player.currentImage.width / 8;
             const frameHeight = player.currentImage.height / 6;
 
-            
-            const cropX = player.frameX * frameWidth;
-            const cropY = player.frameY * frameHeight;
+            for (let id in otherPlayers) {
+                const p = otherPlayers[id];
+                if (!p || p.worldX === undefined || !p.username) continue;
+                
+                p.worldX += (p.targetX - p.worldX) * 0.3; 
+                p.worldY += (p.targetY - p.worldY) * 0.3;
+                
+                const pScaledWidth = frameWidth * zoomLevel;
+                const pScaledHeight = frameHeight * zoomLevel;
+                const pDrawX = Math.round(screenCenterX + ((p.worldX - player.worldX) * zoomLevel) - (pScaledWidth / 2));
+                const pDrawY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel) - (pScaledHeight / 2));
+                
+                const pImage = p.isMoving ? walkSprite : idleSprite;
+                ctx.drawImage(
+                    pImage,
+                    p.frameX * (pImage.width / 8), p.frameY * (pImage.height / 6), pImage.width / 8, pImage.height / 6,
+                    pDrawX, pDrawY, pScaledWidth, pScaledHeight
+                );
+            }
+
+            // Draw Local Player Sprite
             const scaledWidth = frameWidth * zoomLevel;
             const scaledHeight = frameHeight * zoomLevel;
             const drawX = Math.round(screenCenterX - (scaledWidth / 2));
             const drawY = Math.round(screenCenterY - (scaledHeight / 2));
 
-            // --- DRAW OTHER PLAYERS ---
+            ctx.drawImage(
+                player.currentImage,
+                player.frameX * frameWidth, player.frameY * frameHeight, frameWidth, frameHeight,
+                drawX, drawY, scaledWidth, scaledHeight
+            );
+
+            // === 3. DRAW OVERHEAD LAYERS (ABOVE PLAYER: L4 - L7) ===
+            drawWorldLayers(4, 7);
+
+            // === 4. DRAW EDIT MODE UI (SELECTION BOXES) ===
+            if (editMode) {
+                let box = mapSelectionBox; 
+                if (worldMode === 'select' && isDraggingMapBox && mapSelectStart && mapSelectEnd) {
+                     box = {
+                         minX: Math.min(mapSelectStart.x, mapSelectEnd.x), maxX: Math.max(mapSelectStart.x, mapSelectEnd.x),
+                         minY: Math.min(mapSelectStart.y, mapSelectEnd.y), maxY: Math.max(mapSelectStart.y, mapSelectEnd.y)
+                     };
+                }
+                
+                if (box) {
+                    const w = (box.maxX - box.minX + 1) * TILE_SIZE * zoomLevel;
+                    const h = (box.maxY - box.minY + 1) * TILE_SIZE * zoomLevel;
+                    const bx = Math.round(screenCenterX + (box.minX * TILE_SIZE - player.worldX) * zoomLevel);
+                    const by = Math.round(screenCenterY + (box.minY * TILE_SIZE - player.worldY) * zoomLevel);
+                    
+                    ctx.strokeStyle = '#8e44ad'; ctx.lineWidth = 2 * zoomLevel; ctx.strokeRect(bx, by, w, h);
+                    ctx.fillStyle = 'rgba(142, 68, 173, 0.3)'; ctx.fillRect(bx, by, w, h);
+                } else if (inspectingCoord && !mapSelectionBox) {
+                    // Single tile yellow box
+                    const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
+                    if (gl === activeLayer) {
+                        const bx = Math.round(screenCenterX + (gx * TILE_SIZE - player.worldX) * zoomLevel);
+                        const by = Math.round(screenCenterY + (gy * TILE_SIZE - player.worldY) * zoomLevel);
+                        ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 2 * zoomLevel; ctx.strokeRect(bx, by, TILE_SIZE * zoomLevel, TILE_SIZE * zoomLevel);
+                    }
+                }
+            }
+
+            // === 5. DRAW NAMETAGS & BUBBLES ON TOP OF EVERYTHING ===
             for (let id in otherPlayers) {
                 const p = otherPlayers[id];
                 if (!p || p.worldX === undefined || !p.username) continue;
-                // THE LERP MAGIC: Smoothly slide actual X/Y towards target X/Y
-                // 0.3 means it moves 30% of the distance to the target every frame.
-                p.worldX += (p.targetX - p.worldX) * 0.3; 
-                p.worldY += (p.targetY - p.worldY) * 0.3;
+                const pDrawX = Math.round(screenCenterX + ((p.worldX - player.worldX) * zoomLevel) - (scaledWidth / 2));
+                const pDrawY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel) - (scaledHeight / 2));
                 
-                // Calculate where they are on the screen relative to YOU
-                const offsetX = p.worldX - player.worldX;
-                const offsetY = p.worldY - player.worldY;
-                
-                const pScaledWidth = frameWidth * zoomLevel;
-                const pScaledHeight = frameHeight * zoomLevel;
-                
-                const pDrawX = Math.round(screenCenterX + (offsetX * zoomLevel) - (pScaledWidth / 2));
-                const pDrawY = Math.round(screenCenterY + (offsetY * zoomLevel) - (pScaledHeight / 2));
-                
-                // Choose their sprite based on if they are moving
-                const pImage = p.isMoving ? walkSprite : idleSprite;
-                
-                // Ensure frame sizes are based on the correct sprite sheet
-                const pFrameW = pImage.width / 8;
-                const pFrameH = pImage.height / 6;
-                const pCropX = p.frameX * pFrameW;
-                const pCropY = p.frameY * pFrameH;
-
-                ctx.drawImage(
-                    pImage,
-                    pCropX, pCropY, pFrameW, pFrameH,
-                    pDrawX, pDrawY,
-                    pScaledWidth, pScaledHeight
-                );
-
-                // Draw their chat bubble or typing indicator
-                drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pDrawX, pDrawY, pScaledWidth);
-              // Draw their nametag
-                drawNametag(p.username, pDrawX, pDrawY, pScaledWidth);
+                drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pDrawX, pDrawY, scaledWidth);
+                drawNametag(p.username, pDrawX, pDrawY, scaledWidth, scaledHeight, getColorForString(p.username));
             }
-            
-            // 8. Draw the cropped frame using currentImage
-            ctx.drawImage(
-                player.currentImage,
-                cropX, cropY, frameWidth, frameHeight,
-                drawX, drawY, 
-                scaledWidth, scaledHeight
-            );
-            
-           // Draw your own chat bubble or typing indicator
+
             drawDynamicBubble(player.message, player.messageTimer, player.isTyping, drawX, drawY, scaledWidth);
-            
-            // Draw your own nametag (Notice it uses 'player', not 'p'!)
-            drawNametag(player.username, drawX, drawY, scaledWidth, scaledHeight);
+            drawNametag(player.username, drawX, drawY, scaledWidth, scaledHeight, "#f1c40f");
 
             if (player.messageTimer > 0) player.messageTimer--;
-        
+
+            // --- NEW: UPDATE THE MINIMAP IF OPEN ---
+            if (isMapOpen) drawMinimap();    
+
             requestAnimationFrame(update);
         }
 
-        // Start loop
         update();
+
     </script>
 </body>
 </html>

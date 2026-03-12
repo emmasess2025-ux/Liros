@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liros | Links Oficiales</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- FONTS --- */
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('fonts/HKGroteskWide-Regular.otf'); }
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('fonts/HKGroteskWide-Bold.otf'); font-weight: 700; }
+        @font-face { font-family: 'HK Grotesk Wide'; src: url('fonts/HKGroteskWide-Black.otf'); font-weight: 900; }
+
+        /* --- THEME VARS --- */
+        :root {
+            --bg-main: #e3e3e3;
+            --text-dark: #050505;
+            --text-grey: #666666;
+            --accent: #4a6fa5;       
+            --accent-soft: #a8c0dd;  
+            --font: 'HK Grotesk Wide', sans-serif;
+
+            /* Liquid Glass Vars */
+            --c-glass: #ffffff;
+            --saturation: 110%;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font);
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- BACKGROUND FX --- */
+        .corner-glow {
+            position: fixed; width: 900px; height: 900px; border-radius: 50%;
+            filter: blur(120px); z-index: -2; opacity: 0.4; pointer-events: none;
+        }
+        .glow-tr { top: -400px; right: -400px; background: radial-gradient(circle, var(--accent-soft), transparent 70%); }
+        .glow-bl { bottom: -400px; left: -400px; background: radial-gradient(circle, var(--accent), transparent 70%); }
+
+        /* --- SHARED LIQUID GLASS STYLE --- */
+        .liquid-glass {
+            background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+            backdrop-filter: blur(12px) saturate(var(--saturation));
+            -webkit-backdrop-filter: blur(12px) saturate(var(--saturation));
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff88 10%, #00000000), 
+                        inset 1.8px 3px 2px -2px color-mix(in srgb, #ffffff99 90%, #00000000), 
+                        inset -1.8px -3px 2px -2px color-mix(in srgb, #ffffff 80%, #00000000), 
+                        0px 6px 16px 0px rgba(0,0,0,0.05);
+        }
+
+        /* --- GENERAL UI --- */
+        h1, h2, h3 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
+        
+        .hero { 
+            margin-top: 50px;
+            text-align: center; 
+            margin-bottom: 30px;
+        }
+        .hero h1 { font-size: 3rem; margin-bottom: 5px; color: var(--text-dark); }
+        .hero p { font-size: 1rem; color: var(--text-grey); letter-spacing: 2px; }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            z-index: 1;
+        }
+
+        .liquid-box {
+            position: relative; padding: 20px; border-radius: 32px;
+            background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+            backdrop-filter: blur(10px) saturate(var(--saturation));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8), 0px 10px 30px -10px rgba(0,0,0,0.1);
+        }
+
+        /* --- LINKS --- */
+        .link-tree-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 40px; }
+        
+        .link-card {
+            display: flex; align-items: center; padding: 20px 30px; border-radius: 20px;
+            text-decoration: none; color: var(--text-dark); font-weight: 700;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .link-card i:first-child { font-size: 1.5rem; width: 40px; color: var(--accent); }
+        .link-card span { flex-grow: 1; letter-spacing: 1px; }
+        .link-card i:last-child { font-size: 0.8rem; opacity: 0.5; }
+
+        .link-card::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s; pointer-events: none;
+        } 
+
+        @media (hover: hover) {
+            .link-card:hover { transform: translateX(5px); background-color: color-mix(in srgb, var(--c-glass) 40%, transparent); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+            .link-card:hover::after { left: 150%; }
+        }
+        .link-card:active { transform: scale(0.96) !important; transition: 0.1s; }
+
+        @keyframes pulse-aura {
+            0% { box-shadow: 0 0 0 0px rgba(74, 111, 165, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(74, 111, 165, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(74, 111, 165, 0); }
+        }
+        .featured-pulse { animation: pulse-aura 2s infinite; margin-bottom: 30px; }
+
+        /* --- NEWSLETTER FORM --- */
+        .newsletter-section {
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .newsletter-section h3 { margin-bottom: 10px; font-size: 1.5rem; color: var(--accent); }
+        .newsletter-section p { font-size: 0.9rem; color: var(--text-grey); margin-bottom: 20px; line-height: 1.5; }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-glass {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.2);
+            font-family: var(--font);
+            font-size: 1rem;
+            color: var(--text-dark);
+            outline: none;
+            transition: 0.3s;
+        }
+        .input-glass::placeholder { color: var(--text-grey); opacity: 0.7; }
+        .input-glass:focus { background: rgba(255, 255, 255, 0.5); border-color: var(--accent); }
+
+        .btn-submit {
+            padding: 15px;
+            border-radius: 15px;
+            border: none;
+            background: var(--text-dark);
+            color: white;
+            font-family: var(--font);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-submit:hover { background: var(--accent); }
+        .btn-submit:active { transform: scale(0.96); }
+
+        footer { text-align: center; padding: 40px 20px; color: var(--text-grey); font-size: 0.8rem; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <div class="corner-glow glow-tr"></div>
+    <div class="corner-glow glow-bl"></div>
+
+    <div class="container">
+        <header class="hero">
+            <h1>LIROS</h1>
+            <p>SAD ROMÁNTICO</p>
+        </header>
+        
+        <div id="featured-player"></div>
+    
+        <div id="link-tree-list" class="link-tree-container"></div>
+
+        <div class="liquid-box newsletter-section">
+            <h3>Únete a la Clika</h3>
+            <p>Déjame tu correo para recibir rolas inéditas antes que nadie, info de merch exclusiva y accesos especiales.</p>
+            
+            <form id="newsletter-form" class="form-group" onsubmit="handleSubscribe(event)">
+                <input type="email" id="email-input" class="input-glass" placeholder="tu@correo.com" required>
+                <button type="submit" class="btn-submit">Suscribirme</button>
+            </form>
+            <p id="form-message" style="display: none; margin-top: 15px; font-weight: bold; color: var(--accent);"></p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 Liros Music.</p>
+    </footer>
+
+    <script>
+        // DATA OBJECT (Solo lo necesario para los links)
+        const profileData = {
+            featured: {
+                type: "spotify", 
+                id: "0jJBTP1lRCe35zspJBa94D", 
+                themeColor: "#4a6fa5"
+            },
+            links: [
+                { name: 'Spotify', icon: 'fab fa-spotify', url: 'https://open.spotify.com/intl-es/artist/5YtRkkyiXntYnEZWO4kUxB', color: '#1DB954' },
+                { name: 'Apple Music', icon: 'fab fa-apple', url: 'https://music.apple.com/mx/artist/liros/1639080261', color: '#FC3C44' },
+                { name: 'Instagram', icon: 'fab fa-instagram', url: 'https://instagram.com/liros__', color: '#E1306C' },
+                { name: 'Youtube', icon: 'fab fa-youtube', url: 'https://www.youtube.com/@liros__', color: '#FF0000' },
+                { name: 'TikTok', icon: 'fab fa-tiktok', url: 'https://www.tiktok.com/@liroscuh', color: '#000000' },
+            ]
+        };
+
+        // Renderizar vistas al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const playerContainer = document.getElementById('featured-player');
+            const data = profileData.featured;
+            
+            // Render Player
+            let embedContent = '';
+            if (data.type === 'youtube') {
+                embedContent = `<iframe width="100%" height="250" src="https://www.youtube.com/embed/${data.id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:15px"></iframe>`;
+            } else {
+                embedContent = `<iframe style="border-radius:15px" src="https://open.spotify.com/embed/track/${data.id}?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+            }
+
+            playerContainer.innerHTML = `
+                <div class="liquid-box featured-pulse">
+                    ${embedContent}
+                </div>
+            `;
+        
+            // Render Links
+            const listContainer = document.getElementById('link-tree-list');
+            profileData.links.forEach(link => {
+                const a = document.createElement('a');
+                a.href = link.url; a.target = "_blank";
+                a.className = "link-card liquid-glass";
+                a.innerHTML = `<i class="${link.icon}" style="color: ${link.color}"></i><span>${link.name}</span><i class="fas fa-chevron-right"></i>`;
+                listContainer.appendChild(a);
+            });
+        });
+
+        // Lógica del formulario de correos
+        function handleSubscribe(event) {
+            event.preventDefault(); // Evita que la página recargue
+            
+            const email = document.getElementById('email-input').value;
+            const messageEl = document.getElementById('form-message');
+            const form = document.getElementById('newsletter-form');
+
+            // Aquí puedes conectar esto a tu base de datos o servicio (Mailchimp, tu servidor Go, etc.)
+            console.log("Nuevo correo registrado:", email);
+
+            // Simular éxito en la pantalla
+            form.style.display = 'none';
+            messageEl.style.display = 'block';
+            messageEl.innerText = "¡Listo! Ya estás en la lista. Nos vemos pronto.";
+        }
+    </script>
+</body>
+</html>

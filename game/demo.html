@@ -509,9 +509,145 @@
             background: rgba(255, 255, 255, 0.2);
             transform: scale(0.95);
         }
+
+        /* --- FLASH ROJO DE DAÑO EN PANTALLA COMPLETA --- */
+        #damage-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* Un gradiente que oscurece y pinta de rojo los bordes de la pantalla */
+            background: radial-gradient(circle, rgba(255,0,0,0) 60%, rgba(255,0,0,0.5) 100%);
+            pointer-events: none; /* Para que los toques traspasen hacia el joystick */
+            opacity: 0;
+            transition: opacity 0.1s ease-out;
+            z-index: 999;
+        }
+
+       /* --- ISLA DINÁMICA (ULTRA COMPACTA Y AUTO-OCULTABLE) --- */
+        #dynamic-island {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px; /* Aún más estrecha */
+            height: 26px; /* Ultra delgada (antes 36px) */
+            background-color: #000;
+            border-radius: 13px; /* Mitad de la altura */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 3px; /* Relleno 100% simétrico en todos los lados */
+            box-sizing: border-box;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            border: 2px solid #222;
+            
+            /* -- SISTEMA DE TRANSPARENCIA -- */
+            opacity: 0.3; /* Traslúcida por defecto */
+            transition: width 0.4s cubic-bezier(0.25, 1.5, 0.5, 1), height 0.4s, opacity 0.5s ease; 
+            z-index: 1000;
+            pointer-events: auto; /* Para detectar toques */
+        }
+
+        /* --- BOTÓN DE NOTIFICACIONES --- */
+        #island-notif-btn {
+            position: relative;
+            width: 16px;  /* Reducido a 16px (Igual que el avatar) */
+            height: 16px; /* Reducido a 16px (Igual que el avatar) */
+            background-color: #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 6px;
+            cursor: pointer;
+            flex-shrink: 0; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            transition: background-color 0.2s;
+            pointer-events: auto; 
+        }
+
+        #island-notif-btn:active {
+            background-color: #555; 
+        }
+
+        /* El puntito rojo de alerta ajustado a la nueva escala */
+        #notif-badge {
+            position: absolute;
+            top: -1px;    /* Más pegado al botón */
+            right: -1px;  /* Más pegado al botón */
+            width: 4px;   /* Un poco más pequeño */
+            height: 4px;  /* Un poco más pequeño */
+            background-color: #e74c3c;
+            border-radius: 50%;
+            border: 1px solid #000;
+        }
+
+        /* Clase mágica que la despierta */
+        #dynamic-island.active {
+            opacity: 1.0; 
+        }
+
+        #island-hp-container {
+            position: relative;
+            flex-grow: 1; 
+            height: 12px; /* Píldora súper delgada */
+            background-color: #333; 
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 6px; 
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        #island-hp-fill {
+            position: absolute;
+            left: 0; top: 0; height: 100%;
+            width: 100%; 
+            background-color: #2ecc71; 
+            transition: width 0.2s ease, background-color 0.3s ease;
+            z-index: 1;
+        }
+
+        #island-hp-text {
+            position: relative;
+            z-index: 2;
+            color: white;
+            font-weight: 900;
+            font-size: 9px; /* Texto miniatura */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.9);
+        }
+
+        #island-avatar {
+            width: 16px; /* Avatar miniatura */
+            height: 16px;
+            image-rendering: pixelated; 
+            border-radius: 50%;
+            background-color: #1a1a1a; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
+    <div id="damage-overlay"></div>
+
+<div id="dynamic-island">
+        
+        <div id="island-notif-btn">
+            <svg viewBox="0 0 24 24" fill="white" width="8" height="8">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path>
+            </svg>
+            <div id="notif-badge"></div>
+        </div>
+
+        <div id="island-hp-container">
+            <div id="island-hp-fill"></div>
+            <span id="island-hp-text">100 / 100</span>
+        </div>
+        
+        <canvas id="island-avatar" width="16" height="16"></canvas>
+    </div>
 
     <canvas id="gameCanvas"></canvas>
 
@@ -669,6 +805,12 @@
         </div>
     </div>
 
+    <div id="ammo-display" style="display: none; position: absolute; right: 75px; height: 42px; background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(15px); border: 2px solid #f1c40f; border-radius: 10px; padding: 0 12px; color: white; font-family: sans-serif; font-weight: 900; font-size: 16px; box-shadow: -5px 5px 15px rgba(0,0,0,0.5); align-items: center; justify-content: center; gap: 4px; z-index: 99; pointer-events: auto; cursor: pointer;">
+        <span id="ammo-current" style="color: #2ecc71;">0</span> 
+        <span style="color: #777; font-size: 12px;">/</span> 
+        <span id="ammo-max" style="color: #aaa; font-size: 14px;">0</span>
+    </div>
+
     <div id="hud-hotbar" style="position: absolute; right: 0; top: 40%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; background: rgba(30, 30, 30, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.15); border-right: none; border-radius: 15px 0 0 15px; padding: 10px; box-shadow: -5px 5px 25px rgba(0,0,0,0.5);">
         <div class="hud-slot" id="hud-slot-0" style="width: 42px; height: 42px; background: rgba(0,0,0,0.5); border: 2px solid #f1c40f; border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer;"></div>
         <div class="hud-slot" id="hud-slot-1" style="width: 42px; height: 42px; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.2); border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer;"></div>
@@ -712,10 +854,20 @@
             <button class="layer-btn" data-layer="1">L1</button>
             <button class="layer-btn" data-layer="2">L2</button>
             <button class="layer-btn" data-layer="3">L3</button>
-            <button class="layer-btn" data-layer="4">L4 ⬆</button>
+            <button class="layer-btn" data-layer="4">L4</button>
             <button class="layer-btn" data-layer="5">L5</button>
             <button class="layer-btn" data-layer="6">L6</button>
             <button class="layer-btn" data-layer="7">L7</button>
+            <div class="toolbar-divider"></div>
+
+            <button class="layer-btn" data-layer="8">L8 ⬆</button>
+            <button class="layer-btn" data-layer="9">L9</button>
+            <button class="layer-btn" data-layer="10">L10</button>
+            <button class="layer-btn" data-layer="11">L11</button>
+            <button class="layer-btn" data-layer="12">L12</button>
+            <button class="layer-btn" data-layer="13">L13</button>
+            <button class="layer-btn" data-layer="14">L14</button>
+            <button class="layer-btn" data-layer="15">L15</button>
             <div class="toolbar-divider"></div>
 
             <button id="tool-pan" class="tool-btn active">🖐️ Pan</button>
@@ -750,6 +902,11 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // --- NUEVO: LIENZO INVISIBLE PARA EL FLASH DE DAÑO ---
+        const flashCanvas = document.createElement('canvas');
+        const flashCtx = flashCanvas.getContext('2d');
+
 
         const tilesetImage = new Image();
         tilesetImage.src = 'All_Tilesets.png';
@@ -972,10 +1129,10 @@
         
 
         // Connect to the live cloud server
-        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
-        //const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket('ws://localhost:8080');
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow
@@ -995,6 +1152,51 @@
                 authMessage.innerText = ""; // Clear the "connecting" message
             }   
         };
+
+        // --- CONTROL DE LA ISLA DINÁMICA ---
+        let islandTimeout = null;
+
+        function wakeUpIsland(duration) {
+            const island = document.getElementById('dynamic-island');
+            if (!island) return;
+            
+            // 1. La hacemos 100% visible
+            island.classList.add('active');
+            
+            // 2. Cancelamos cualquier temporizador viejo
+            if (islandTimeout) clearTimeout(islandTimeout);
+            
+            // 3. Programamos que se vuelva a dormir
+            islandTimeout = setTimeout(() => {
+                island.classList.remove('active');
+            }, duration);
+        }
+
+        // --- DESPERTAR AL TOCARLA (5 SEGUNDOS) ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const island = document.getElementById('dynamic-island');
+            if (island) {
+                island.addEventListener('mousedown', () => wakeUpIsland(5000));
+                island.addEventListener('touchstart', () => wakeUpIsland(5000));
+            }
+
+            // EVENTO DEL BOTÓN DE NOTIFICACIONES
+            const notifBtn = document.getElementById('island-notif-btn');
+            if (notifBtn) {
+                const openModal = (e) => {
+                    e.stopPropagation(); // Evita que el toque se confunda con el fondo de la isla
+                    wakeUpIsland(5000);  // Despierta la isla para que se vea bien
+                    
+                    // --- AQUÍ ABRIREMOS TU MODAL EN EL FUTURO ---
+                    console.log("¡Botón de mensajes presionado!");
+                    // Ocultamos el puntito rojo al leer los mensajes
+                    document.getElementById('notif-badge').style.display = 'none'; 
+                };
+
+                notifBtn.addEventListener('mousedown', openModal);
+                notifBtn.addEventListener('touchstart', openModal);
+            }
+        });
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -1060,17 +1262,50 @@
                 spawnProjectile(data.x, data.y, data.angle, data.id, data.weaponId);
             }
             // --- NEW: RECIBIR ACTUALIZACIÓN DE VIDA DESDE EL SERVIDOR ---
+            // --- RECIBIR ACTUALIZACIÓN DE VIDA DESDE EL SERVIDOR ---
             else if (data.type === 'hp_update') {
                 if (data.targetId === myId) {
                     player.hp = data.newHp;
-                    player.isDead = data.isDead; // <--- GUARDAR ESTADO
-                    player.lastHitTime = Date.now(); 
-                    if (data.damageDealt > 0) spawnDamageText(player.worldX, player.worldY, data.damageDealt);
+                    player.isDead = data.isDead; 
+                    
+                    // --- NUEVO: Registramos que la vida cambió visualmente ---
+                    player.lastHpUpdateTime = Date.now();
+
+                    if (data.damageDealt > 0) {
+                        player.lastHitTime = Date.now(); // Mantenemos esto para la pantalla roja
+                        spawnDamageText(player.worldX, player.worldY, data.damageDealt, false);
+                        
+                        const overlay = document.getElementById('damage-overlay');
+                        overlay.style.opacity = '1';
+                        setTimeout(() => { overlay.style.opacity = '0'; }, 150);
+
+                        wakeUpIsland(3000);
+                    } else if (data.damageDealt < 0) {
+                        spawnDamageText(player.worldX, player.worldY, data.damageDealt, true);
+                        wakeUpIsland(2000); 
+                    }
+
+                    const islandFill = document.getElementById('island-hp-fill');
+                    const islandText = document.getElementById('island-hp-text');
+                    islandText.innerText = `${player.hp} / 100`;
+                    islandFill.style.width = `${player.hp}%`;
+                    if (player.hp > 50) islandFill.style.backgroundColor = '#2ecc71'; 
+                    else if (player.hp > 25) islandFill.style.backgroundColor = '#f1c40f'; 
+                    else islandFill.style.backgroundColor = '#e74c3c'; 
+                    
                 } else if (otherPlayers[data.targetId]) {
                     otherPlayers[data.targetId].hp = data.newHp;
-                    otherPlayers[data.targetId].isDead = data.isDead; // <--- GUARDAR ESTADO
-                    otherPlayers[data.targetId].lastHitTime = Date.now();
-                    if (data.damageDealt > 0) spawnDamageText(otherPlayers[data.targetId].worldX, otherPlayers[data.targetId].worldY, data.damageDealt);
+                    otherPlayers[data.targetId].isDead = data.isDead;
+                    
+                    // --- NUEVO: Registramos que la vida cambió visualmente para el enemigo ---
+                    otherPlayers[data.targetId].lastHpUpdateTime = Date.now();
+                    
+                    if (data.damageDealt > 0) {
+                        otherPlayers[data.targetId].lastHitTime = Date.now();
+                        spawnDamageText(otherPlayers[data.targetId].worldX, otherPlayers[data.targetId].worldY, data.damageDealt, false);
+                    } else if (data.damageDealt < 0) {
+                        spawnDamageText(otherPlayers[data.targetId].worldX, otherPlayers[data.targetId].worldY, data.damageDealt, true);
+                    }
                 }
             }
             else if (data.type === 'joined' || data.type === 'update') {
@@ -1232,13 +1467,14 @@
         // Send our state to the server ONLY when something changes
         let lastNetworkString = "";
 
-        function spawnDamageText(x, y, amount) {
-            if (!amount || amount <= 0) return;
+        function spawnDamageText(x, y, amount, isHeal = false) {
+            if (!amount || amount === 0) return;
             damageTexts.push({
-                x: x + (Math.random() * 16 - 8), // Lo mueve un poco al azar a la izq/der
+                x: x + (Math.random() * 16 - 8), 
                 y: y - 10,
-                text: amount.toString(),
-                life: 60, // Dura 1 segundo exacto a 60 FPS
+                text: isHeal ? "+" + Math.abs(amount) : Math.abs(amount).toString(),
+                color: isHeal ? "#2ecc71" : "#f1c40f", // Verde si cura, amarillo si es daño
+                life: 60, 
                 maxLife: 60
             });
         }
@@ -2319,7 +2555,7 @@
 
             // 1. DRAW TILES
             const tilesPerRow = Math.floor(tilesetImage.width / TILE_SIZE);
-            for (let currentLayer = 0; currentLayer <= 7; currentLayer++) {
+            for (let currentLayer = 0; currentLayer <= 15; currentLayer++) { // <-- Cambiar a 15
                 for (let key in worldMap) {
                     const tileData = worldMap[key];
                     if (!tileData || tileData.l !== currentLayer) continue;
@@ -2661,18 +2897,43 @@
         
         // Render it once when the game loads
         setTimeout(renderHudHotbar, 500); // Slight delay ensures images load first
+
+        // --- RECARGA TÁCTICA (MANUAL) ---
+        const ammoDisplayBox = document.getElementById('ammo-display');
         
+        const triggerReload = (e) => {
+            e.preventDefault(); // Evita que la pantalla haga zoom accidental
+            if (player.equippedWeapon !== "none" && !player.isReloading) {
+                const stats = WEAPONS[player.equippedWeapon];
+                
+                // Solo recargar si nos faltan balas
+                if (stats && player.ammo < stats.magSize) {
+                    player.isReloading = true;
+                    setTimeout(() => {
+                        player.ammo = stats.magSize;
+                        player.isReloading = false;
+                    }, stats.reloadTime);
+                }
+            }
+        };
+
+        ammoDisplayBox.addEventListener('mousedown', triggerReload);
+        ammoDisplayBox.addEventListener('touchstart', triggerReload, {passive: false});
+
         function update() {
             // --- NEW: SLIDING COLLISION CHECK ---
-            // Helper function to quickly check if a specific pixel hits a wall
             const checkWall = (x, y) => {
                 const gx = Math.floor(x / TILE_SIZE);
                 const gy = Math.floor(y / TILE_SIZE);
-                for (let l = 0; l <= 7; l++) {
+                
+                // AHORA REVISA HASTA LA CAPA 15
+                for (let l = 0; l <= 15; l++) {
                     if (worldMap[`${gx},${gy},${l}`] && worldMap[`${gx},${gy},${l}`].hasCollision) return true;
                 }
                 return false;
             };
+
+
 
             // --- SI ESTOY MUERTO, NO ME PUEDO MOVER NI DISPARAR ---
             if (player.isDead) {
@@ -2680,6 +2941,13 @@
                 player.vy = 0;
                 player.isMoving = false;
                 isShooting = false;
+            }
+
+            // --- EL FIX: INMOVILIZAR AL RECARGAR ---
+            if (player.isReloading) {
+                player.vx = 0;
+                player.vy = 0;
+                player.isMoving = false;
             }
 
             // 1. Try moving X first
@@ -2694,7 +2962,7 @@
                 player.worldY -= player.vy; // Hit a wall vertically? Undo Y, keep X moving!
             }
 
-// --- 3. SHOOTING & RELOADING PHYSICS ---
+            // --- 3. SHOOTING & RELOADING PHYSICS ---
             const currentWeaponStats = WEAPONS[player.equippedWeapon] || WEAPONS["none"];
 
             if (isShooting && player.equippedWeapon !== "none" && !player.isReloading) {
@@ -2730,6 +2998,39 @@
                         }, currentWeaponStats.reloadTime);
                     }
                 }
+            }
+
+            // --- ACTUALIZAR UI DE MUNICIÓN EN TIEMPO REAL ---
+            const ammoDisplay = document.getElementById('ammo-display');
+            if (player.equippedWeapon !== "none" && WEAPONS[player.equippedWeapon]) {
+                ammoDisplay.style.display = 'flex'; // Usar flex para centrado perfecto
+                
+                // ALINEACIÓN PERFECTA: Leer la posición Y de la ranura activa
+                const activeSlotElem = document.getElementById('hud-slot-' + player.activeSlot);
+                if (activeSlotElem) {
+                    const rect = activeSlotElem.getBoundingClientRect();
+                    // Colocar el contador exactamente a la mitad de la ranura
+                    ammoDisplay.style.top = (rect.top + rect.height / 2) + 'px';
+                    ammoDisplay.style.transform = 'translateY(-50%)';
+                }
+
+                const ammoCurrentElem = document.getElementById('ammo-current');
+                const ammoMaxElem = document.getElementById('ammo-max');
+                const maxAmmo = WEAPONS[player.equippedWeapon].magSize;
+
+                if (player.isReloading) {
+                    ammoCurrentElem.style.color = "#e74c3c";
+                    ammoCurrentElem.innerText = "↻"; 
+                    ammoMaxElem.innerText = "RELOAD";
+                    ammoDisplay.style.borderColor = "#e74c3c";
+                } else {
+                    ammoCurrentElem.style.color = player.ammo > (maxAmmo * 0.3) ? "#2ecc71" : "#e74c3c";
+                    ammoCurrentElem.innerText = player.ammo;
+                    ammoMaxElem.innerText = maxAmmo;
+                    ammoDisplay.style.borderColor = "#f1c40f"; 
+                }
+            } else {
+                ammoDisplay.style.display = 'none';
             }
 
             // --- 4. BULLET MOVEMENT & PLAYER DAMAGE ---
@@ -2785,9 +3086,15 @@
             // HELPER FUNCTION: Draws a specific range of layers
             function drawWorldLayers(startLayer, endLayer) {
                 const tilesPerRow = Math.floor(tilesetImage.width / TILE_SIZE);
+
                 for (let currentLayer = startLayer; currentLayer <= endLayer; currentLayer++) {
-                    if (editMode) ctx.globalAlpha = (currentLayer === activeLayer) ? 1.0 : 0.3;
-                    else ctx.globalAlpha = 1.0;
+                    
+                    // Solo usamos transparencia si estamos en Modo Edición para ver qué capa editamos
+                    if (editMode) {
+                        ctx.globalAlpha = (currentLayer === activeLayer) ? 1.0 : 0.3;
+                    } else {
+                        ctx.globalAlpha = 1.0; // En el juego normal, todo es 100% sólido por ahora
+                    }
 
                     for (let key in worldMap) {
                         const tileData = worldMap[key];
@@ -2809,10 +3116,23 @@
                 ctx.globalAlpha = 1.0; 
             }
 
-            // === 1. DRAW GROUND LAYERS (BELOW PLAYER: L0 - L3) ===
-            drawWorldLayers(0, 3);
+            // === ¿ESTAMOS BAJO TECHO? (Transparencia) ===
+            let isUnderRoof = false;
+            const pGridX = Math.floor(player.worldX / TILE_SIZE);
+            const pGridY = Math.floor((player.worldY) / TILE_SIZE); 
+            
+            // Revisamos si hay algún bloque en las capas superiores (L8 a L15) justo donde estamos parados
+            for (let l = 8; l <= 15; l++) {
+                if (worldMap[`${pGridX},${pGridY},${l}`]) {
+                    isUnderRoof = true;
+                    break;
+                }
+            }
 
-// === 2. DRAW PLAYER SPRITES ===
+            // === 1. DRAW GROUND LAYERS (BELOW PLAYER: L0 - L7) ===
+            drawWorldLayers(0, 7);
+
+            // === 2. DRAW PLAYER SPRITES ===
             updatePlayerDirection();
             
             // THE FIX: ALL SPRITES HAVE 6 ROWS OF GRID SPACE! 
@@ -2888,18 +3208,18 @@
                 const gunFrameW = gunReady ? ghostGunSprite.width / 8 : 0;
                 const gunFrameH = gunReady ? ghostGunSprite.height / 6 : 0; 
 
-                // --- THE FIX: ESTADO VISUAL (MUERTO O RECIBIENDO DAÑO) ---
-                let pFilter = 'none';
+                // --- THE MOBILE FIX: ESTADO VISUAL COMPATIBLE CON CELULARES ---
                 const timeSinceHit = Date.now() - (p.lastHitTime || 0);
+                const isHit = (timeSinceHit < 150);
 
                 if (p.isDead) {
-                    pFilter = 'grayscale(100%) opacity(50%)'; // Gris y fantasma
-                } else if (timeSinceHit < 150) { 
-                    // Si le pegaron hace menos de 150ms, filtro rojo intenso!
-                    pFilter = 'brightness(40%) sepia(100%) hue-rotate(315deg) saturate(700%)';
+                    ctx.globalAlpha = 0.3; // Modo Fantasma (100% compatible en móviles)
+                } else if (isHit) {
+                    // En lugar de filtro, usamos un aura roja intensa y bajamos la opacidad para que parpadee
+                    ctx.shadowBlur = 20 * zoomLevel;
+                    ctx.shadowColor = "red";
+                    ctx.globalAlpha = 0.6; 
                 }
-                
-                ctx.filter = pFilter; // Aplicar filtro a TODO el personaje
 
                 // 1. Draw Gun BEHIND
                 if (!isFacingDown && p.equippedWeapon === "ghost_gun" && gunReady) {
@@ -2921,7 +3241,17 @@
                     ctx.drawImage(ghostGunSprite, pDrawFrameX * gunFrameW, p.frameY * gunFrameH, gunFrameW, gunFrameH, pDrawX, pDrawY + pGunOffsetY, pScaledWidth, pScaledHeight);
                 }
 
-                ctx.filter = 'none'; // SIEMPRE resetear el filtro AL FINAL
+                // Si le pegaron, dibujamos una mancha de sangre/impacto roja sobre su pecho
+                if (isHit && !p.isDead) {
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+                    ctx.beginPath();
+                    ctx.arc(pDrawX + (pScaledWidth/2), pDrawY + (pScaledHeight/2), 12 * zoomLevel, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // SIEMPRE resetear los efectos para no manchar el resto del juego
+                ctx.shadowBlur = 0; 
+                ctx.globalAlpha = 1.0;
             }
 
             // --- B. DRAW LOCAL PLAYER ---
@@ -2945,19 +3275,19 @@
             const localGunW = gunReady ? ghostGunSprite.width / 8 : 0;
             const localGunH = gunReady ? ghostGunSprite.height / 6 : 0; 
 
-if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
+            if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
                 
-                // --- THE FIX: TU PROPIO ESTADO VISUAL ---
-                let localFilter = 'none';
+                // --- THE MOBILE FIX: TU PROPIO ESTADO VISUAL ---
                 const localTimeSinceHit = Date.now() - (player.lastHitTime || 0);
+                const localIsHit = (localTimeSinceHit < 150);
 
                 if (player.isDead) {
-                    localFilter = 'grayscale(100%) opacity(50%)';
-                } else if (localTimeSinceHit < 150) {
-                    localFilter = 'brightness(40%) sepia(100%) hue-rotate(315deg) saturate(700%)';
+                    ctx.globalAlpha = 0.3; // Fantasma
+                } else if (localIsHit) {
+                    ctx.shadowBlur = 20 * zoomLevel;
+                    ctx.shadowColor = "red";
+                    ctx.globalAlpha = 0.6; // Parpadeo rojo
                 }
-
-                ctx.filter = localFilter; // Aplicar a todo tu cuerpo y arma
 
                 // 1. Draw Gun BEHIND 
                 if (!localFacingDown && player.equippedWeapon === "ghost_gun" && gunReady) {
@@ -2974,12 +3304,56 @@ if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
                 // 2b. Top Half (Head & Torso)
                 ctx.drawImage(player.currentImage, localDrawFrameX * frameWidth, player.frameY * frameHeight, frameWidth, localHalfH, drawX, drawY + localGunOffsetY, scaledWidth, localScaleHalfH);
 
-                // 3. Draw Gun IN FRONT
+                // 3. Draw Gun IN FRONT 
                 if (localFacingDown && player.equippedWeapon === "ghost_gun" && gunReady) {
                     ctx.drawImage(ghostGunSprite, localDrawFrameX * localGunW, player.frameY * localGunH, localGunW, localGunH, drawX, drawY + localGunOffsetY, scaledWidth, scaledHeight);
                 }
 
-                ctx.filter = 'none'; // Resetear al final
+                // Sangre/Mancha en el pecho al recibir daño
+                if (localIsHit && !player.isDead) {
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+                    ctx.beginPath();
+                    ctx.arc(drawX + (scaledWidth/2), drawY + (scaledHeight/2), 12 * zoomLevel, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.shadowBlur = 0; 
+                ctx.globalAlpha = 1.0; 
+
+                // --- NUEVO: CLONAR AL JUGADOR EN LA ISLA DINÁMICA ---
+                const avatarCanvas = document.getElementById('island-avatar');
+                if (avatarCanvas) {
+                    const aCtx = avatarCanvas.getContext('2d');
+                    aCtx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height); // Limpiar frame anterior
+                    
+                    // Escalar para que tu sprite encaje perfectamente en el cuadro de 40x40
+                    const aScale = 24 / Math.max(frameWidth, frameHeight);
+                    const aW = frameWidth * aScale;
+                    const aH = frameHeight * aScale;
+                    const aX = (avatarCanvas.width - aW) / 2;
+                    const aY = (avatarCanvas.height - aH) / 2;
+                    
+                    const aHalfH = frameHeight / 2;
+                    const aScaleHalfH = aH / 2;
+                    const aGunScaleW = localGunW * aScale;
+                    const aGunScaleH = localGunH * aScale;
+                    // Escalar el "respiro" del arma
+                    const aGunOffsetY = localGunOffsetY ? (localGunOffsetY / zoomLevel) * aScale : 0;
+
+                    if (player.isDead) aCtx.globalAlpha = 0.3;
+
+                    // Dibujar exactamente con el mismo frame de animación que tienes en el mapa
+                    if (!localFacingDown && player.equippedWeapon === "ghost_gun" && gunReady) {
+                        aCtx.drawImage(ghostGunSprite, localDrawFrameX * localGunW, player.frameY * localGunH, localGunW, localGunH, aX, aY + aGunOffsetY, aGunScaleW, aGunScaleH);
+                    }
+                    aCtx.drawImage(player.currentImage, localDrawFrameX * frameWidth, player.frameY * frameHeight + aHalfH, frameWidth, aHalfH, aX, aY + aScaleHalfH, aW, aScaleHalfH);
+                    aCtx.drawImage(player.currentImage, localDrawFrameX * frameWidth, player.frameY * frameHeight, frameWidth, aHalfH, aX, aY + aGunOffsetY, aW, aScaleHalfH);
+                    
+                    if (localFacingDown && player.equippedWeapon === "ghost_gun" && gunReady) {
+                        aCtx.drawImage(ghostGunSprite, localDrawFrameX * localGunW, player.frameY * localGunH, localGunW, localGunH, aX, aY + aGunOffsetY, aGunScaleW, aGunScaleH);
+                    }
+                    aCtx.globalAlpha = 1.0;
+                }
             }
 
             // --- NEW: DRAW PROJECTILES (GHOSTLY GREEN ORBS) ---
@@ -2999,9 +3373,8 @@ if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
             // Reset shadows so the rest of the game doesn't glow!
             ctx.shadowBlur = 0; 
             
-            // === 3. DRAW OVERHEAD LAYERS (ABOVE PLAYER: L4 - L7) ===
-            drawWorldLayers(4, 7);
-
+            // === 3. DRAW OVERHEAD LAYERS (ABOVE PLAYER: L8 - L15) ===
+            drawWorldLayers(8, 15);
             // === 4. DRAW EDIT MODE UI (SELECTION BOXES) ===
             if (editMode) {
                 let box = mapSelectionBox; 
@@ -3045,25 +3418,27 @@ if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
             }
 
             // --- HELPER: Dibujar Barra de Vida Dinámica ---
-            function drawHealthBar(x, y, hp, maxHp, scaledWidth, lastHit) {
-                const timeSinceHit = Date.now() - (lastHit || 0);
-                
-                // Si pasaron más de 4 segundos sin recibir daño, ocultar la barra
-                if (timeSinceHit > 4000 && hp === maxHp) return; 
+            function drawHealthBar(x, y, hp, maxHp, scaledWidth, lastHpUpdate) {
+                // Si nunca se ha actualizado y tiene la vida llena, no dibujar
+                if (!lastHpUpdate && hp === maxHp) return;
 
-                // Desvanecer (Fade out) suavemente durante el último segundo
+                const timeSinceUpdate = Date.now() - (lastHpUpdate || 0);
+                
+                // Si pasaron 4 segundos sin CAMBIOS de vida, ocultar
+                if (timeSinceUpdate > 4000) return; 
+
+                // Fade out el último segundo
                 let alpha = 1.0;
-                if (timeSinceHit > 3000 && hp === maxHp) {
-                    alpha = 1.0 - ((timeSinceHit - 3000) / 1000);
+                if (timeSinceUpdate > 3000) {
+                    alpha = 1.0 - ((timeSinceUpdate - 3000) / 1000);
                 }
 
                 ctx.globalAlpha = alpha;
 
-                // Barra más pequeña, centrada y pegada a la cabeza
                 const barW = 24 * zoomLevel; 
                 const barH = 4 * zoomLevel;
                 const barX = x + (scaledWidth / 2) - (barW / 2);
-                const barY = y - (8 * zoomLevel); 
+                const barY = y - (2 * zoomLevel); 
                 
                 ctx.fillStyle = "rgba(0,0,0,0.6)";
                 ctx.fillRect(barX, barY, barW, barH);
@@ -3072,7 +3447,7 @@ if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
                 ctx.fillStyle = healthPercent > 0.3 ? "#2ecc71" : "#e74c3c"; 
                 ctx.fillRect(barX, barY, barW * healthPercent, barH);
 
-                ctx.globalAlpha = 1.0; // Resetear transparencia para lo demás
+                ctx.globalAlpha = 1.0; 
             }
 
             // === 5. DRAW NAMETAGS, BUBBLES & HEALTH BARS ===
@@ -3084,14 +3459,13 @@ if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
                 const pDrawY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel) - (scaledHeight / 2));
                 
                 const currentHp = p.hp !== undefined ? p.hp : 100;
-                drawHealthBar(pDrawX, pDrawY, currentHp, 100, scaledWidth, p.lastHitTime);
-
+                drawHealthBar(pDrawX, pDrawY, currentHp, 100, scaledWidth, p.lastHpUpdateTime);
                 drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pDrawX, pDrawY, scaledWidth);
                 drawNametag(p.username, pDrawX, pDrawY, scaledWidth, scaledHeight, getColorForString(p.username));
             }
 
             // Dibujar TU barra de vida
-            drawHealthBar(drawX, drawY, player.hp, player.maxHp, scaledWidth, player.lastHitTime);
+            drawHealthBar(drawX, drawY, player.hp, player.maxHp, scaledWidth, player.lastHpUpdateTime);
             drawDynamicBubble(player.message, player.messageTimer, player.isTyping, drawX, drawY, scaledWidth);
             drawNametag(player.username, drawX, drawY, scaledWidth, scaledHeight, "#f1c40f");
 
@@ -3117,7 +3491,7 @@ if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
                 ctx.lineJoin = "round";
                 
                 ctx.strokeText(dt.text, dtDrawX, dtDrawY);
-                ctx.fillStyle = "#f1c40f"; // Amarillo / Naranja brillante
+                ctx.fillStyle = dt.color; // Usa verde o amarillo dependiendo del golpe
                 ctx.fillText(dt.text, dtDrawX, dtDrawY);
 
                 if (dt.life <= 0) damageTexts.splice(i, 1);

@@ -20,8 +20,6 @@
             --accent: #4a6fa5;       
             --accent-soft: #a8c0dd;  
             --font: 'HK Grotesk Wide', sans-serif;
-
-            /* Liquid Glass Vars */
             --c-glass: #ffffff;
             --saturation: 110%;
         }
@@ -62,20 +60,11 @@
         /* --- GENERAL UI --- */
         h1, h2, h3 { font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
         
-        .hero { 
-            margin-top: 50px;
-            text-align: center; 
-            margin-bottom: 30px;
-        }
+        .hero { margin-top: 50px; text-align: center; margin-bottom: 30px; }
         .hero h1 { font-size: 3rem; margin-bottom: 5px; color: var(--text-dark); }
         .hero p { font-size: 1rem; color: var(--text-grey); letter-spacing: 2px; }
 
-        .container {
-            width: 100%;
-            max-width: 600px;
-            padding: 20px;
-            z-index: 1;
-        }
+        .container { width: 100%; max-width: 600px; padding: 20px; z-index: 1; }
 
         .liquid-box {
             position: relative; padding: 20px; border-radius: 32px;
@@ -84,59 +73,38 @@
             box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8), 0px 10px 30px -10px rgba(0,0,0,0.1);
         }
 
-        /* --- LINKS --- */
-        .link-tree-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 40px; }
-        
-        .link-card {
-            display: flex; align-items: center; padding: 20px 30px; border-radius: 20px;
-            text-decoration: none; color: var(--text-dark); font-weight: 700;
-            transition: all 0.3s ease; position: relative; overflow: hidden;
-        }
-        .link-card i:first-child { font-size: 1.5rem; width: 40px; color: var(--accent); }
-        .link-card span { flex-grow: 1; letter-spacing: 1px; }
-        .link-card i:last-child { font-size: 0.8rem; opacity: 0.5; }
-
-        .link-card::after {
-            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: 0.5s; pointer-events: none;
-        } 
-
-        @media (hover: hover) {
-            .link-card:hover { transform: translateX(5px); background-color: color-mix(in srgb, var(--c-glass) 40%, transparent); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-            .link-card:hover::after { left: 150%; }
-        }
-        .link-card:active { transform: scale(0.96) !important; transition: 0.1s; }
-
         @keyframes pulse-aura {
             0% { box-shadow: 0 0 0 0px rgba(74, 111, 165, 0.4); }
             70% { box-shadow: 0 0 0 15px rgba(74, 111, 165, 0); }
             100% { box-shadow: 0 0 0 0px rgba(74, 111, 165, 0); }
         }
-        .featured-pulse { animation: pulse-aura 2s infinite; margin-bottom: 30px; }
+        .featured-pulse { animation: pulse-aura 2s infinite; margin-bottom: 20px; }
 
-        /* --- NEWSLETTER FORM --- */
+        /* --- NEWSLETTER COMPRIMIDO --- */
         .newsletter-section {
             text-align: center;
-            padding: 30px 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 24px;
         }
-        .newsletter-section h3 { margin-bottom: 10px; font-size: 1.5rem; color: var(--accent); }
-        .newsletter-section p { font-size: 0.9rem; color: var(--text-grey); margin-bottom: 20px; line-height: 1.5; }
+        .newsletter-section h3 { margin-bottom: 5px; font-size: 1.2rem; color: var(--text-dark); }
+        .newsletter-section p { font-size: 0.85rem; color: var(--text-grey); margin-bottom: 15px; }
         
-        .form-group {
+        .compact-form {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            flex-direction: row;
+            gap: 10px;
+            align-items: center;
         }
 
         .input-glass {
-            width: 100%;
-            padding: 15px 20px;
-            border-radius: 15px;
+            flex-grow: 1;
+            padding: 12px 20px;
+            border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.5);
             background: rgba(255, 255, 255, 0.2);
             font-family: var(--font);
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: var(--text-dark);
             outline: none;
             transition: 0.3s;
@@ -145,23 +113,72 @@
         .input-glass:focus { background: rgba(255, 255, 255, 0.5); border-color: var(--accent); }
 
         .btn-submit {
-            padding: 15px;
-            border-radius: 15px;
+            padding: 12px 25px;
+            border-radius: 12px;
             border: none;
-            background: var(--text-dark);
+            background: var(--accent);
             color: white;
             font-family: var(--font);
             font-weight: 700;
+            font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             cursor: pointer;
             transition: 0.3s;
+            white-space: nowrap;
         }
-        .btn-submit:hover { background: var(--accent); }
+        .btn-submit:hover { background: var(--text-dark); }
         .btn-submit:active { transform: scale(0.96); }
+
+        /* En celulares, apilamos el input y el botón para que no quede muy apretado */
+        @media(max-width: 480px) {
+            .compact-form { flex-direction: column; }
+            .input-glass, .btn-submit { width: 100%; }
+        }
+
+        /* --- LINKS --- */
+        .link-tree-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 40px; }
+        
+        .link-card {
+            display: flex; align-items: center; padding: 18px 25px; border-radius: 20px;
+            text-decoration: none; color: var(--text-dark); font-weight: 700;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .link-card i:first-child { font-size: 1.5rem; width: 40px; color: var(--accent); }
+        .link-card span { flex-grow: 1; letter-spacing: 1px; font-size: 0.95rem; }
+        .link-card i:last-child { font-size: 0.8rem; opacity: 0.5; }
+        .link-card::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s; pointer-events: none;
+        } 
+        @media (hover: hover) {
+            .link-card:hover { transform: translateX(5px); background-color: color-mix(in srgb, var(--c-glass) 40%, transparent); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+            .link-card:hover::after { left: 150%; }
+        }
+        .link-card:active { transform: scale(0.96) !important; transition: 0.1s; }
 
         footer { text-align: center; padding: 40px 20px; color: var(--text-grey); font-size: 0.8rem; margin-top: auto; }
     </style>
+
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '4579823242338247');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=4579823242338247&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+
 </head>
 <body>
 
@@ -171,36 +188,40 @@
     <div class="container">
         <header class="hero">
             <h1>LIROS</h1>
-            <p>SAD ROMÁNTICO</p>
         </header>
         
-        <div id="featured-player"></div>
-    
-        <div id="link-tree-list" class="link-tree-container"></div>
+        <div id="spotify-player"></div>
 
         <div class="liquid-box newsletter-section">
             <h3>Únete a la Clika</h3>
-            <p>Déjame tu correo para recibir rolas inéditas antes que nadie, info de merch exclusiva y accesos especiales.</p>
+            <p>Deja tu correo para rolas inéditas y accesos especiales.</p>
             
-            <form id="newsletter-form" class="form-group" onsubmit="handleSubscribe(event)">
+            <form id="newsletter-form" class="compact-form" onsubmit="handleSubscribe(event)">
                 <input type="email" id="email-input" class="input-glass" placeholder="tu@correo.com" required>
-                <button type="submit" class="btn-submit">Suscribirme</button>
+                <button type="submit" class="btn-submit">Unirme</button>
             </form>
-            <p id="form-message" style="display: none; margin-top: 15px; font-weight: bold; color: var(--accent);"></p>
+            <p id="form-message" style="display: none; margin-top: 10px; font-size: 0.85rem; font-weight: bold;"></p>
         </div>
+    
+        <div id="link-tree-list" class="link-tree-container"></div>
+
+        <div id="tiktok-player" style="margin-bottom: 20px;"></div>
     </div>
 
     <footer>
         <p>© 2026 Liros Music.</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
-        // DATA OBJECT (Solo lo necesario para los links)
+        // --- CONFIGURACIÓN DE DATOS ---
         const profileData = {
-            featured: {
-                type: "spotify", 
-                id: "0jJBTP1lRCe35zspJBa94D", 
-                themeColor: "#4a6fa5"
+            spotify: { 
+                id: "0jJBTP1lRCe35zspJBa94D", // Tu ID de Spotify
+            },
+            tiktok: {
+                id: "7616192281871142164" // PON AQUÍ TU ID DE TIKTOK REAL
             },
             links: [
                 { name: 'Spotify', icon: 'fab fa-spotify', url: 'https://open.spotify.com/intl-es/artist/5YtRkkyiXntYnEZWO4kUxB', color: '#1DB954' },
@@ -211,26 +232,19 @@
             ]
         };
 
-        // Renderizar vistas al cargar la página
+        // --- RENDERIZAR VISTAS ---
         document.addEventListener('DOMContentLoaded', () => {
-            const playerContainer = document.getElementById('featured-player');
-            const data = profileData.featured;
-            
-            // Render Player
-            let embedContent = '';
-            if (data.type === 'youtube') {
-                embedContent = `<iframe width="100%" height="250" src="https://www.youtube.com/embed/${data.id}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:15px"></iframe>`;
-            } else {
-                embedContent = `<iframe style="border-radius:15px" src="https://open.spotify.com/embed/track/${data.id}?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+            // 1. Render Spotify
+            const spotifyContainer = document.getElementById('spotify-player');
+            if (profileData.spotify && profileData.spotify.id) {
+                spotifyContainer.innerHTML = `
+                    <div class="liquid-box featured-pulse">
+                        <iframe style="border-radius:15px" src="https://open.spotify.com/embed/track/${profileData.spotify.id}?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    </div>
+                `;
             }
 
-            playerContainer.innerHTML = `
-                <div class="liquid-box featured-pulse">
-                    ${embedContent}
-                </div>
-            `;
-        
-            // Render Links
+            // 2. Render Links
             const listContainer = document.getElementById('link-tree-list');
             profileData.links.forEach(link => {
                 const a = document.createElement('a');
@@ -239,23 +253,81 @@
                 a.innerHTML = `<i class="${link.icon}" style="color: ${link.color}"></i><span>${link.name}</span><i class="fas fa-chevron-right"></i>`;
                 listContainer.appendChild(a);
             });
+
+            // 3. Render TikTok (Abajo de los links)
+            const tiktokContainer = document.getElementById('tiktok-player');
+            if (profileData.tiktok && profileData.tiktok.id) {
+                tiktokContainer.innerHTML = `
+                    <p style="font-size: 0.8rem; letter-spacing: 2px; margin-bottom: 15px; color: var(--text-grey); text-align: center;">ÚLTIMO VIDEO</p>
+                    <div class="liquid-box" style="padding: 10px;">
+                        <iframe src="https://www.tiktok.com/embed/v2/${profileData.tiktok.id}" width="100%" height="740" frameborder="0" allowfullscreen style="border-radius:20px; background: transparent;"></iframe>
+                    </div>
+                `;
+            }
         });
 
-        // Lógica del formulario de correos
-        function handleSubscribe(event) {
-            event.preventDefault(); // Evita que la página recargue
+        // --- CONFIGURACIÓN DE SUPABASE ---
+        // ¡No olvides poner tus credenciales reales aquí!
+        const supabaseUrl = 'https://hwsffnsxwxygvamqdxcd.supabase.co'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3c2ZmbnN4d3h5Z3ZhbXFkeGNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzM2MTIsImV4cCI6MjA4NDYwOTYxMn0.1cslca0G6SMjGv2UBiRCYJsTNelc8vfhCixErap-2hU';
+        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // --- LÓGICA DEL FORMULARIO DE CORREOS ---
+        async function handleSubscribe(event) {
+            event.preventDefault(); 
             
-            const email = document.getElementById('email-input').value;
+            const emailInput = document.getElementById('email-input');
+            const email = emailInput.value;
             const messageEl = document.getElementById('form-message');
             const form = document.getElementById('newsletter-form');
+            const submitBtn = document.querySelector('.btn-submit');
 
-            // Aquí puedes conectar esto a tu base de datos o servicio (Mailchimp, tu servidor Go, etc.)
-            console.log("Nuevo correo registrado:", email);
+            // Filtro estricto de correo
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+            if (!emailRegex.test(email)) {
+                messageEl.innerText = "Ese correo no parece válido, compa. Revísalo bien.";
+                messageEl.style.display = 'block';
+                messageEl.style.color = '#d9534f'; 
+                return; 
+            }
 
-            // Simular éxito en la pantalla
-            form.style.display = 'none';
-            messageEl.style.display = 'block';
-            messageEl.innerText = "¡Listo! Ya estás en la lista. Nos vemos pronto.";
+            // Estado de carga
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Enviando...';
+            submitBtn.style.opacity = '0.7';
+
+            // Insertar en Supabase
+            const { data, error } = await supabaseClient
+                .from('subscribers')
+                .insert([{ email: email }]);
+
+            if (error) {
+                console.error("Error guardando correo:", error);
+                
+                if (error.code === '23505') { 
+                    messageEl.innerText = "Este correo ya está registrado en la clika.";
+                } else {
+                    messageEl.innerText = "Hubo un error. Intenta de nuevo, por favor.";
+                }
+                
+                messageEl.style.display = 'block';
+                messageEl.style.color = '#d9534f'; 
+                
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Unirme';
+                submitBtn.style.opacity = '1';
+                
+            } else {
+                form.style.display = 'none';
+                messageEl.style.display = 'block';
+                messageEl.style.color = 'var(--accent)'; 
+                messageEl.innerText = "¡Listo! Ya estás en la lista. Pendiente a las próximas rolas.";
+            
+                // AVISO A META DEL NUEVO FAN REGISTRADO
+                if (typeof fbq === 'function') {
+                    fbq('track', 'Lead');
+                }
+            }
         }
     </script>
 </body>

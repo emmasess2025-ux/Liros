@@ -775,19 +775,80 @@
                 <canvas id="profile-canvas" width="150" height="200" style="image-rendering: pixelated;"></canvas>
             </div>
 
-            <div style="width: 55%; padding: 30px; display: flex; flex-direction: column; justify-content: center;">
-                <h2 id="profile-name-display" style="color: white; margin: 0 0 5px 0; font-family: sans-serif; font-size: 28px;">Username</h2>
-                <p style="color: #aaa; margin: 0 0 20px 0; font-family: sans-serif; font-size: 14px;">Lv. 1 Musician</p>
+            <div style="width: 55%; padding: 30px; display: flex; flex-direction: column; justify-content: center; position: relative;">
+                <h2 id="profile-name-display" style="color: white; margin: 0 0 5px 0; font-family: sans-serif; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Username</h2>
+                <p style="color: #aaa; margin: 0 0 10px 0; font-family: sans-serif; font-size: 14px;">Lv. 1 Musician</p>
 
-                <div id="profile-edit-controls" style="display: none; flex-direction: column; gap: 10px;">
-                    <input type="text" id="edit-name-input" placeholder="New Display Name" style="padding: 10px; border-radius: 8px; border: none; background: rgba(0,0,0,0.3); color: white; outline: none;">
-                    <button id="save-name-btn" style="padding: 10px; border-radius: 8px; border: none; background: #f1c40f; font-weight: bold; cursor: pointer;">Save Name</button>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 6px 14px; border-radius: 12px; width: fit-content; border: 1px solid rgba(255, 215, 0, 0.3); box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);">
+                    <span style="font-size: 18px;">🪙</span>
+                    <span id="profile-coins-display" style="color: #ffd700; font-weight: bold; font-family: sans-serif; font-size: 16px;">0</span>
                 </div>
 
                 <div id="profile-other-controls" style="display: none; flex-direction: column; gap: 10px;">
                     <button id="add-friend-btn" style="padding: 10px; border-radius: 8px; border: none; background: #3498db; color: white; font-weight: bold; cursor: pointer;">➕ Add Friend</button>
-                    <button style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; cursor: pointer;">💬 Message</button>
+                    <button id="profile-message-btn" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; cursor: pointer;">💬 Message</button>
                 </div>
+
+                <button id="profile-options-btn" style="display: none; position: absolute; bottom: 20px; right: 20px; padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); color: white; font-weight: bold; cursor: pointer; transition: background 0.2s;">⚙️ Options</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="options-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 2500;">
+        <div style="width: 400px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 25px; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 20px;">⚙️ Configurations</h3>
+                <button id="close-options-modal" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0; color: #f1c40f; font-family: sans-serif;">Profile</h4>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="edit-name-input" placeholder="New Display Name" style="flex: 1; padding: 10px; border-radius: 8px; border: none; background: rgba(0,0,0,0.5); color: white; outline: none; border: 1px solid rgba(255,255,255,0.1);">
+                    <button id="save-name-btn" style="padding: 10px 15px; border-radius: 8px; border: none; background: #f1c40f; color: black; font-weight: bold; cursor: pointer;">Save</button>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="margin: 0 0 10px 0; color: #3498db; font-family: sans-serif;">Outfits & Gear</h4>
+                <div style="background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.2); border-radius: 10px; padding: 30px; text-align: center; color: #aaa; font-family: sans-serif; font-size: 14px;">
+                    👕 Wardrobe coming soon...
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="inbox-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 2500;">
+        <div style="width: 90vw; max-width: 350px; height: 75vh; max-height: 500px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+            
+            <div style="padding: 15px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 18px; color: white;">📥 Mensajes</h3>
+                <button id="close-inbox-modal" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+            </div>
+
+            <div id="inbox-list-container" style="flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+                </div>
+        </div>
+    </div>
+
+    <div id="pm-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 2600;">
+        <div style="width: 90vw; max-width: 350px; height: 75vh; max-height: 500px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+            
+           <div style="padding: 15px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px;">
+                <button id="back-to-inbox-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0;">⬅</button>
+                
+                <div id="pm-header-avatar" style="width: 36px; height: 36px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: flex-end; flex-shrink: 0;"></div>
+                
+                <h3 id="pm-target-name" style="margin: 0; font-family: sans-serif; font-size: 18px; color: #f1c40f;">Username</h3>
+            </div>
+
+            <div id="pm-history-container" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;"></div>
+
+            <div style="padding: 10px; background: rgba(0,0,0,0.5); border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 8px;">
+                <input type="text" id="pm-input" placeholder="Mensaje..." autocomplete="off" style="flex: 1; padding: 10px; border-radius: 15px; border: none; background: rgba(255,255,255,0.1); color: white; outline: none; font-family: sans-serif;">
+                <button id="pm-send-btn" style="background: #2ecc71; border: none; border-radius: 50%; width: 40px; height: 40px; color: black; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center;">➤</button>
             </div>
         </div>
     </div>
@@ -1014,6 +1075,7 @@
             // --- NUEVOS STATS DE COMBATE ---
             hp: 100,
             maxHp: 100,
+            coins: 0, // <--- NUEVO
             ammo: 0,
             isReloading: false,
             lastShotX: 0, 
@@ -1129,10 +1191,10 @@
         
 
         // Connect to the live cloud server
-        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
-        //const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket('ws://localhost:8080');
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow
@@ -1172,7 +1234,9 @@
             }, duration);
         }
 
-        // --- DESPERTAR AL TOCARLA (5 SEGUNDOS) ---
+        // --- SISTEMA DE BANDEJA DE ENTRADA (ISLA DINÁMICA) ---
+        let unreadPMs = []; // Guarda los nombres de quienes nos escriben
+
         window.addEventListener('DOMContentLoaded', () => {
             const island = document.getElementById('dynamic-island');
             if (island) {
@@ -1180,21 +1244,29 @@
                 island.addEventListener('touchstart', () => wakeUpIsland(5000));
             }
 
-            // EVENTO DEL BOTÓN DE NOTIFICACIONES
             const notifBtn = document.getElementById('island-notif-btn');
-            if (notifBtn) {
-                const openModal = (e) => {
-                    e.stopPropagation(); // Evita que el toque se confunda con el fondo de la isla
-                    wakeUpIsland(5000);  // Despierta la isla para que se vea bien
-                    
-                    // --- AQUÍ ABRIREMOS TU MODAL EN EL FUTURO ---
-                    console.log("¡Botón de mensajes presionado!");
-                    // Ocultamos el puntito rojo al leer los mensajes
-                    document.getElementById('notif-badge').style.display = 'none'; 
-                };
+            const notifBadge = document.getElementById('notif-badge');
+            
+            // Ocultar el puntito rojo al inicio
+            if(notifBadge) notifBadge.style.display = 'none';
 
-                notifBtn.addEventListener('mousedown', openModal);
-                notifBtn.addEventListener('touchstart', openModal);
+            if (notifBtn) {
+                const openInbox = (e) => {
+                    e.stopPropagation(); 
+                    wakeUpIsland(5000);  
+                    
+                    // Ya no abrimos un chat random, abrimos el INBOX
+                    document.getElementById('inbox-modal').style.display = 'flex';
+                    
+                    // Le pedimos al servidor nuestra lista de chats
+                    ws.send(JSON.stringify({ type: 'get_inbox' }));
+                    
+                    // Borramos la notificación roja
+                    unreadPMs = [];
+                    if (notifBadge) notifBadge.style.display = 'none'; 
+                };
+                notifBtn.addEventListener('mousedown', openInbox);
+                notifBtn.addEventListener('touchstart', openInbox);
             }
         });
 
@@ -1208,6 +1280,29 @@
             } else if (data.type === 'register_success') {
                 authMessage.style.color = '#4cd137'; // Green
                 authMessage.innerText = data.message;
+            }// --- RECIBIR HISTORIAL DE PM ---
+            else if (data.type === 'pm_history') {
+                if (currentChatTargetId === data.targetAccountId) {
+                    pmTargetName.innerText = data.targetUsername; // Actualizar con el nombre real
+                    currentChatTargetName = data.targetUsername;
+                    renderPMHistory(data.history);
+                }
+            }// --- RECIBIR LISTA DEL INBOX ---
+            else if (data.type === 'inbox_data') {
+                renderInbox(data.inbox);
+            }
+            // --- RECIBIR NUEVO PM (NOTIFICACIÓN) ---
+            else if (data.type === 'receive_pm') {
+                if (currentChatTargetId === data.senderAccountId && document.getElementById('pm-modal').style.display === 'flex') {
+                    renderPMHistory(data.history);
+                } else {
+                    if (!unreadPMs.includes(data.senderAccountId)) {
+                        unreadPMs.push(data.senderAccountId);
+                    }
+                    const badge = document.getElementById('notif-badge');
+                    if (badge) badge.style.display = 'flex'; 
+                    wakeUpIsland(5000); 
+                }
             }
 
 // --- EXISTING: GAME INITIALIZATION ---
@@ -1221,6 +1316,7 @@
                 player.worldX = data.players[myId].worldX;
                 player.worldY = data.players[myId].worldY;
                 player.username = data.players[myId].username;
+                player.accountId = data.players[myId].accountId;
 
                 for (let id in data.players) {
                     if (id !== myId) {
@@ -1361,7 +1457,7 @@
                 
                 // --- THE HOTBAR PERSISTENCE FIX ---
                 player.hotbar = data.player.hotbar || ["none", "none", "none"]; 
-                
+                player.accountId = data.player.accountId;
                 // Set the active highlight to match the equipped weapon
                 const slotIndex = player.hotbar.indexOf(player.equippedWeapon);
                 if (slotIndex !== -1) {
@@ -2632,14 +2728,20 @@
         const profileCanvas = document.getElementById('profile-canvas');
         const prCtx = profileCanvas.getContext('2d');
         const profileNameDisplay = document.getElementById('profile-name-display');
-        const profileEditControls = document.getElementById('profile-edit-controls');
+        
+        // Nuevas variables para el botón de opciones
+        const profileOptionsBtn = document.getElementById('profile-options-btn');
         const profileOtherControls = document.getElementById('profile-other-controls');
-        const editNameInput = document.getElementById('edit-name-input');
-        const saveNameBtn = document.getElementById('save-name-btn');
         const addFriendBtn = document.getElementById('add-friend-btn');
 
+        // Variables del Modal de Opciones
+        const optionsModal = document.getElementById('options-modal');
+        const closeOptionsModal = document.getElementById('close-options-modal');
+        const editNameInput = document.getElementById('edit-name-input');
+        const saveNameBtn = document.getElementById('save-name-btn');
+
         let isProfileOpen = false;
-        let profileTargetId = null; // 'self' or the ID of the other player
+        let profileTargetId = null; 
         let profileAnimFrame = 0;
 
         // 1. Detect Taps on Players in the Game World
@@ -2672,18 +2774,28 @@
             isProfileOpen = true;
             profileTargetId = targetId;
             profileNameDisplay.innerText = username;
+            
+            // Actualizar monedas
+            const coinsDisplay = document.getElementById('profile-coins-display');
+            if (targetId === 'self') {
+                coinsDisplay.innerText = player.coins || 0;
+            } else {
+                coinsDisplay.innerText = otherPlayers[targetId].coins || 0;
+            }
+
             profileModal.style.display = 'flex';
 
             if (targetId === 'self') {
-                profileEditControls.style.display = 'flex';
+                // Si eres tú, mostramos el engranaje de Opciones
+                profileOptionsBtn.style.display = 'block';
                 profileOtherControls.style.display = 'none';
-                editNameInput.value = username;
             } else {
-                profileEditControls.style.display = 'none';
+                // Si es otro, mostramos los botones de añadir amigo/mensaje
+                profileOptionsBtn.style.display = 'none';
                 profileOtherControls.style.display = 'flex';
             }
             
-            drawProfileAnimation(); // Kick off the loop
+            drawProfileAnimation(); 
         }
 
         closeProfile.addEventListener('click', () => {
@@ -2691,11 +2803,25 @@
             profileModal.style.display = 'none';
         });
 
+        // --- NUEVO: LÓGICA DEL MODAL DE OPCIONES ---
+        profileOptionsBtn.addEventListener('click', () => {
+            // Cuando abre las opciones, rellenamos el input con su nombre actual
+            editNameInput.value = player.username;
+            optionsModal.style.display = 'flex';
+        });
+
+        closeOptionsModal.addEventListener('click', () => {
+            optionsModal.style.display = 'none';
+        });
+
         // 3. The Isolated Walking Animation for the UI
         function drawProfileAnimation() {
             if (!isProfileOpen) return; // Stop loop when closed
             
             prCtx.clearRect(0, 0, profileCanvas.width, profileCanvas.height);
+            
+            // --- EL FIX: APAGAR EL SUAVIZADO PARA QUE EL PIXEL ART QUEDE NÍTIDO ---
+            prCtx.imageSmoothingEnabled = false; 
             
             // Advance fake animation frame
             profileAnimFrame = (profileAnimFrame + 0.1) % 8; 
@@ -2713,6 +2839,262 @@
             );
 
             requestAnimationFrame(drawProfileAnimation);
+        }
+
+       // --- LÓGICA DEL INBOX Y CHAT PRIVADO ---
+        const inboxModal = document.getElementById('inbox-modal');
+        const closeInboxModal = document.getElementById('close-inbox-modal');
+        const inboxListContainer = document.getElementById('inbox-list-container');
+        
+        const pmModal = document.getElementById('pm-modal');
+        const backToInboxBtn = document.getElementById('back-to-inbox-btn');
+        const pmTargetName = document.getElementById('pm-target-name');
+        const pmHistoryContainer = document.getElementById('pm-history-container');
+        const pmInput = document.getElementById('pm-input');
+        const pmSendBtn = document.getElementById('pm-send-btn');
+        const profileMessageBtn = document.getElementById('profile-message-btn');
+        
+        let currentChatTargetId = ""; // AHORA USAMOS EL ID
+        let currentChatTargetName = "";
+    
+        // CERRAR INBOX
+        closeInboxModal.addEventListener('click', () => {
+            inboxModal.style.display = 'none';
+        });
+
+        // BOTÓN "ATRÁS" EN EL CHAT
+        backToInboxBtn.addEventListener('click', () => {
+            pmModal.style.display = 'none';
+            currentChatTarget = "";
+            inboxModal.style.display = 'flex'; // Reabrir Inbox
+            ws.send(JSON.stringify({ type: 'get_inbox' })); // Actualizar lista
+        });
+
+        // BOTÓN "MESSAGE" EN EL PERFIL
+        if(profileMessageBtn) {
+            profileMessageBtn.addEventListener('click', () => {
+                if (profileTargetId !== 'self') {
+                    const targetAccId = otherPlayers[profileTargetId].accountId;
+                    if (!targetAccId) {
+                        alert("No puedes enviar mensajes a un Invitado.");
+                        return;
+                    }
+                    const targetName = otherPlayers[profileTargetId].username;
+                    profileModal.style.display = 'none'; 
+                    openPMModal(targetAccId, targetName);
+                }
+            });
+        }
+
+      // ABRIR UN CHAT ESPECÍFICO
+        function openPMModal(targetAccountId, fallbackName) {
+            inboxModal.style.display = 'none'; 
+            currentChatTargetId = targetAccountId;
+            currentChatTargetName = fallbackName || "Cargando...";
+            pmTargetName.innerText = currentChatTargetName;
+            
+            const pmHeaderAvatar = document.getElementById('pm-header-avatar');
+            pmHeaderAvatar.innerHTML = "";
+            pmHeaderAvatar.appendChild(createAvatarCanvas(36));
+
+            pmModal.style.display = 'flex';
+            pmHistoryContainer.innerHTML = '<div style="text-align:center; color:#777; font-size: 12px; margin-top:20px;">Cargando mensajes...</div>';
+            
+            // Pedimos el historial usando el ID
+            ws.send(JSON.stringify({ type: 'get_pm_history', targetAccountId: targetAccountId }));
+            setTimeout(() => pmInput.focus(), 100);
+        }
+
+        // ENVIAR MENSAJE
+        function sendPM() {
+            const text = pmInput.value.trim();
+            if (text && currentChatTargetId) {
+                ws.send(JSON.stringify({ type: 'send_pm', targetAccountId: currentChatTargetId, targetUsername: currentChatTargetName, text: text }));
+                pmInput.value = ""; 
+            }
+        }
+        pmSendBtn.addEventListener('click', sendPM);
+        pmInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendPM(); });
+
+// DIBUJAR LISTA DE INBOX (Con Avatares y Hora)
+        function renderInbox(inboxData) {
+            inboxListContainer.innerHTML = "";
+            if(inboxData.length === 0) {
+                inboxListContainer.innerHTML = '<div style="text-align:center; color:#777; font-size: 14px; margin-top:20px;">No tienes mensajes activos.</div>';
+                return;
+            }
+
+            inboxData.forEach(chat => {
+                const chatRow = document.createElement('div');
+                chatRow.style.padding = "10px";
+                chatRow.style.background = "rgba(255,255,255,0.05)";
+                chatRow.style.borderRadius = "10px";
+                chatRow.style.border = "1px solid rgba(255,255,255,0.1)";
+                chatRow.style.cursor = "pointer";
+                chatRow.style.display = "flex";
+                chatRow.style.alignItems = "center";
+                chatRow.style.gap = "12px";
+
+                // 1. Contenedor del avatar de la tarjeta
+                const avatarDiv = document.createElement('div');
+                avatarDiv.style.width = "40px"; avatarDiv.style.height = "40px";
+                avatarDiv.style.borderRadius = "10px"; avatarDiv.style.overflow = "hidden";
+                avatarDiv.style.background = "rgba(0,0,0,0.3)";
+                avatarDiv.style.flexShrink = "0";
+                avatarDiv.appendChild(createAvatarCanvas(40)); // Crear el canvas del avatar
+
+                // 2. Textos (Nombre, Hora y Último Mensaje)
+                const textDiv = document.createElement('div');
+                textDiv.style.flex = "1";
+                textDiv.style.display = "flex";
+                textDiv.style.flexDirection = "column";
+                textDiv.style.overflow = "hidden";
+
+                const topRow = document.createElement('div');
+                topRow.style.display = "flex"; topRow.style.justifyContent = "space-between";
+                topRow.innerHTML = `
+                    <span style="color: #f1c40f; font-weight: bold; font-family: sans-serif; font-size: 15px;">${chat.targetUser}</span>
+                    <span style="color: #777; font-family: sans-serif; font-size: 11px;">${formatPMTime(chat.time)}</span>
+                `;
+
+                const msgSpan = document.createElement('span');
+                msgSpan.style.color = "#aaa"; msgSpan.style.fontFamily = "sans-serif";
+                msgSpan.style.fontSize = "13px"; msgSpan.style.marginTop = "4px";
+                msgSpan.style.whiteSpace = "nowrap"; msgSpan.style.overflow = "hidden";
+                msgSpan.style.textOverflow = "ellipsis";
+                msgSpan.innerText = chat.lastMessage;
+
+                textDiv.appendChild(topRow);
+                textDiv.appendChild(msgSpan);
+                chatRow.appendChild(avatarDiv);
+                chatRow.appendChild(textDiv);
+
+chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.targetUser));                inboxListContainer.appendChild(chatRow);
+            });
+        }
+
+        // --- HELPERS PARA AVATARES Y HORAS (CON CONTROLES MANUALES) ---
+        function createAvatarCanvas(size = 36) {
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = size; 
+            tCanvas.height = size;
+            const tCtx = tCanvas.getContext('2d');
+            tCtx.imageSmoothingEnabled = false;
+
+            if (idleSprite.complete && idleSprite.naturalWidth > 0) {
+                const pFrameW = idleSprite.width / 8;
+                const pFrameH = idleSprite.height / 6;
+                const cropW = pFrameW;
+                const cropH = pFrameH / 2; 
+
+                // --- 🎛️ TUS CONTROLES DE CÁMARA ---
+                // 1. ZOOM: Lo subimos de 1.6 a 2.2 para un primer plano masivo
+                const zoom = 2.2; 
+                
+                // 2. CENTRADO (EMPUJE): 
+                // Multiplicamos por 'size' para que el ajuste sea proporcional si la burbuja es de 28px o 36px.
+                // Si la cabeza sigue muy arriba, sube el 0.15 a 0.20 o 0.25.
+                const pushY = size * -0.40; 
+                const pushX = 0; // (Por si tu sprite está descentrado horizontalmente)
+
+                const drawW = size * zoom; 
+                const drawH = drawW * (cropH / cropW);
+
+                // Dibujamos aplicando tus ajustes
+                tCtx.drawImage(
+                    idleSprite,
+                    0, 0, cropW, cropH, 
+                    ((size - drawW) / 2) + pushX, 
+                    ((size - drawH) / 2) + pushY, 
+                    drawW, drawH
+                );
+            }
+            return tCanvas;
+        }
+
+        function formatPMTime(dateString) {
+            if (!dateString) return "";
+            const d = new Date(dateString);
+            // Convierte la fecha del servidor en hora local (ej: "02:15 PM")
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // DIBUJAR LAS BURBUJAS (Con Avatar a un lado y Hora abajo)
+        function renderPMHistory(history) {
+            pmHistoryContainer.innerHTML = "";
+            if(history.length === 0) {
+                pmHistoryContainer.innerHTML = '<div style="text-align:center; color:#777; font-size: 12px; margin-top:20px;">No hay mensajes. ¡Di hola!</div>';
+                return;
+            }
+
+            history.forEach(msg => {
+                const isMe = (msg.senderId === player.accountId);
+                
+                // Contenedor invisible para acomodar la burbuja a la izquierda o derecha
+                const row = document.createElement('div');
+                row.style.width = "100%";
+                row.style.display = "flex";
+                row.style.justifyContent = isMe ? "flex-end" : "flex-start";
+                row.style.alignItems = "flex-end"; // Alinea la burbuja y el avatar por la base
+                row.style.gap = "8px";
+                row.style.marginBottom = "8px";
+
+                // --- 1. MINI AVATAR ---
+                const avatar = createAvatarCanvas(28); // 28x28 píxeles
+                avatar.style.borderRadius = "50%"; // Avatar circular para los chats
+                avatar.style.background = "rgba(0,0,0,0.3)";
+                avatar.style.flexShrink = "0";
+                avatar.style.border = "1px solid rgba(255,255,255,0.1)";
+
+                // --- 2. CONTENEDOR DE BURBUJA + HORA ---
+                const bubbleGroup = document.createElement('div');
+                bubbleGroup.style.display = "flex";
+                bubbleGroup.style.flexDirection = "column";
+                bubbleGroup.style.maxWidth = "75%"; // Limita el ancho del texto
+                bubbleGroup.style.alignItems = isMe ? "flex-end" : "flex-start";
+
+                const bubble = document.createElement('div');
+                bubble.style.padding = "10px 14px";
+                bubble.style.fontFamily = "sans-serif";
+                bubble.style.fontSize = "14px";
+                bubble.style.lineHeight = "1.4";
+                bubble.style.wordBreak = "break-word";
+                
+                if (isMe) {
+                    bubble.style.background = "#2ecc71";
+                    bubble.style.color = "black";
+                    bubble.style.borderRadius = "15px 15px 0 15px"; 
+                } else {
+                    bubble.style.background = "rgba(255,255,255,0.15)";
+                    bubble.style.color = "white";
+                    bubble.style.borderRadius = "15px 15px 15px 0"; 
+                }
+                bubble.innerText = msg.text;
+
+                // Hora bajo la burbuja
+                const timeSpan = document.createElement('span');
+                timeSpan.style.fontSize = "10px";
+                timeSpan.style.color = "#777";
+                timeSpan.style.marginTop = "4px";
+                timeSpan.style.fontFamily = "sans-serif";
+                timeSpan.innerText = formatPMTime(msg.timestamp);
+
+                bubbleGroup.appendChild(bubble);
+                bubbleGroup.appendChild(timeSpan);
+
+                // Ensamblar la fila: [Burbuja] + [Avatar] si eres tú, o [Avatar] + [Burbuja] si es el otro
+                if (isMe) {
+                    row.appendChild(bubbleGroup);
+                    row.appendChild(avatar);
+                } else {
+                    row.appendChild(avatar);
+                    row.appendChild(bubbleGroup);
+                }
+                
+                pmHistoryContainer.appendChild(row);
+            });
+
+            pmHistoryContainer.scrollTop = pmHistoryContainer.scrollHeight;
         }
 
         // 4. WebSockets Hooks

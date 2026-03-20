@@ -1048,6 +1048,65 @@
         window.addEventListener('resize', resize);
         resize();
 
+        // --- SISTEMA MULTIPLATAFORMA (PC vs MÓVIL) ---
+        // Detecta si la pantalla es táctil (Celular/Tablet)
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        
+        // Variables para los controles de PC
+        const keys = { w: false, a: false, s: false, d: false };
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let isMouseDown = false;
+
+        // Ocultar los joysticks si estamos en PC
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!isTouchDevice) {
+                // AQUÍ ESTÁ LA CORRECCIÓN DE LOS IDs:
+                const leftJoy = document.getElementById('joystick-zone'); 
+                const rightJoy = document.getElementById('aim-zone');
+                
+                if(leftJoy) leftJoy.style.display = 'none';
+                if(rightJoy) rightJoy.style.display = 'none';
+            }
+        });
+
+        // --- ESCUCHAR TECLADO (WASD) ---
+        if (!isTouchDevice) {
+            window.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                // Evitar que la pantalla se mueva si usan las flechas en vez de wasd por error
+                if (["w", "a", "s", "d"].includes(key)) {
+                    keys[key] = true;
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                const key = e.key.toLowerCase();
+                if (["w", "a", "s", "d"].includes(key)) {
+                    keys[key] = false;
+                }
+            });
+        }
+
+        // --- ESCUCHAR RATÓN (APUNTAR Y DISPARAR) ---
+        if (!isTouchDevice) {
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            window.addEventListener('mousedown', (e) => {
+                // Solo disparamos si hicieron clic en el juego, no en un botón de la interfaz
+                if (e.target.tagName.toLowerCase() === 'canvas') {
+                    isMouseDown = true;
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+        }
+
         const player = {    
             worldX: 0,
             worldY: 0,
@@ -1191,10 +1250,10 @@
         
 
         // Connect to the live cloud server
-        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
-        //const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket('ws://localhost:8080');
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow
@@ -3303,6 +3362,10 @@ chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.t
         ammoDisplayBox.addEventListener('touchstart', triggerReload, {passive: false});
 
         function update() {
+            // --- EL FIX: Declarar el centro de la pantalla desde el principio ---
+            const screenCenterX = window.innerWidth / 2;
+            const screenCenterY = window.innerHeight / 2;
+
             // --- NEW: SLIDING COLLISION CHECK ---
             const checkWall = (x, y) => {
                 const gx = Math.floor(x / TILE_SIZE);
@@ -3330,6 +3393,45 @@ chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.t
                 player.vx = 0;
                 player.vy = 0;
                 player.isMoving = false;
+            }
+
+            // --- NUEVO: APLICAR CONTROLES DE PC (WASD + MOUSE) ---
+            if (!isTouchDevice && !player.isDead) {
+                
+                // 1. Movimiento WASD
+                if (!player.isReloading) {
+                    let moveX = 0;
+                    let moveY = 0;
+                    
+                    if (keys.w) moveY -= 1;
+                    if (keys.s) moveY += 1;
+                    if (keys.a) moveX -= 1;
+                    if (keys.d) moveX += 1;
+
+                    // Normalizar para que no camine más rápido en diagonal
+                    if (moveX !== 0 && moveY !== 0) {
+                        const length = Math.sqrt(moveX * moveX + moveY * moveY);
+                        moveX /= length;
+                        moveY /= length;
+                    }
+
+                    player.vx = moveX * player.speed;
+                    player.vy = moveY * player.speed;
+                    player.isMoving = (moveX !== 0 || moveY !== 0);
+                }
+
+                // 2. Apuntar con el Mouse (Matemática conectada a tu variable shootAngle)
+                const dx = mouseX - screenCenterX;
+                const dy = mouseY - screenCenterY;
+                shootAngle = Math.atan2(dy, dx);
+
+                // 3. Disparar (Clic Izquierdo)
+                // Si el mouse está presionado, activamos isShooting (igual que el joystick derecho)
+                if (isMouseDown && player.equippedWeapon === "ghost_gun") {
+                    isShooting = true;
+                } else {
+                    isShooting = false;
+                }
             }
 
             // 1. Try moving X first
@@ -3458,10 +3560,7 @@ chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.t
         
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
             ctx.imageSmoothingEnabled = false; 
-            ctx.webkitImageSmoothingEnabled = false;
-        
-            const screenCenterX = window.innerWidth / 2;
-            const screenCenterY = window.innerHeight / 2;   
+            ctx.webkitImageSmoothingEnabled = false;  
         
             drawGrid(-player.worldX, -player.worldY);
 

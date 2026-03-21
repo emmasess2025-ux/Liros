@@ -1265,10 +1265,10 @@
         
 
         // Connect to the live cloud server
-        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
-        const ws = new WebSocket('ws://localhost:8080');
+        //const ws = new WebSocket('ws://localhost:8080');
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow

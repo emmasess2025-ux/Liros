@@ -386,9 +386,10 @@
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%); 
-            width: 95vw; /* Made slightly wider to give more breathing room */
-            max-width: 600px;
-            height: 45px; /* SHRUNK from 55px */
+            width: fit-content; 
+            max-width: 95vw;
+            
+            height: 45px;
             background: rgba(30, 30, 30, 0.85);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
@@ -942,10 +943,6 @@
             <button class="layer-btn" data-layer="13">L13</button>
             <button class="layer-btn" data-layer="14">L14</button>
             <button class="layer-btn" data-layer="15">L15</button>
-            <div class="toolbar-divider"></div>
-
-            <button id="tool-pan" class="tool-btn active">🖐️ Pan</button>
-            <button id="tool-select" class="tool-btn">🔲 Select</button>
         </div>
     </div>
 
@@ -956,6 +953,11 @@
             <button id="close-palette" style="background: none; border: none; color: white; cursor: pointer; font-size: 16px;">✖</button>
         </div>
         
+        <div style="padding: 5px 10px 5px 25px; display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+            <button id="tool-pan" class="tool-btn">🖐️ Pan</button>
+            <button id="tool-select" class="tool-btn active">🔲 Select</button>
+        </div>
+
         <div id="tile-grid" style="overflow: auto; flex: 1; padding: 10px 10px 10px 25px; background: rgba(0,0,0,0.3); touch-action: pan-x pan-y;">
             <canvas id="palette-canvas" style="image-rendering: pixelated;"></canvas>
         </div>
@@ -1263,10 +1265,10 @@
         
 
         // Connect to the live cloud server
-        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
-        //const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket('ws://localhost:8080');
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow
@@ -2050,10 +2052,9 @@
                     pCanvas = document.getElementById('palette-canvas');
                     pCtx = pCanvas.getContext('2d');
                     
-                    PALETTE_SCALE = 2; // Hace que los tiles se vean el doble de grandes en la paleta
+                    PALETTE_SCALE = 2; 
                     const scaledSize = TILE_SIZE * PALETTE_SCALE;
                     
-                    // Calcular tamaño basado en tu imagen de All_Tilesets.png
                     cols = Math.floor(tilesetImage.width / TILE_SIZE);
                     const rows = Math.floor(tilesetImage.height / TILE_SIZE);
                     
@@ -2063,6 +2064,9 @@
                     attachPaletteListeners();
                 }
                 drawPalette();
+                
+                // --- NEW FIX: Automatically trigger Select Mode so you can drag instantly ---
+                document.getElementById('tool-select').click();
                 
                 // Efecto visual: Hace que el botón brille indicando que está encendido
                 appEditMode.querySelector('.app-bg').style.boxShadow = "0 0 15px #f5576c";
@@ -2258,7 +2262,7 @@
 
         // --- 3. LAYER & TOOL LOGIC ---
         let activeLayer = 0;
-        let paletteTool = 'pan'; 
+        let paletteTool = 'select';
         let worldMode = 'paint'; // 'paint' or 'select'
         
         let selectStart = null, selectEnd = null, isDraggingBox = false;
@@ -2276,14 +2280,6 @@
             };
         });
 
-        document.getElementById('tool-pan').onclick = (e) => {
-            paletteTool = 'pan';
-            e.target.classList.add('active');
-            document.getElementById('tool-select').classList.remove('active');
-            if (pCanvas) pCanvas.style.touchAction = 'pan-x pan-y'; 
-            document.getElementById('tile-grid').style.touchAction = 'pan-x pan-y';
-        };
-
         document.getElementById('tool-select').onclick = (e) => {
             paletteTool = 'select';
             e.target.classList.add('active');
@@ -2292,6 +2288,7 @@
             document.getElementById('tile-grid').style.touchAction = 'none';
         };
 
+        // --- 3. LÓGICA DE HERRAMIENTAS PRINCIPALES (PAINT, SELECT, ERASE) ---
         const worldPaintBtn = document.getElementById('world-paint-btn');
         const worldSelectBtn = document.getElementById('world-select-btn');
         const inspectCopyBtn = document.getElementById('inspect-copy-btn');
@@ -2300,27 +2297,51 @@
             worldMode = 'paint';
             worldPaintBtn.style.background = '#27ae60'; 
             worldSelectBtn.style.background = 'rgba(255,255,255,0.1)';
-            eraserBtn.style.borderColor = "transparent";
             tileInspector.style.display = 'none';
             mapSelectionBox = null; // Clear selections
+            
+            // EL FIX: Si estábamos borrando y tocamos "Paint", apagamos el borrador y regresamos al último bloque
+            if (selectedTileId === -1) {
+                selectedTileId = selectedGrid.tiles[0][0] !== undefined ? selectedGrid.tiles[0][0] : 0;
+                eraserBtn.style.borderColor = "transparent";
+            }
         };
 
         worldSelectBtn.onclick = () => {
             worldMode = 'select';
             worldSelectBtn.style.background = '#8e44ad'; // Purple
             worldPaintBtn.style.background = 'rgba(255,255,255,0.1)';
-            eraserBtn.style.borderColor = "transparent";
             tileInspector.style.display = 'none';
             mapSelectionBox = null;
+
+            // EL FIX: Apagar borrador también si cambiamos a "Select"
+            if (selectedTileId === -1) {
+                selectedTileId = selectedGrid.tiles[0][0] !== undefined ? selectedGrid.tiles[0][0] : 0;
+                eraserBtn.style.borderColor = "transparent";
+            }
         };
 
-        eraserBtn.addEventListener('click', () => {
-            worldPaintBtn.onclick(); 
-            selectedTileId = selectedTileId === -1 ? 0 : -1;
-            eraserBtn.style.borderColor = selectedTileId === -1 ? "#f1c40f" : "transparent"; 
+        // Usamos .onclick en lugar de addEventListener para evitar duplicados
+        eraserBtn.onclick = () => {
+            // El borrador siempre forza el modo visual a "Paint"
+            worldMode = 'paint';
+            worldPaintBtn.style.background = '#27ae60'; 
+            worldSelectBtn.style.background = 'rgba(255,255,255,0.1)';
+            tileInspector.style.display = 'none';
+            mapSelectionBox = null;
+            
+            if (selectedTileId === -1) {
+                // APAGAR BORRADOR (Volver al bloque anterior)
+                selectedTileId = selectedGrid.tiles[0][0] !== undefined ? selectedGrid.tiles[0][0] : 0;
+                eraserBtn.style.borderColor = "transparent"; 
+            } else {
+                // ENCENDER BORRADOR (-1 significa "vacío")
+                selectedTileId = -1;
+                eraserBtn.style.borderColor = "#f1c40f"; 
+            }
             drawPalette();
-        });
-
+        };
+        
         // --- NEW: UNDO & REDO HISTORY STACKS ---
         const undoStack = [];
         const redoStack = [];
@@ -2385,7 +2406,35 @@
             }
         }
 
-        // --- 4. MULTI-SELECT PALETTE ---
+        // --- 4. MULTI-SELECT PALETTE (CON PAN PARA PC) ---
+        let isPanningPalette = false;
+        let panStartX = 0, panStartY = 0;
+        let scrollStartX = 0, scrollStartY = 0;
+        const tileGridDiv = document.getElementById('tile-grid');
+
+        // Botones de Herramientas de la Paleta (Con Cursores)
+        document.getElementById('tool-pan').onclick = (e) => {
+            paletteTool = 'pan';
+            e.target.classList.add('active');
+            document.getElementById('tool-select').classList.remove('active');
+            if (pCanvas) {
+                pCanvas.style.touchAction = 'pan-x pan-y'; 
+                pCanvas.style.cursor = 'grab'; // Manita abierta
+            }
+            tileGridDiv.style.touchAction = 'pan-x pan-y';
+        };
+
+        document.getElementById('tool-select').onclick = (e) => {
+            paletteTool = 'select';
+            e.target.classList.add('active');
+            document.getElementById('tool-pan').classList.remove('active');
+            if (pCanvas) {
+                pCanvas.style.touchAction = 'none'; 
+                pCanvas.style.cursor = 'crosshair'; // Cruz de selección
+            }
+            tileGridDiv.style.touchAction = 'none';
+        };
+
         function getPaletteGridXY(e) {
             const rect = pCanvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -2398,21 +2447,51 @@
         }
 
         function handlePaletteDown(e) {
-            if (paletteTool !== 'select') return;
-            isDraggingBox = true;
-            selectStart = getPaletteGridXY(e);
-            selectEnd = selectStart;
-            drawPalette();
+            if (paletteTool === 'select') {
+                isDraggingBox = true;
+                selectStart = getPaletteGridXY(e);
+                selectEnd = selectStart;
+                drawPalette();
+            } 
+            // NUEVO: Iniciar Paneo en PC
+            else if (paletteTool === 'pan' && e.clientX !== undefined) {
+                isPanningPalette = true;
+                panStartX = e.clientX;
+                panStartY = e.clientY;
+                scrollStartX = tileGridDiv.scrollLeft;
+                scrollStartY = tileGridDiv.scrollTop;
+                pCanvas.style.cursor = 'grabbing'; // Manita cerrada
+            }
         }
 
         function handlePaletteMove(e) {
-            if (!isDraggingBox || paletteTool !== 'select') return;
-            e.preventDefault(); 
-            selectEnd = getPaletteGridXY(e);
-            drawPalette();
+            if (paletteTool === 'select' && isDraggingBox) {
+                e.preventDefault(); 
+                const newEnd = getPaletteGridXY(e);
+                
+                // --- EL FIX DE RENDIMIENTO (ANTI-LAG) ---
+                // Solo redibujamos la paleta si cruzamos a un tile DIFERENTE
+                if (newEnd.c !== selectEnd.c || newEnd.r !== selectEnd.r) {
+                    selectEnd = newEnd;
+                    drawPalette();
+                }
+            } 
+            // Arrastrar Paneo en PC
+            else if (paletteTool === 'pan' && isPanningPalette && e.clientX !== undefined) {
+                const dx = e.clientX - panStartX;
+                const dy = e.clientY - panStartY;
+                tileGridDiv.scrollLeft = scrollStartX - dx;
+                tileGridDiv.scrollTop = scrollStartY - dy;
+            }
         }
 
         function handlePaletteUp(e) {
+            // NUEVO: Soltar Paneo SIEMPRE que soltemos el clic
+            if (paletteTool === 'pan') {
+                isPanningPalette = false;
+                if (pCanvas) pCanvas.style.cursor = 'grab'; // Vuelve la manita abierta
+            }
+
             if (!isDraggingBox || paletteTool !== 'select') return;
             isDraggingBox = false;
             
@@ -2440,14 +2519,20 @@
         function attachPaletteListeners() {
             pCanvas.onmousedown = handlePaletteDown;
             pCanvas.onmousemove = handlePaletteMove;
-            window.addEventListener('mouseup', () => { if(isDraggingBox) handlePaletteUp(); });
+            
+            // EL FIX: Antes tenía un 'if(isDraggingBox)'. Ahora escucha siempre 
+            // que levantas el dedo o el clic para detener cualquier acción (pan o select).
+            window.addEventListener('mouseup', handlePaletteUp);
+            
             pCanvas.ontouchstart = handlePaletteDown;
             pCanvas.ontouchmove = handlePaletteMove;
-            window.addEventListener('touchend', () => { if(isDraggingBox) handlePaletteUp(); });
+            window.addEventListener('touchend', handlePaletteUp);
         }
 
         function drawPalette() {
             if (!pCtx) return;
+            // --- EL FIX DEL GHOSTING: Limpiar el lienzo antes de redibujar ---
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
             pCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
             pCtx.imageSmoothingEnabled = false;

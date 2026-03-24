@@ -642,7 +642,7 @@
     </style>
 </head>
 <body>
-    <div id="damage-overlay"></div>
+<div id="fade-overlay" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: black; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 4000;"></div>    <div id="damage-overlay"></div>
 
 <div id="dynamic-island">
         
@@ -749,9 +749,32 @@
             <span>House</span>
         </div>
 
-        <div class="app-icon" id="app-edit-mode">
+        <div class="app-icon" id="app-edit-mode" style="display: none;">
             <div class="app-bg" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🎨</div>
             <span>Edit Mode</span>
+        </div>
+
+        <div class="app-icon" id="app-god-panel" style="display: none;">
+            <div class="app-bg" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); box-shadow: 0 0 15px #38ef7d;">⚡</div>
+            <span style="color: #38ef7d;">God Panel</span>
+        </div>
+    </div>
+
+    <div id="god-modal" style="display: none; position: absolute; top: 150px; left: 20px; width: 280px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(15px); border: 2px solid #38ef7d; border-radius: 12px; color: white; box-shadow: 0 10px 40px rgba(56, 239, 125, 0.4); z-index: 2800; flex-direction: column; overflow: hidden;">
+            
+        <div id="god-drag-handle" style="background: rgba(56, 239, 125, 0.15); padding: 8px 12px; cursor: grab; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 239, 125, 0.3); touch-action: none;">
+            <span style="font-size: 14px; color: #38ef7d; font-weight: bold; font-family: sans-serif;">⋮⋮ God Tools</span>
+            <button id="close-god-modal" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 0;">✖</button>
+        </div>
+
+        <div style="padding: 15px;">
+            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.2); text-align: center;">
+                <h4 style="margin: 0 0 8px 0; color: #f1c40f; font-family: sans-serif;">Live Event Maker</h4>
+                <p style="font-size: 11px; color: #aaa; margin: 0 0 12px 0; font-family: sans-serif;">Haz clic en las paredes para desaparecer sus colisiones en tiempo real.</p>
+                <button id="god-pointer-btn" style="width: 100%; padding: 10px; border-radius: 6px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                    🪄 Puntero Mágico
+                </button>
+            </div>
         </div>
     </div>
 
@@ -915,6 +938,25 @@
         </div>
     </div>
 
+    <div id="god-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 2800;">
+        <div style="width: 320px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(15px); border: 2px solid #38ef7d; border-radius: 15px; padding: 25px; color: white; box-shadow: 0 10px 40px rgba(56, 239, 125, 0.3); text-align: center;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(56, 239, 125, 0.3); padding-bottom: 10px;">
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 20px; color: #38ef7d;">⚡ God Tools</h3>
+                <button id="close-god-modal" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px dashed rgba(255,255,255,0.2); margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #f1c40f;">Live Event Maker</h4>
+                <p style="font-size: 12px; color: #aaa; margin: 0 0 15px 0;">Activa el puntero mágico para hacer clic en las paredes y desaparecer sus colisiones en tiempo real.</p>
+                <button id="god-pointer-btn" style="width: 100%; padding: 12px; border-radius: 8px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer; transition: 0.2s;">
+                    🪄 Activar Puntero Mágico
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     <div id="joystick-zone">
         <div id="joystick-knob"></div>
     </div>
@@ -955,6 +997,10 @@
             <button class="layer-btn" data-layer="14">L14</button>
             <button class="layer-btn" data-layer="15">L15</button>
         </div>
+    </div>
+    
+    <div id="coord-helper" style="display: none; position: absolute; top: 40px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.8); border: 1px solid #2ecc71; color: #2ecc71; padding: 5px 15px; border-radius: 8px; font-family: monospace; font-size: 14px; font-weight: bold; z-index: 3000; pointer-events: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+        X: 0 | Y: 0
     </div>
 
     <div id="tile-palette">
@@ -1075,7 +1121,8 @@
             { id: "water_well", name: "Water Well", src: "tilesets/water_well.png", startId: 5600000 },
             { id: "windows_doors", name: "Windows & Doors", src: "tilesets/Windows_and_Doors.png", startId: 5700000 },
             { id: "wooden_fence_01", name: "Wooden Fence 01", src: "tilesets/wooden_fence_01.png", startId: 5800000 },
-            { id: "wooden_fence_02", name: "Wooden Fence 02", src: "tilesets/wooden_fence_02.png", startId: 5900000 }
+            { id: "wooden_fence_02", name: "Wooden Fence 02", src: "tilesets/wooden_fence_02.png", startId: 5900000 },
+            { id: "logic_tiles", name: "⚙️ Lógica", src: "tilesets/logic_tiles.png", startId: 6000000 }
         ];
 
         const loadedTilesets = {};
@@ -1251,7 +1298,8 @@
             frameY: 0,      
             tickCount: 0,   
             ticksPerFrame: 5, 
-            isMoving: false,          
+            isMoving: false, 
+            isTeleporting: false,         
             currentImage: null,
             
             hotbar: ["none", "none", "none"], 
@@ -1383,7 +1431,7 @@
         const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
-        //const ws = new WebSocket('ws://localhost:8080');
+        // const ws = new WebSocket('ws://localhost:8080');
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow
@@ -1523,7 +1571,8 @@
                     data.worldMap.forEach(t => {
                         const l = t.l || 0;
                         worldMap[`${t.x},${t.y},${l}`] = { 
-                            tileId: t.tileId, l: l, hasCollision: t.hasCollision || false 
+                            tileId: t.tileId, l: l, hasCollision: t.hasCollision || false,
+                            triggerType: t.triggerType, destX: t.destX, destY: t.destY // <-- NUEVO
                         };
                     });
                 }
@@ -1551,11 +1600,15 @@
                 });
             }
             else if (data.type === 'tile_meta_update') {
-                // Someone changed a tile using the Inspector
-                if (worldMap[`${data.x},${data.y}`]) {
-                    worldMap[`${data.x},${data.y}`].layer = data.layer;
-                    worldMap[`${data.x},${data.y}`].hasCollision = data.hasCollision;
-                    worldMap[`${data.x},${data.y}`].overlayTileId = data.overlayTileId; // <--- NEW
+                const key = `${data.x},${data.y},${data.layer}`;
+                if (worldMap[key]) {
+                    worldMap[key].layer = data.layer;
+                    worldMap[key].hasCollision = data.hasCollision;
+                    if (data.triggerType) {
+                        worldMap[key].triggerType = data.triggerType;
+                        worldMap[key].destX = data.destX;
+                        worldMap[key].destY = data.destY;
+                    }
                 }
             }// --- NEW: RECEIVE BULLET FROM ANOTHER PLAYER ---
             else if (data.type === 'shoot') {
@@ -1662,6 +1715,23 @@
                 // --- THE HOTBAR PERSISTENCE FIX ---
                 player.hotbar = data.player.hotbar || ["none", "none", "none"]; 
                 player.accountId = data.player.accountId;
+                
+                // --- NUEVO: RECIBIR TU ROL ---
+                player.role = data.player.role;
+
+                // EL FIX: Comprobamos si los botones existen antes de intentar cambiarles el 'style'
+                const appEditModeBtn = document.getElementById('app-edit-mode');
+                const appGodPanelBtn = document.getElementById('app-god-panel');
+
+                // Ocultar o Mostrar el botón del Editor según tu rol
+                if (player.role === 'admin') {
+                    if (appEditModeBtn) appEditModeBtn.style.display = 'flex';
+                    if (appGodPanelBtn) appGodPanelBtn.style.display = 'flex';
+                } else {
+                    if (appEditModeBtn) appEditModeBtn.style.display = 'none';
+                    if (appGodPanelBtn) appGodPanelBtn.style.display = 'none';
+                    editMode = false; // Por si acaso un hacker intenta forzarlo
+                }
                 // Set the active highlight to match the equipped weapon
                 const slotIndex = player.hotbar.indexOf(player.equippedWeapon);
                 if (slotIndex !== -1) {
@@ -1807,7 +1877,7 @@
                 
                 const currentString = JSON.stringify(currentState);
 
-                if (currentString !== lastNetworkString) {
+               if (currentString !== lastNetworkString) {
                     ws.send(JSON.stringify({
                         type: 'update',
                         player: {
@@ -1816,12 +1886,8 @@
                             frameX: player.frameX, frameY: player.frameY,
                             isMoving: player.isMoving,
                             message: player.message, messageTimer: player.messageTimer,
-                            isTyping: player.isTyping,
-                            
-                            equippedWeapon: player.equippedWeapon,
-                            inventory: player.inventory, // <--- STOP THE SERVER FROM ERASING BAG
-                            hotbar: player.hotbar, // <--- ENSURE THIS LINE IS HERE
-                            friends: player.friends      // <--- STOP THE SERVER FROM ERASING FRIENDS
+                            isTyping: player.isTyping
+                            // ¡ELIMINADOS: equippedWeapon, inventory, hotbar y friends!
                         }
                     }));
                     lastNetworkString = currentString; 
@@ -1949,11 +2015,30 @@
         }
         
         function sendMessage() {
-            if (chatInput.value.trim() !== "") {
-                player.message = chatInput.value;
-                player.messageTimer = 420;
+            const text = chatInput.value.trim();
+            if (text !== "") {
+                
+                // --- COMANDO DE ADMIN: TELETRANSPORTE INSTANTÁNEO ---
+                // ¡EL FIX!: Ahora verifica si tienes el rol de admin
+                if (text.startsWith('/tp ') && player.role === 'admin') {
+                    const parts = text.split(' ');
+                    if (parts.length === 3) {
+                        const tx = parseInt(parts[1]);
+                        const ty = parseInt(parts[2]);
+                        if (!isNaN(tx) && !isNaN(ty)) {
+                            player.worldX = (tx * TILE_SIZE) + (TILE_SIZE / 2);
+                            player.worldY = (ty * TILE_SIZE) + (TILE_SIZE / 2);
+                            lastNetworkString = ""; 
+                        }
+                    }
+                } 
+                // --- MENSAJE DE CHAT NORMAL ---
+                else {
+                    player.message = text;
+                    player.messageTimer = 420;
+                }
             }
-            closeChat(); // Always close after sending
+            closeChat(); 
         }
         
         sendBtn.addEventListener('click', sendMessage);
@@ -2156,6 +2241,7 @@
         const inspectCollision = document.getElementById('inspect-collision');
         const eraserBtn = document.getElementById('eraser-btn'); 
         const paletteResizer = document.getElementById('palette-resizer');
+        const coordHelper = document.getElementById('coord-helper');
 
         let isResizingPalette = false;
         let inspectingCoord = null; 
@@ -2172,7 +2258,8 @@
             if (editMode) {
                 editorToolbar.style.display = 'flex';
                 tilePalette.style.display = 'flex';
-                
+                if(coordHelper) coordHelper.style.display = 'block'; // <--- SHOW RADAR
+
                 if (!pCanvas) {
                     pCanvas = document.getElementById('palette-canvas');
                     pCtx = pCanvas.getContext('2d');
@@ -2213,6 +2300,7 @@
                 tileInspector.style.display = 'none';
                 isPainting = false;
                 appEditMode.querySelector('.app-bg').style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
+                if(coordHelper) coordHelper.style.display = 'none'; // <--- HIDE RADAR
             }
         });
 
@@ -2242,6 +2330,107 @@
         });
 
         // 👆 HASTA AQUÍ 👆
+
+// --- LÓGICA DEL GOD PANEL Y PUNTERO MÁGICO ---
+        const appGodPanel = document.getElementById('app-god-panel');
+        const godModal = document.getElementById('god-modal');
+        const closeGodModal = document.getElementById('close-god-modal');
+        const godPointerBtn = document.getElementById('god-pointer-btn');
+        const godDragHandle = document.getElementById('god-drag-handle'); 
+        
+        let godPointerActive = false;
+
+        // EL FIX: Envolver en un "if" gigante para que no crashee si te falta el HTML
+        if (appGodPanel && godModal && closeGodModal && godPointerBtn) {
+            
+            appGodPanel.addEventListener('click', () => {
+                appTray.classList.remove('open');
+                godModal.style.display = 'flex';
+            });
+
+            closeGodModal.addEventListener('click', () => {
+                godModal.style.display = 'none';
+            });
+
+            godPointerBtn.addEventListener('click', () => {
+                godPointerActive = !godPointerActive;
+                if (godPointerActive) {
+                    godPointerBtn.style.background = "#e74c3c";
+                    godPointerBtn.innerText = "🔴 Puntero Activado";
+                    canvas.style.cursor = 'crosshair';
+                } else {
+                    godPointerBtn.style.background = "#34495e";
+                    godPointerBtn.innerText = "🪄 Activar Puntero Mágico";
+                    canvas.style.cursor = 'default';
+                }
+            });
+        }
+
+        // Interceptar clics en el juego cuando el puntero está activo
+        canvas.addEventListener('mousedown', (e) => {
+            if (godPointerActive && player.role === 'admin' && e.button === 0) {
+                e.stopPropagation(); 
+                
+                const gridPos = getWorldGridXY(e.clientX, e.clientY);
+                
+                for (let l = 15; l >= 0; l--) {
+                    const key = `${gridPos.x},${gridPos.y},${l}`;
+                    if (worldMap[key]) {
+                        const newCollisionState = !worldMap[key].hasCollision;
+                        worldMap[key].hasCollision = newCollisionState;
+                        
+                        ws.send(JSON.stringify({
+                            type: 'update_tile_metadata', 
+                            x: gridPos.x, y: gridPos.y, layer: l, 
+                            hasCollision: newCollisionState
+                        }));
+                        
+                        spawnDamageText(gridPos.x * TILE_SIZE, gridPos.y * TILE_SIZE, newCollisionState ? "LOCKED" : "OPEN", newCollisionState);
+                        break; 
+                    }
+                }
+            }
+        }, true);
+
+        // --- LÓGICA DE ARRASTRE PARA LA VENTANA DE DIOS ---
+        let isDraggingGod = false;
+        let godOffsetX = 0;
+        let godOffsetY = 0;
+
+        function startDragGod(clientX, clientY, e) {
+            isDraggingGod = true;
+            if (!godModal) return;
+            const rect = godModal.getBoundingClientRect();
+            godOffsetX = clientX - rect.left;
+            godOffsetY = clientY - rect.top;
+            if(godDragHandle) godDragHandle.style.cursor = 'grabbing';
+            if(e && e.preventDefault) e.preventDefault();
+        }
+
+        function moveGod(clientX, clientY) {
+            if (!isDraggingGod || !godModal) return;
+            let newX = clientX - godOffsetX;
+            let newY = clientY - godOffsetY;
+            
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX + godModal.offsetWidth > window.innerWidth) newX = window.innerWidth - godModal.offsetWidth;
+            if (newY + godModal.offsetHeight > window.innerHeight) newY = window.innerHeight - godModal.offsetHeight;
+
+            godModal.style.left = newX + 'px';
+            godModal.style.top = newY + 'px';
+        }
+
+        // EL FIX: Envolver los detectores de arrastre
+        if (godDragHandle) {
+            godDragHandle.addEventListener('touchstart', (e) => startDragGod(e.touches[0].clientX, e.touches[0].clientY, e), {passive: false});
+            window.addEventListener('touchmove', (e) => { if (e.touches.length > 0) moveGod(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+            window.addEventListener('touchend', () => { isDraggingGod = false; godDragHandle.style.cursor = 'grab'; });
+            
+            godDragHandle.addEventListener('mousedown', (e) => startDragGod(e.clientX, e.clientY, e));
+            window.addEventListener('mousemove', (e) => moveGod(e.clientX, e.clientY));
+            window.addEventListener('mouseup', () => { isDraggingGod = false; godDragHandle.style.cursor = 'grab'; });
+        }
 
         // --- UPGRADED: MAP UI & PHYSICS ---
         const mapToggle = document.getElementById('map-toggle');
@@ -2865,7 +3054,7 @@
             if (worldMap[centerKey] && selectedGrid.w === 1 && selectedGrid.h === 1) {
                 inspectingCoord = centerKey;
                 mapSelectionBox = null;
-                
+                tpDestX.value = worldMap[centerKey].destX || ""; tpDestY.value = worldMap[centerKey].destY || "";
                 // Ocultamos los botones masivos cuando solo tocas 1 bloque
                 if(inspectCopyBtn) inspectCopyBtn.style.display = 'none';
                 if(inspectCopyBelowBtn) inspectCopyBelowBtn.style.display = 'none';
@@ -3034,13 +3223,25 @@
             }
         }
 
-        // --- ENLAZAR EVENTOS TÁCTILES ---
+// --- ENLAZAR EVENTOS TÁCTILES ---
         canvas.addEventListener('touchstart', (e) => {
             if (e.touches.length > 1) return;
+            
+            // --- FIX: Actualizar Radar con un solo toque en Móvil ---
+            if (editMode && coordHelper && e.touches.length > 0) {
+                const gridPos = getWorldGridXY(e.touches[0].clientX, e.touches[0].clientY);
+                coordHelper.innerText = `X: ${gridPos.x} | Y: ${gridPos.y}`;
+            }
+            
             handleEditStart(e.touches[0].clientX, e.touches[0].clientY);
         }, {passive: false});
 
         canvas.addEventListener('touchmove', (e) => {
+            // --- NUEVO: Update Radar HUD for Mobile ---
+            if (editMode && coordHelper && e.touches.length > 0) {
+                const gridPos = getWorldGridXY(e.touches[0].clientX, e.touches[0].clientY);
+                coordHelper.innerText = `X: ${gridPos.x} | Y: ${gridPos.y}`;
+            }
             handleEditMove(e.touches[0].clientX, e.touches[0].clientY, e);
         }, {passive: false});
 
@@ -3058,6 +3259,11 @@
         });
 
         window.addEventListener('mousemove', (e) => {
+            // --- NUEVO: Update Radar HUD ---
+            if (editMode && coordHelper && e.target.id === 'gameCanvas') {
+                const gridPos = getWorldGridXY(e.clientX, e.clientY);
+                coordHelper.innerText = `X: ${gridPos.x} | Y: ${gridPos.y}`;
+            }
             handleEditMove(e.clientX, e.clientY, e);
         });
 
@@ -3193,6 +3399,42 @@
             }
         };
 
+        // --- NUEVO: GUARDAR COORDENADAS DE TELETRANSPORTE ---
+        const tpDestX = document.getElementById('tp-dest-x');
+        const tpDestY = document.getElementById('tp-dest-y');
+        const saveTpBtn = document.getElementById('save-tp-btn');
+
+        saveTpBtn.onclick = () => {
+            if (inspectingCoord) {
+                const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
+                const dx = parseInt(tpDestX.value);
+                const dy = parseInt(tpDestY.value);
+
+                if (!isNaN(dx) && !isNaN(dy)) {
+                    // 1. Guardar localmente
+                    worldMap[inspectingCoord].triggerType = 'teleport';
+                    worldMap[inspectingCoord].destX = dx;
+                    worldMap[inspectingCoord].destY = dy;
+
+                    // 2. Enviar al Servidor
+                    ws.send(JSON.stringify({
+                        type: 'update_tile_metadata', 
+                        x: gx, y: gy, layer: gl, 
+                        hasCollision: inspectCollision.checked,
+                        triggerType: 'teleport', destX: dx, destY: dy
+                    }));
+
+                    // 3. Feedback visual del botón
+                    saveTpBtn.innerText = "Saved!";
+                    saveTpBtn.style.background = "#27ae60";
+                    setTimeout(() => {
+                        saveTpBtn.innerText = "Save";
+                        saveTpBtn.style.background = "#2ecc71";
+                    }, 1500);
+                }
+            }
+        };
+
         // --- UPGRADED MINIMAP DRAW ENGINE ---
         function drawMinimap() {
             if (!mCtx) return;
@@ -3213,8 +3455,9 @@
             const mapRadiusY = (minimapCanvas.height / 2) / scale;
 
             // 1. DRAW TILES
-            const tilesPerRow = Math.floor(tilesetImage.width / TILE_SIZE);
-            for (let currentLayer = 0; currentLayer <= 15; currentLayer++) { // <-- Cambiar a 15
+            // (¡Aquí borramos la línea que daba error!)
+            
+            for (let currentLayer = 0; currentLayer <= 15; currentLayer++) { 
                 for (let key in worldMap) {
                     const tileData = worldMap[key];
                     if (!tileData || tileData.l !== currentLayer) continue;
@@ -3230,10 +3473,11 @@
                     const drawX = (worldTileX - cameraX) * scale + (minimapCanvas.width / 2);
                     const drawY = (worldTileY - cameraY) * scale + (minimapCanvas.height / 2);
                     
-                    // --- NUEVO: Extraer imagen para el minimapa ---
+                    // --- LA MAGIA MULTI-TILESET EN EL MINIMAPA ---
                     const tsData = getTilesetData(tileData.tileId);
                     if (!tsData || !tsData.img) continue;
 
+                    // El cálculo de tilesPerRow YA ESTÁ AQUÍ ADENTRO correctamente
                     const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
                     const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                     const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
@@ -3783,13 +4027,11 @@ chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.t
 
             noneSlot.onclick = () => {
                 player.hotbar[equippingSlotIndex] = "none";
-                // If we just emptied the slot we are currently holding, de-equip immediately
-                if (player.activeSlot === equippingSlotIndex) {
-                    player.equippedWeapon = "none";
-                }
+                if (player.activeSlot === equippingSlotIndex) player.equippedWeapon = "none";
                 renderHudHotbar();
                 inventoryModal.style.display = 'none';
-                lastNetworkString = ""; 
+                // --- NUEVO ---
+                if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'update_hotbar', slotIndex: equippingSlotIndex, weaponId: "none" }));
             };
             inventoryGrid.appendChild(noneSlot);
 
@@ -3811,12 +4053,11 @@ chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.t
                     
                     slot.onclick = () => {
                         player.hotbar[equippingSlotIndex] = "ghost_gun";
-                        if (player.activeSlot === equippingSlotIndex) {
-                            player.equippedWeapon = "ghost_gun";
-                        }
+                        if (player.activeSlot === equippingSlotIndex) player.equippedWeapon = "ghost_gun";
                         renderHudHotbar();
                         inventoryModal.style.display = 'none';
-                        lastNetworkString = ""; 
+                        // --- NUEVO ---
+                        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'update_hotbar', slotIndex: equippingSlotIndex, weaponId: "ghost_gun" }));
                     };
                 }
                 inventoryGrid.appendChild(slot);
@@ -3849,17 +4090,19 @@ chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.t
 
                 slot.onclick = () => {
                     if (player.activeSlot === i) {
-                        // Toggle the weapon on/off if clicking the same slot
                         player.equippedWeapon = (player.equippedWeapon === "none") ? player.hotbar[i] : "none";
                         player.ammo = WEAPONS[player.equippedWeapon] ? WEAPONS[player.equippedWeapon].magSize : 0;
                     } else {
-                        // Switch slots and auto-equip whatever is there
                         player.activeSlot = i;
                         player.equippedWeapon = player.hotbar[i] || "none";
                     }
                     
                     renderHudHotbar();
-                    lastNetworkString = ""; // Tell the server the weapon state changed
+                    
+                    // --- NUEVO: AVISAR AL SERVIDOR QUE CAMBIAMOS DE ARMA ---
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: 'equip_weapon', weaponId: player.equippedWeapon }));
+                    }
                 };
             }
         }
@@ -4059,6 +4302,36 @@ chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.t
                 }
             }
 
+            // --- NUEVO: DETECCIÓN DE TELETRANSPORTE (CAPA 15) ---
+            if (!player.isDead && !editMode && !player.isTeleporting) {
+                const currentGridX = Math.floor(player.worldX / TILE_SIZE);
+                const currentGridY = Math.floor(player.worldY / TILE_SIZE);
+                const logicTile = worldMap[`${currentGridX},${currentGridY},15`];
+
+                if (logicTile && logicTile.triggerType === 'teleport') {
+                    player.isTeleporting = true;
+                    player.vx = 0; player.vy = 0;
+                    player.isMoving = false;
+
+                    const fade = document.getElementById('fade-overlay');
+                    fade.style.opacity = '1'; 
+
+                    // FIX: Reducido de 500ms a 250ms
+                    setTimeout(() => {
+                        player.worldX = (logicTile.destX * TILE_SIZE) + (TILE_SIZE / 2);
+                        player.worldY = (logicTile.destY * TILE_SIZE) + (TILE_SIZE / 2);
+                        lastNetworkString = ""; 
+
+                        // FIX: Reducido de 400ms a 200ms
+                        setTimeout(() => {
+                            fade.style.opacity = '0';
+                            player.isTeleporting = false; 
+                        }, 200);
+
+                    }, 250);
+                }
+            }
+
             // 1. Try moving X first
             player.worldX += player.vx;
             if (checkWall(player.worldX, player.worldY)) {
@@ -4209,50 +4482,52 @@ chatRow.addEventListener('click', () => openPMModal(chat.targetAccountId, chat.t
             drawGrid(-player.worldX, -player.worldY);
 
             // HELPER FUNCTION: Draws a specific range of layers (CON CULLING Y MULTI-TILESET)
+            // HELPER FUNCTION: Draws a specific range of layers (CON CULLING Y MULTI-TILESET)
             function drawWorldLayers(startLayer, endLayer) {
-                // ⚠️ AQUÍ ESTABA EL ERROR: Borramos la línea vieja de tilesPerRow que estaba aquí
+                // 1. CALCULATE CAMERA BOUNDS (EL FIX: Usar window.innerWidth para pantallas HD)
+                const screenWidthWorld = window.innerWidth / zoomLevel;
+                const screenHeightWorld = window.innerHeight / zoomLevel;
 
-                const cullMargin = TILE_SIZE * zoomLevel; 
-                const screenLeft = -cullMargin;
-                const screenRight = window.innerWidth + cullMargin;
-                const screenTop = -cullMargin;
-                const screenBottom = window.innerHeight + cullMargin;
+                const startCol = Math.floor((player.worldX - (screenWidthWorld / 2)) / TILE_SIZE) - 1;
+                const endCol = Math.floor((player.worldX + (screenWidthWorld / 2)) / TILE_SIZE) + 1;
+                const startRow = Math.floor((player.worldY - (screenHeightWorld / 2)) / TILE_SIZE) - 1;
+                const endRow = Math.floor((player.worldY + (screenHeightWorld / 2)) / TILE_SIZE) + 1;
 
+                const scaledSize = TILE_SIZE * zoomLevel;
+
+                // 2. RENDER ONLY WHAT IS VISIBLE
                 for (let currentLayer = startLayer; currentLayer <= endLayer; currentLayer++) {
                     
+                    if (!editMode && currentLayer === 15) continue; 
+
                     if (editMode) {
                         ctx.globalAlpha = (currentLayer === activeLayer) ? 1.0 : 0.3;
                     } else {
                         ctx.globalAlpha = 1.0; 
                     }
 
-                    for (let key in worldMap) {
-                        const tileData = worldMap[key];
-                        if (!tileData || tileData.l !== currentLayer) continue;
-                        
-                        const parts = key.split(',');
-                        const tx = Number(parts[0]);
-                        const ty = Number(parts[1]);
-                        
-                        const drawX = Math.round(screenCenterX + (tx * TILE_SIZE - player.worldX) * zoomLevel);
-                        const drawY = Math.round(screenCenterY + (ty * TILE_SIZE - player.worldY) * zoomLevel);
-                        const scaledSize = TILE_SIZE * zoomLevel;
+                    // Iteramos exactamente los cuadros de la pantalla en lugar de todo el mapa
+                    for (let gridY = startRow; gridY <= endRow; gridY++) {
+                        for (let gridX = startCol; gridX <= endCol; gridX++) {
+                            
+                            const key = `${gridX},${gridY},${currentLayer}`;
+                            const tileData = worldMap[key];
 
-                        // Culling
-                        if (drawX < screenLeft || drawX > screenRight || drawY < screenTop || drawY > screenBottom) {
-                            continue; 
+                            if (!tileData) continue; 
+
+                            const tsData = getTilesetData(tileData.tileId);
+                            if (!tsData || !tsData.img) continue; 
+
+                            // Aquí usamos screenCenterX que ya está declarado correctamente al inicio de update()
+                            const drawX = Math.round(screenCenterX + ((gridX * TILE_SIZE) - player.worldX) * zoomLevel);
+                            const drawY = Math.round(screenCenterY + ((gridY * TILE_SIZE) - player.worldY) * zoomLevel);
+
+                            const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
+                            const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
+                            const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
+                            
+                            ctx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, scaledSize, scaledSize);
                         }
-
-                        // --- LA MAGIA MULTI-TILESET ---
-                        const tsData = getTilesetData(tileData.tileId);
-                        if (!tsData || !tsData.img) continue; // Si el bloque no existe o no cargó, lo ignoramos
-
-                        // AHORA CALCULAMOS LAS COLUMNAS DEPENDIENDO DE LA IMAGEN ACTUAL
-                        const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
-                        const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
-                        const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
-                        
-                        ctx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, scaledSize, scaledSize);
                     }
                 }
                 ctx.globalAlpha = 1.0; 

@@ -821,8 +821,8 @@
             style="width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(12px); border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 12px; cursor: pointer; padding: 0; overflow: hidden; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
             <canvas id="notif-canvas" width="45" height="45" style="image-rendering: pixelated;"></canvas>
         </button>
-        <div id="notif-badge"
-            style="position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #222;">
+        <div id="friend-notif-badge"
+            style="display: none; position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; justify-content: center; align-items: center; border: 2px solid #222;">
             1</div>
     </div>
 
@@ -870,6 +870,11 @@
         <div class="app-icon" id="app-friends">
             <div class="app-bg" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">👥</div>
             <span>Friends</span>
+        </div>
+
+        <div class="app-icon" id="open-squads-btn">
+            <div class="app-bg" style="background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);">🏴‍☠️</div>
+            <span>Squads</span>
         </div>
 
         <div class="app-icon" id="app-house">
@@ -959,7 +964,15 @@
                 <h2 id="profile-name-display"
                     style="color: white; margin: 0 0 5px 0; font-family: sans-serif; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
                     Username</h2>
-                <p style="color: #aaa; margin: 0 0 10px 0; font-family: sans-serif; font-size: 14px;">Lv. 1 Musician</p>
+                <p style="color: #aaa; margin: 0 0 10px 0; font-family: sans-serif; font-size: 14px;">Lv. 1</p>
+
+                <div id="profile-squad-tag-container"
+                    style="display: none; align-items: center; gap: 6px; margin-bottom: 15px; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: fit-content;">
+                    <span id="profile-squad-name"
+                        style="font-size: 13px; color: rgba(255,255,255,0.8); font-family: sans-serif; font-style: italic;"></span>
+                    <img id="profile-squad-logo" src=""
+                        style="width: 16px; height: 16px; border-radius: 4px; object-fit: cover; display: none;">
+                </div>
 
                 <div
                     style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 6px 14px; border-radius: 12px; width: fit-content; border: 1px solid rgba(255, 215, 0, 0.3); box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);">
@@ -1031,6 +1044,155 @@
 
             <div id="inbox-list-container"
                 style="flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+            </div>
+        </div>
+    </div>
+
+    <div id="squad-main-modal"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 3000;">
+        <div
+            style="width: 350px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 25px; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative;">
+
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 20px;">🏴‍☠️ Squads</h3>
+                <button id="close-squad-main"
+                    style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+            </div>
+
+            <p
+                style="color: #aaa; font-size: 14px; margin-top: 0; margin-bottom: 20px; text-align: center; font-family: sans-serif;">
+                Domina el mapa con tu pandilla.</p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button id="btn-create-squad"
+                    style="padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: bold; font-size: 15px; cursor: pointer; transition: background 0.2s; font-family: sans-serif;">➕
+                    Crear Squad</button>
+                <button id="btn-my-squads"
+                    style="padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: bold; font-size: 15px; cursor: pointer; transition: background 0.2s; font-family: sans-serif;">🛡️
+                    Mis Squads</button>
+                <button id="btn-search-squads"
+                    style="padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; font-weight: bold; font-size: 15px; cursor: pointer; transition: background 0.2s; font-family: sans-serif;">🔍
+                    Buscar Squads</button>
+
+                <button id="btn-squad-leaderboard"
+                    style="padding: 12px; border-radius: 8px; border: 1px solid rgba(241, 196, 15, 0.5); background: rgba(241, 196, 15, 0.15); color: #f1c40f; font-weight: bold; font-size: 15px; cursor: pointer; transition: background 0.2s; font-family: sans-serif;">🏆
+                    Puntajes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="squad-create-modal"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 3100;">
+        <div
+            style="width: 320px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 25px; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 18px; color: #3498db;">➕ Fundar Squad</h3>
+                <button id="close-create-squad"
+                    style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+            </div>
+
+            <input type="text" id="new-squad-name" placeholder="Nombre (Máx 20 letras)" maxlength="20"
+                autocomplete="off"
+                style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: white; margin-bottom: 10px; text-align: center; outline: none; font-family: sans-serif; font-size: 15px;">
+            <input type="text" id="new-squad-logo" placeholder="URL Logo Pinterest (Opcional)" autocomplete="off"
+                style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: white; margin-bottom: 10px; text-align: center; outline: none; font-family: sans-serif; font-size: 13px;">
+
+            <p id="squad-create-msg"
+                style="color: #ff6b6b; font-size: 12px; height: 15px; margin-top: 0; margin-bottom: 15px; font-family: sans-serif; text-align: center;">
+            </p>
+            <button id="confirm-create-squad"
+                style="width: 100%; padding: 12px; background: #3498db; color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 0 #2980b9; font-family: sans-serif; font-size: 16px;">Pagar
+                2000 🪙 y Fundar</button>
+        </div>
+    </div>
+
+    <div id="squad-edit-modal"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 3200;">
+        <div
+            style="width: 320px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid #f1c40f; border-radius: 15px; padding: 25px; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 18px; color: #f1c40f;">⚙️ Ajustes del Clan
+                </h3>
+                <button id="close-edit-squad"
+                    style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+            </div>
+
+            <p style="font-size: 11px; color: #aaa; text-align: center; margin: 0 0 15px 0; font-family: sans-serif;">
+                Cambiar el logo es gratis. Cambiar el nombre cuesta 350 🪙.</p>
+
+            <input type="text" id="edit-squad-name" placeholder="Nombre (Máx 20 letras)" maxlength="20"
+                autocomplete="off"
+                style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: white; margin-bottom: 10px; text-align: center; outline: none; font-family: sans-serif; font-size: 15px;">
+            <input type="text" id="edit-squad-logo" placeholder="URL Logo Pinterest" autocomplete="off"
+                style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: white; margin-bottom: 10px; text-align: center; outline: none; font-family: sans-serif; font-size: 13px;">
+
+            <p id="squad-edit-msg"
+                style="color: #ff6b6b; font-size: 12px; height: 15px; margin-top: 0; margin-bottom: 15px; font-family: sans-serif; text-align: center;">
+            </p>
+            <button id="confirm-edit-squad"
+                style="width: 100%; padding: 12px; background: #f1c40f; color: black; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 0 #d4ac0d; font-family: sans-serif; font-size: 16px;">Guardar
+                Cambios</button>
+        </div>
+    </div>
+
+    <div id="squad-list-modal"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 3050;">
+        <div
+            style="width: 320px; height: 60vh; max-height: 450px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+
+            <div
+                style="padding: 15px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <button id="back-to-squad-main"
+                    style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0;">⬅</button>
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 18px; color: white;">🛡️ Tus Afiliaciones</h3>
+                <div style="width: 20px;"></div>
+            </div>
+
+            <div id="squads-list-container"
+                style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+            </div>
+        </div>
+    </div>
+
+    <div id="my-squad-modal"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 3100;">
+        <div
+            style="width: 90vw; max-width: 400px; height: 75vh; max-height: 550px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+
+            <div
+                style="padding: 20px; background: rgba(0,0,0,0.6); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; position: relative;">
+                <button id="edit-squad-btn"
+                    style="display: none; position: absolute; top: 15px; left: 20px; background: none; border: none; color: #f1c40f; font-size: 20px; cursor: pointer; text-shadow: 0 2px 5px black;">⚙️</button>
+                <button id="close-my-squad"
+                    style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
+
+                <div id="my-squad-logo-container"
+                    style="width: 70px; height: 70px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 35px; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(161, 140, 209, 0.5); overflow: hidden; border: 2px solid rgba(255,255,255,0.2);">
+                    🏴‍☠️
+                </div>
+
+                <h2 id="my-squad-title"
+                    style="margin: 0; font-family: sans-serif; font-size: 22px; color: white; text-transform: uppercase; letter-spacing: 1px;">
+                    Cargando...</h2>
+                <span id="my-squad-member-count"
+                    style="color: #aaa; font-size: 13px; font-family: sans-serif; margin-top: 5px; margin-bottom: 10px;">0
+                    / 25 Miembros</span>
+
+                <button id="toggle-squad-tag-btn"
+                    style="display: none; padding: 6px 15px; border-radius: 8px; font-weight: bold; font-family: sans-serif; cursor: pointer; border: none; font-size: 13px; transition: 0.2s;"></button>
+            </div>
+
+            <div id="squad-members-list"
+                style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+            </div>
+
+            <div style="padding: 15px; background: rgba(0,0,0,0.5); border-top: 1px solid rgba(255,255,255,0.1);">
+                <button id="leave-squad-btn"
+                    style="width: 100%; padding: 12px; background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #e74c3c; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: sans-serif;">Abandonar
+                    Squad</button>
             </div>
         </div>
     </div>
@@ -1649,10 +1811,10 @@
 
 
         // Connect to the live cloud server
-        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
-        const ws = new WebSocket('ws://localhost:8080');
+        //const ws = new WebSocket('ws://localhost:8080');
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow
@@ -1765,6 +1927,159 @@
             } else if (data.type === 'register_success') {
                 authMessage.style.color = '#4cd137'; // Green
                 authMessage.innerText = data.message;
+            }// --- RECIBIR LISTA DE TODOS MIS SQUADS ---
+            else if (data.type === 'my_squads_list_data') {
+                squadsListContainer.innerHTML = "";
+
+                data.squads.forEach(sq => {
+                    const row = document.createElement('div');
+                    row.style.background = "rgba(255,255,255,0.05)";
+                    row.style.border = sq.isLeader ? "1px solid #f1c40f" : "1px solid rgba(255,255,255,0.2)";
+                    row.style.borderRadius = "10px"; row.style.padding = "15px"; row.style.cursor = "pointer";
+                    row.style.display = "flex"; row.style.justifyContent = "space-between"; row.style.alignItems = "center";
+
+                    // Si tiene logo lo dibujamos, si no, ponemos la bandera
+                    const logoHtml = sq.logo
+                        ? `<img src="${sq.logo}" style="width: 45px; height: 45px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.3);">`
+                        : `<div style="width: 45px; height: 45px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 20px;">🏴‍☠️</div>`;
+
+                    row.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            ${logoHtml}
+                            <div>
+                                <div style="color: ${sq.isLeader ? '#f1c40f' : 'white'}; font-weight: bold; font-family: sans-serif; font-size: 16px;">
+                                    ${sq.isLeader ? '👑 ' : ''}${sq.name}
+                                </div>
+                                <div style="color: #aaa; font-size: 12px; font-family: sans-serif; margin-top: 4px;">👥 ${sq.memberCount} Miembros</div>
+                            </div>
+                        </div>
+                        <span style="color: #777; font-size: 20px;">➔</span>
+                    `;
+
+                    row.onclick = () => ws.send(JSON.stringify({ type: 'get_squad_details', squadId: sq.id }));
+                    squadsListContainer.appendChild(row);
+                });
+                squadListModal.style.display = 'flex';
+            }
+            // --- RECIBIR DETALLES DE UN SQUAD AL HACER CLIC ---
+            else if (data.type === 'my_squad_data') {
+                const sq = data.squad;
+                document.getElementById('my-squad-title').innerText = sq.name;
+                document.getElementById('my-squad-member-count').innerText = `${sq.members.length + 1} / 25 Miembros`;
+
+                // Poner el Logo en Grande
+                const logoContainer = document.getElementById('my-squad-logo-container');
+                if (sq.logo) {
+                    logoContainer.innerHTML = `<img src="${sq.logo}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                } else {
+                    logoContainer.innerHTML = `🏴‍☠️`;
+                }
+
+                // Mostrar botón de "Editar" SOLO si soy el líder
+                const editBtn = document.getElementById('edit-squad-btn');
+                if (sq.leader.name === player.username) {
+                    editBtn.style.display = 'block';
+                    editBtn.onclick = () => {
+                        originalSquadName = sq.name;
+                        currentEditSquadId = sq.id;
+                        editSquadNameInput.value = sq.name;
+                        editSquadLogoInput.value = sq.logo || "";
+                        squadEditMsg.innerText = "";
+                        confirmEditSquad.innerText = "Guardar Logo (Gratis)";
+                        mySquadModal.style.display = 'none';
+                        squadEditModal.style.display = 'flex';
+                    };
+                } else {
+                    editBtn.style.display = 'none';
+                }
+
+                // --- NUEVO: LÓGICA DEL BOTÓN DE TAG ---
+                const toggleTagBtn = document.getElementById('toggle-squad-tag-btn');
+                toggleTagBtn.style.display = 'block';
+
+                // ¿El ID de este clan es igual al que tengo en mi memoria RAM?
+                const isTagEquipped = (player.squad === sq.id);
+
+                if (isTagEquipped) {
+                    toggleTagBtn.innerText = "✅ Tag Equipado (Click para quitar)";
+                    toggleTagBtn.style.background = "rgba(46, 204, 113, 0.2)";
+                    toggleTagBtn.style.color = "#2ecc71";
+                    toggleTagBtn.style.border = "1px solid #2ecc71";
+                } else {
+                    toggleTagBtn.innerText = "⬜ Equipar este Tag";
+                    toggleTagBtn.style.background = "rgba(255, 255, 255, 0.1)";
+                    toggleTagBtn.style.color = "white";
+                    toggleTagBtn.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+                }
+
+                toggleTagBtn.onclick = () => {
+                    toggleTagBtn.innerText = "Procesando...";
+                    ws.send(JSON.stringify({ type: 'toggle_squad_tag', squadId: sq.id }));
+                };
+
+                squadMembersList.innerHTML = "";
+                squadMembersList.appendChild(createSquadMemberRow(sq.leader.name, "👑 Líder", true));
+                sq.members.forEach(m => squadMembersList.appendChild(createSquadMemberRow(m.name, m.title, false)));
+
+                squadListModal.style.display = 'none';
+                mySquadModal.style.display = 'flex';
+
+
+            }// --- RESPUESTA: TAG EQUIPADO / DESEQUIPADO ---
+            else if (data.type === 'toggle_squad_success') {
+                // Actualizar mi propia memoria RAM
+                player.squad = data.isActive ? data.squadId : null;
+                player.squadName = data.squadName;
+                player.squadLogo = data.squadLogo;
+
+                // Recargar los detalles del squad para que el botón se redibuje con el color correcto
+                ws.send(JSON.stringify({ type: 'get_squad_details', squadId: data.squadId }));
+            }
+            // --- ÉXITO O ERROR AL EDITAR SQUAD ---
+            else if (data.type === 'edit_squad_success') {
+                squadEditModal.style.display = 'none';
+                alert(data.message);
+
+                if (data.newCoins !== undefined) {
+                    player.coins = data.newCoins;
+                    const coinsDisplay = document.getElementById('profile-coins-display');
+                    if (coinsDisplay) coinsDisplay.innerText = player.coins;
+                }
+                player.squadName = data.squadName;
+                player.squadLogo = data.squadLogo;
+
+                // Volvemos a pedir los detalles para que la imagen se actualice mágicamente en pantalla
+                ws.send(JSON.stringify({ type: 'get_squad_details', squadId: data.squadId }));
+            }
+            else if (data.type === 'edit_squad_error') {
+                document.getElementById('squad-edit-msg').innerText = data.message;
+                document.getElementById('confirm-edit-squad').innerText = "Reintentar";
+            }
+            // --- NO TIENE SQUADS ---
+            else if (data.type === 'no_squads_found') {
+                alert("Aún no perteneces a ningún Squad. ¡Crea uno o busca uno al cual unirte!");
+            }
+            else if (data.type === 'no_squad') {
+                alert("Aún no perteneces a ningún Squad. ¡Crea uno o busca uno al cual unirte!");
+            }// --- RESPUESTAS DEL SISTEMA DE SQUADS ---
+            else if (data.type === 'squad_success') {
+                document.getElementById('squad-create-modal').style.display = 'none';
+                document.getElementById('confirm-create-squad').innerText = "Pagar 2000 🪙 y Fundar";
+
+                // ACTUALIZAR MONEDAS EN PANTALLA
+                if (data.newCoins !== undefined) {
+                    player.coins = data.newCoins;
+                    const coinsDisplay = document.getElementById('profile-coins-display');
+                    if (coinsDisplay) coinsDisplay.innerText = player.coins;
+                }
+                player.squadName = data.squadName;
+                player.squadLogo = data.squadLogo;
+                alert(data.message); // Notificación de éxito
+            }
+            else if (data.type === 'squad_error') {
+                document.getElementById('squad-create-msg').style.color = "#ff6b6b";
+                document.getElementById('squad-create-msg').innerText = data.message;
+                document.getElementById('confirm-create-squad').innerText = "Pagar 2000 🪙 y Fundar";
             }// --- RECIBIR HISTORIAL DE PM ---
             else if (data.type === 'pm_history') {
                 if (currentChatTargetId === data.targetAccountId) {
@@ -1775,7 +2090,19 @@
             }// --- RECIBIR LISTA DE AMIGOS ---
             else if (data.type === 'friends_list_data') {
                 renderFriendsList(data.friends);
-            }// --- RECIBIR LISTA DEL INBOX ---
+            }
+            // 👇 PEGA ESTO NUEVO AQUÍ 👇
+            // --- RESPUESTA: AMIGO ELIMINADO ---
+            else if (data.type === 'friend_removed') {
+                if (player.friends) {
+                    // Lo borramos de la memoria RAM local
+                    player.friends = player.friends.filter(id => id !== data.targetId);
+                }
+                alert("Amigo eliminado de tu lista.");
+                // Actualizamos la ventana gráfica pidiéndole la nueva lista al servidor
+                ws.send(JSON.stringify({ type: 'get_friends_list' }));
+            }
+            // 👆 HASTA AQUÍ 👆// --- RECIBIR LISTA DEL INBOX ---
             else if (data.type === 'inbox_data') {
                 renderInbox(data.inbox);
             }
@@ -1792,7 +2119,6 @@
                     wakeUpIsland(5000);
                 }
             }
-
             else if (data.type === 'init') {
                 authOverlay.style.pointerEvents = 'none';
                 authOverlay.style.opacity = '0';
@@ -1822,6 +2148,9 @@
                 player.username = data.players[myId].username;
                 player.accountId = data.players[myId].accountId;
                 player.coins = data.players[myId].coins || 0; // <--- ¡AÑADE ESTA LÍNEA!
+                player.squadName = data.players[myId].squadName;
+                player.squadLogo = data.players[myId].squadLogo;
+                player.squad = data.players[myId].squad;
 
                 for (let id in data.players) {
                     if (id !== myId) {
@@ -1957,6 +2286,8 @@
                     // ...but set TARGETS for their movement so we can slide them smoothly
                     op.targetX = data.player.worldX;
                     op.targetY = data.player.worldY;
+                    op.squadName = data.player.squadName;
+                    op.squadLogo = data.player.squadLogo;
                 }
             } else if (data.type === 'left') {
                 delete otherPlayers[data.id];
@@ -2021,17 +2352,23 @@
                 player.worldX = data.player.worldX;
                 player.worldY = data.player.worldY;
                 player.coins = data.player.coins || 0;
+                player.squadName = data.player.squadName;
+                player.squadLogo = data.player.squadLogo;
+                player.squad = data.player.squad;
 
                 // Force an immediate camera update
                 lastNetworkString = "";
             }// --- NEW: RECEIVE A FRIEND REQUEST ---
             else if (data.type === 'friend_request') {
-                // Only react if the request is actually for YOU!
                 pendingRequests.push(data);
 
-                // Show the button and update the red badge number
-                notifBtnContainer.style.display = 'block';
-                notifBadge.innerText = pendingRequests.length;
+                // Forzar que el contenedor y el nuevo ID del puntito rojo se muestren
+                document.getElementById('notif-btn-container').style.display = 'block';
+                document.getElementById('friend-notif-badge').style.display = 'flex';
+                document.getElementById('friend-notif-badge').innerText = pendingRequests.length;
+
+                // Despertar la isla para que el jugador note que algo llegó en pantalla
+                wakeUpIsland(5000);
 
                 // Paint their upper-body onto the button!
                 if (nCtx) {
@@ -2470,7 +2807,6 @@
         }
 
         // --- UPDATED: Nametag Drawer ---
-        // Notice we added 'textColor' to the end of the parameters!
         function drawNametag(name, x, y, scaledWidth, scaledHeight, textColor) {
             if (!name) return;
 
@@ -2478,24 +2814,68 @@
             ctx.font = `bold ${fontSize}px Arial`;
             ctx.textAlign = "center";
 
-            // THE GAP FIX: Changed from (12 * zoomLevel) to (3 * zoomLevel)
             const tagY = y + scaledHeight + (-12 * zoomLevel);
             const centerX = x + (scaledWidth / 2);
 
-            // Set transparency to 70%
             ctx.globalAlpha = 0.5;
-
             ctx.lineJoin = "round";
             ctx.lineWidth = 2.5 * zoomLevel;
             ctx.strokeStyle = "black";
             ctx.strokeText(name, centerX, tagY);
 
-            // Use the custom color we pass in
             ctx.fillStyle = textColor;
             ctx.fillText(name, centerX, tagY);
 
-            // ALWAYS reset alpha to 1.0 afterwards!
             ctx.globalAlpha = 1.0;
+        }
+
+        // --- NUEVO: SQUAD TAG DRAWER ---
+        const squadLogosCache = {}; // Guarda imágenes para no laguear
+
+        function drawSquadTag(playerObj, x, y, scaledWidth, scaledHeight) {
+            if (!playerObj || !playerObj.squadName) return;
+
+            const tagFontSize = 8 * zoomLevel;
+            ctx.font = `italic ${tagFontSize}px sans-serif`;
+
+            const tagText = `(${playerObj.squadName})`;
+            const textWidth = ctx.measureText(tagText).width;
+            const logoSize = 12 * zoomLevel;
+            const gap = 4 * zoomLevel;
+
+            const totalWidth = textWidth + (playerObj.squadLogo ? gap + logoSize : 0);
+
+            const centerX = x + (scaledWidth / 2);
+            const startX = centerX - (totalWidth / 2);
+
+            // Dibujamos justo debajo del nametag normal
+            const tagY = y + scaledHeight + (0 * zoomLevel);
+
+            ctx.textAlign = "left";
+
+            // Texto transparente y con borde
+            ctx.globalAlpha = 0.7;
+            ctx.lineWidth = 2 * zoomLevel;
+            ctx.strokeStyle = "black";
+            ctx.strokeText(tagText, startX, tagY);
+            ctx.fillStyle = "white";
+            ctx.fillText(tagText, startX, tagY);
+
+            // Dibujar logo si existe
+            if (playerObj.squadLogo) {
+                if (!squadLogosCache[playerObj.squadLogo]) {
+                    const img = new Image();
+                    img.src = playerObj.squadLogo;
+                    squadLogosCache[playerObj.squadLogo] = img;
+                }
+                const img = squadLogosCache[playerObj.squadLogo];
+                if (img.complete && img.naturalWidth > 0) {
+                    ctx.globalAlpha = 0.9; // Transparencia Glassmorphism
+                    ctx.drawImage(img, startX + textWidth + gap, tagY - logoSize + (2 * zoomLevel), logoSize, logoSize);
+                }
+            }
+            ctx.globalAlpha = 1.0;
+            ctx.textAlign = "center";
         }
 
         // --- 1. UI ELEMENT GRABBERS ---
@@ -2816,7 +3196,6 @@
             if (pendingRequests.length > 0) {
                 const req = pendingRequests.shift();
 
-                // ENVIAMOS EL ACCOUNT ID
                 ws.send(JSON.stringify({ type: 'add_friend', friendAccountId: req.senderAccountId, isReply: true }));
 
                 if (!player.friends) player.friends = [];
@@ -2828,7 +3207,7 @@
                     notifBtnContainer.style.display = 'none';
                     notifModal.style.display = 'none';
                 } else {
-                    notifBadge.innerText = pendingRequests.length;
+                    document.getElementById('friend-notif-badge').innerText = pendingRequests.length;
                     notifModal.style.display = 'none';
                 }
             }
@@ -2843,7 +3222,7 @@
                     notifBtnContainer.style.display = 'none';
                     notifModal.style.display = 'none';
                 } else {
-                    notifBadge.innerText = pendingRequests.length;
+                    document.getElementById('friend-notif-badge').innerText = pendingRequests.length;
                     notifModal.style.display = 'none';
                 }
             }
@@ -3879,6 +4258,25 @@
             profileTargetId = targetId;
             profileNameDisplay.innerText = username;
 
+            // --- MOSTRAR EL TAG DEL CLAN EN EL PERFIL ---
+            const targetPlayer = (targetId === 'offline') ? { squadName: null } : otherPlayers[targetId] || (targetId === 'self' ? player : { squadName: null });
+            const tagContainer = document.getElementById('profile-squad-tag-container');
+
+            if (targetPlayer && targetPlayer.squadName) {
+                tagContainer.style.display = 'flex';
+                document.getElementById('profile-squad-name').innerText = `(${targetPlayer.squadName})`;
+
+                const logoImg = document.getElementById('profile-squad-logo');
+                if (targetPlayer.squadLogo) {
+                    logoImg.src = targetPlayer.squadLogo;
+                    logoImg.style.display = 'block';
+                } else {
+                    logoImg.style.display = 'none';
+                }
+            } else {
+                tagContainer.style.display = 'none';
+            }
+
             // Actualizar monedas de forma segura
             const coinsDisplay = document.getElementById('profile-coins-display');
             if (targetId === 'self') {
@@ -3897,14 +4295,37 @@
             } else {
                 profileOptionsBtn.style.display = 'none';
                 profileOtherControls.style.display = 'flex';
+                addFriendBtn.style.display = 'block';
 
-                // Ocultar botón de "Añadir Amigo" si ya somos amigos
-                if (player.friends && player.friends.includes(username)) {
-                    addFriendBtn.style.display = 'none';
+                // Conseguir el ID de la base de datos (incluso si está offline)
+                const targetAccId = (targetId === 'offline') ? offlineFriendAccountId : otherPlayers[targetId].accountId;
+
+                // Verificar usando el ID real
+                const isFriend = player.friends && player.friends.includes(targetAccId);
+
+                if (isFriend) {
+                    addFriendBtn.innerText = "❌ Eliminar Amigo";
+                    addFriendBtn.style.background = "rgba(231, 76, 60, 0.2)";
+                    addFriendBtn.style.border = "1px solid #e74c3c";
+                    addFriendBtn.style.color = "#e74c3c";
+
+                    addFriendBtn.onclick = () => {
+                        ws.send(JSON.stringify({ type: 'remove_friend', targetId: targetAccId }));
+                        profileModal.style.display = 'none'; // Cerramos la ventana al eliminar
+                    };
                 } else {
-                    addFriendBtn.style.display = 'block';
-                    addFriendBtn.innerText = "➕ Add Friend";
+                    addFriendBtn.innerText = "➕ Agregar Amigo";
                     addFriendBtn.style.background = "#3498db";
+                    addFriendBtn.style.border = "none";
+                    addFriendBtn.style.color = "white";
+
+                    addFriendBtn.onclick = () => {
+                        ws.send(JSON.stringify({ type: 'add_friend', friendAccountId: targetAccId }));
+                        addFriendBtn.innerText = "✓ Enviado";
+                        addFriendBtn.style.background = "#27ae60";
+                        if (!player.friends) player.friends = [];
+                        player.friends.push(targetAccId);
+                    };
                 }
             }
             drawProfileAnimation();
@@ -4225,18 +4646,6 @@
                 profileNameDisplay.innerText = newName;
                 player.username = newName; // Update locally immediately
             }
-        });
-
-        addFriendBtn.addEventListener('click', () => {
-            if (profileTargetId === 'offline') return; // No se puede agregar si está offline (ya son amigos)
-            const targetAccId = otherPlayers[profileTargetId].accountId;
-
-            ws.send(JSON.stringify({ type: 'add_friend', friendAccountId: targetAccId }));
-            addFriendBtn.innerText = "✓ Friend Added";
-            addFriendBtn.style.background = "#27ae60";
-
-            if (!player.friends) player.friends = [];
-            player.friends.push(targetAccId); // Ahora guardamos el ID en local!
         });
 
         // --- INVENTORY & HOTBAR LOGIC ---
@@ -4687,6 +5096,173 @@
 
                 friendsListContainer.appendChild(friendRow);
             });
+        }
+
+        // --- LÓGICA DE SQUADS (FRONTEND) ---
+        const openSquadsBtn = document.getElementById('open-squads-btn');
+        const squadMainModal = document.getElementById('squad-main-modal');
+        const closeSquadMain = document.getElementById('close-squad-main');
+
+        const btnCreateSquad = document.getElementById('btn-create-squad');
+        const squadCreateModal = document.getElementById('squad-create-modal');
+        const closeCreateSquad = document.getElementById('close-create-squad');
+        const confirmCreateSquad = document.getElementById('confirm-create-squad');
+        const newSquadNameInput = document.getElementById('new-squad-name');
+        const squadCreateMsg = document.getElementById('squad-create-msg');
+
+        // --- VARIABLES DE SQUADS (LISTA Y DETALLES) ---
+        const btnMySquads = document.getElementById('btn-my-squads');
+        const squadListModal = document.getElementById('squad-list-modal');
+        const squadsListContainer = document.getElementById('squads-list-container');
+        const backToSquadMain = document.getElementById('back-to-squad-main');
+
+        const mySquadModal = document.getElementById('my-squad-modal');
+        const closeMySquad = document.getElementById('close-my-squad');
+        const mySquadTitle = document.getElementById('my-squad-title');
+        const mySquadMemberCount = document.getElementById('my-squad-member-count');
+        const squadMembersList = document.getElementById('squad-members-list');
+
+        // 1. Clic en "Mis Squads" -> Pide la LISTA
+        btnMySquads.addEventListener('click', () => {
+            squadMainModal.style.display = 'none';
+            ws.send(JSON.stringify({ type: 'get_my_squads_list' }));
+        });
+
+        // 2. Botón Atrás de la lista
+        backToSquadMain.addEventListener('click', () => {
+            squadListModal.style.display = 'none';
+            squadMainModal.style.display = 'flex';
+        });
+
+        // 3. Cerrar el modal de detalles
+        closeMySquad.addEventListener('click', () => {
+            mySquadModal.style.display = 'none';
+            // Al cerrar detalles, volvemos a la lista por si quiere ver otro
+            squadListModal.style.display = 'flex';
+        });
+
+        function createSquadMemberRow(name, title, isLeader) {
+            const row = document.createElement('div');
+            row.style.background = isLeader ? "rgba(241, 196, 15, 0.1)" : "rgba(255,255,255,0.05)";
+            row.style.border = isLeader ? "1px solid rgba(241, 196, 15, 0.3)" : "1px solid rgba(255,255,255,0.1)";
+            row.style.padding = "12px 15px";
+            row.style.borderRadius = "10px";
+            row.style.display = "flex";
+            row.style.justifyContent = "space-between";
+            row.style.alignItems = "center";
+
+            const nameSpan = document.createElement('span');
+            nameSpan.style.color = isLeader ? "#f1c40f" : "white";
+            nameSpan.style.fontWeight = "bold";
+            nameSpan.style.fontFamily = "sans-serif";
+            nameSpan.innerText = name;
+
+            const titleSpan = document.createElement('span');
+            titleSpan.style.color = isLeader ? "#f39c12" : "#3498db";
+            titleSpan.style.fontSize = "12px";
+            titleSpan.style.fontFamily = "sans-serif";
+            titleSpan.style.background = "rgba(0,0,0,0.5)";
+            titleSpan.style.padding = "4px 8px";
+            titleSpan.style.borderRadius = "6px";
+            titleSpan.innerText = title;
+
+            row.appendChild(nameSpan);
+            row.appendChild(titleSpan);
+            return row;
+        }
+
+        // Abrir/Cerrar Menú Principal
+        if (openSquadsBtn) {
+            openSquadsBtn.addEventListener('click', () => {
+                appTray.classList.remove('open');
+                squadMainModal.style.display = 'flex';
+                player.vx = 0; player.vy = 0; player.isMoving = false;
+            });
+        }
+        if (closeSquadMain) closeSquadMain.addEventListener('click', () => squadMainModal.style.display = 'none');
+
+        // Abrir/Cerrar Ventana de "Crear"
+        btnCreateSquad.addEventListener('click', () => {
+            squadMainModal.style.display = 'none';
+            squadCreateModal.style.display = 'flex';
+            squadCreateMsg.innerText = ""; // Limpiar errores pasados
+            newSquadNameInput.value = "";
+        });
+        closeCreateSquad.addEventListener('click', () => squadCreateModal.style.display = 'none');
+
+        // Botón de Confirmar Creación
+        confirmCreateSquad.addEventListener('click', () => {
+            const squadName = newSquadNameInput.value.trim();
+            const squadLogo = document.getElementById('new-squad-logo').value.trim(); // <--- ATRAPA EL LOGO
+            if (squadName.length < 3) {
+                squadCreateMsg.style.color = "#ff6b6b";
+                squadCreateMsg.innerText = "El nombre es muy corto.";
+                return;
+            }
+            confirmCreateSquad.innerText = "Creando...";
+            // SE LO ENVÍA AL SERVIDOR
+            ws.send(JSON.stringify({ type: 'create_squad', squadName: squadName, logo: squadLogo }));
+        });
+
+        // --- LÓGICA DE EDITAR SQUAD ---
+        const squadEditModal = document.getElementById('squad-edit-modal');
+        const closeEditSquad = document.getElementById('close-edit-squad');
+        const confirmEditSquad = document.getElementById('confirm-edit-squad');
+        const editSquadNameInput = document.getElementById('edit-squad-name');
+        const editSquadLogoInput = document.getElementById('edit-squad-logo');
+        const squadEditMsg = document.getElementById('squad-edit-msg');
+        let currentEditSquadId = null;
+        let originalSquadName = ""; // Para saber si le cobramos o no
+
+        closeEditSquad.addEventListener('click', () => squadEditModal.style.display = 'none');
+
+        // Efecto visual: si cambia el nombre, el botón cambia de texto
+        editSquadNameInput.addEventListener('input', () => {
+            if (editSquadNameInput.value.trim() !== originalSquadName) {
+                confirmEditSquad.innerText = "Guardar Cambios (Cuesta 350 🪙)";
+            } else {
+                confirmEditSquad.innerText = "Guardar Logo (Gratis)";
+            }
+        });
+
+        confirmEditSquad.addEventListener('click', () => {
+            confirmEditSquad.innerText = "Procesando...";
+            ws.send(JSON.stringify({
+                type: 'edit_squad',
+                squadId: currentEditSquadId,
+                newName: editSquadNameInput.value.trim(),
+                newLogo: editSquadLogoInput.value.trim()
+            }));
+        });
+
+        function createSquadMemberRow(name, title, isLeader) {
+            const row = document.createElement('div');
+            row.style.background = isLeader ? "rgba(241, 196, 15, 0.1)" : "rgba(255,255,255,0.05)";
+            row.style.border = isLeader ? "1px solid rgba(241, 196, 15, 0.3)" : "1px solid rgba(255,255,255,0.1)";
+            row.style.padding = "12px 15px";
+            row.style.borderRadius = "10px";
+            row.style.display = "flex";
+            row.style.justifyContent = "space-between";
+            row.style.alignItems = "center";
+
+            const nameSpan = document.createElement('span');
+            nameSpan.style.color = isLeader ? "#f1c40f" : "white";
+            nameSpan.style.fontWeight = "bold";
+            nameSpan.style.fontFamily = "sans-serif";
+            nameSpan.innerText = name;
+
+            const titleSpan = document.createElement('span');
+            titleSpan.style.color = isLeader ? "#f39c12" : "#3498db";
+            titleSpan.style.fontSize = "12px";
+            titleSpan.style.fontFamily = "sans-serif";
+            titleSpan.style.background = "rgba(0,0,0,0.5)";
+            titleSpan.style.padding = "4px 8px";
+            titleSpan.style.borderRadius = "6px";
+            titleSpan.innerText = title;
+
+            row.appendChild(nameSpan);
+            row.appendChild(titleSpan);
+            return row;
         }
 
         function update() {
@@ -5380,12 +5956,14 @@
                 drawHealthBar(pDrawX, pDrawY, currentHp, 100, scaledWidth, p.lastHpUpdateTime);
                 drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pDrawX, pDrawY, scaledWidth);
                 drawNametag(p.username, pDrawX, pDrawY, scaledWidth, scaledHeight, getColorForString(p.username));
+                drawSquadTag(p, pDrawX, pDrawY, scaledWidth, scaledHeight); // <--- AÑADIDO PARA OTROS
             }
 
             // Dibujar TU barra de vida
             drawHealthBar(drawX, drawY, player.hp, player.maxHp, scaledWidth, player.lastHpUpdateTime);
             drawDynamicBubble(player.message, player.messageTimer, player.isTyping, drawX, drawY, scaledWidth);
             drawNametag(player.username, drawX, drawY, scaledWidth, scaledHeight, "#f1c40f");
+            drawSquadTag(player, drawX, drawY, scaledWidth, scaledHeight); // <--- AÑADIDO PARA TI
 
             if (player.messageTimer > 0) player.messageTimer--;
 

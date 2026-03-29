@@ -146,22 +146,17 @@
             pointer-events: none;
         }
 
-        /* --- AUTH SCREEN STYLES --- */
         #auth-overlay {
             display: none;
-            /* Start hidden, will be shown when server connects */
             position: absolute;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.75);
-            /* Darkens the game behind it */
-            display: flex;
+            background: rgba(0, 0, 0, 0.3);
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            /* Forces it above everything else */
             transition: opacity 0.3s ease;
         }
 
@@ -749,10 +744,36 @@
 </head>
 
 <body>
+    <div id="loading-screen"
+        style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); z-index: 5000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-family: sans-serif; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: opacity 0.8s ease; pointer-events: auto;">
+
+        <h1
+            style="color: #f1c40f; font-size: 40px; text-shadow: 0 5px 15px rgba(0,0,0,0.8); margin-bottom: 20px; font-style: italic; letter-spacing: 3px;">
+            MMOARGON v1.6.0</h1>
+
+        <h3 id="loading-text"
+            style="color: #aaa; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; font-size: 14px;">
+            Conectando al servidor...</h3>
+
+        <div
+            style="width: 280px; height: 12px; background: rgba(0,0,0,0.6); border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
+            <div id="loading-bar-fill"
+                style="width: 0%; height: 100%; background: linear-gradient(90deg, #f39c12, #f1c40f); transition: width 0.3s ease; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8);">
+            </div>
+        </div>
+    </div>
+
     <div id="fade-overlay"
         style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: black; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 4000;">
     </div>
     <div id="damage-overlay"></div>
+
+    <div id="safezone-ui"
+        style="display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); color: #2ecc71; padding: 8px 16px; border-radius: 6px; font-family: sans-serif; font-size: 13px; font-weight: bold; border: 1px solid #2ecc71; text-transform: uppercase; letter-spacing: 1px; z-index: 1000; pointer-events: none; text-align: center; box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);">
+        🛡️ Estás en Zona Segura<br>
+        <span style="font-size: 10px; color: #aaa; text-transform: none; letter-spacing: 0;">No puedes recibir ni hacer
+            daño aquí</span>
+    </div>
 
     <div id="dynamic-island">
 
@@ -773,7 +794,7 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <div id="auth-overlay">
+    <div id="auth-overlay" style="display: none; opacity: 0; pointer-events: none;">
         <div id="auth-box">
             <button id="close-auth-btn"
                 style="float: right; background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✖</button>
@@ -949,51 +970,105 @@
     <div id="profile-modal"
         style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); justify-content: center; align-items: center; z-index: 2000;">
         <div
-            style="width: 500px; height: 300px; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; display: flex; overflow: hidden; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            style="width: 500px; height: 300px; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; display: flex; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
 
             <button id="close-profile"
-                style="position: absolute; top: 10px; right: 15px; background: none; border: none; color: white; font-size: 20px; cursor: pointer; z-index: 10;">✖</button>
+                style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 18px; cursor: pointer; z-index: 10; transition: 0.2s;">✖</button>
 
             <div
-                style="width: 45%; background: rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; border-right: 1px solid rgba(255,255,255,0.1);">
-                <canvas id="profile-canvas" width="150" height="200" style="image-rendering: pixelated;"></canvas>
-            </div>
-
-            <div
-                style="width: 55%; padding: 30px; display: flex; flex-direction: column; justify-content: center; position: relative;">
+                style="position: absolute; top: 25px; left: 25px; display: flex; flex-direction: row; align-items: center; gap: 10px; z-index: 15; pointer-events: none;">
                 <h2 id="profile-name-display"
-                    style="color: white; margin: 0 0 5px 0; font-family: sans-serif; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                    style="margin: 0; color: #3498db; font-family: sans-serif; font-size: 20px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">
                     Username</h2>
-                <p style="color: #aaa; margin: 0 0 10px 0; font-family: sans-serif; font-size: 14px;">Lv. 1</p>
 
                 <div id="profile-squad-tag-container"
-                    style="display: none; align-items: center; gap: 6px; margin-bottom: 15px; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: fit-content;">
-                    <span id="profile-squad-name"
-                        style="font-size: 13px; color: rgba(255,255,255,0.8); font-family: sans-serif; font-style: italic;"></span>
+                    style="display: none; align-items: center; gap: 5px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;">
                     <img id="profile-squad-logo" src=""
-                        style="width: 16px; height: 16px; border-radius: 4px; object-fit: cover; display: none;">
+                        style="width: 14px; height: 14px; border-radius: 4px; object-fit: cover; display: none;">
+                    <span id="profile-squad-name"
+                        style="font-size: 12px; color: rgba(255,255,255,0.8); font-family: sans-serif; font-style: italic;"></span>
                 </div>
+            </div>
+
+            <div
+                style="width: 42%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; position: relative;">
+                <canvas id="profile-canvas" width="130" height="130" style="image-rendering: pixelated;"></canvas>
+            </div>
+
+            <div
+                style="width: 58%; padding: 25px; padding-top: 70px; display: flex; flex-direction: column; position: relative; box-sizing: border-box;">
 
                 <div
-                    style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 6px 14px; border-radius: 12px; width: fit-content; border: 1px solid rgba(255, 215, 0, 0.3); box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);">
-                    <span style="font-size: 18px;">🪙</span>
-                    <span id="profile-coins-display"
-                        style="color: #ffd700; font-weight: bold; font-family: sans-serif; font-size: 16px;">0</span>
+                    style="display: flex; flex-direction: column; gap: 8px; font-family: sans-serif; font-size: 13px; align-items: flex-start;">
+                    <div
+                        style="background: rgba(0,0,0,0.3); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); color: #aaa; display: flex; align-items: center; gap: 6px;">
+                        Lv. 1 Noobie
+                    </div>
+
+                    <div
+                        style="background: rgba(0,0,0,0.3); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); color: #f1c40f; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+                        <span id="profile-coins-display">0</span>Argons
+                    </div>
+
+                    <div
+                        style="background: rgba(0,0,0,0.3); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); color: #eee; font-family: sans-serif; font-size: 12px; display: flex; gap: 10px; width: 100%; box-sizing: border-box; justify-content: space-between; margin-top: 5px;">
+                        <div>Kills: <span id="profile-kills-display" style="color:#e74c3c; font-weight:bold;">0</span>
+                        </div>
+                        <div>Losses: <span id="profile-losses-display" style="color:#aaa; font-weight:bold;">0</span>
+                        </div>
+                        <div title="Kill Ratio (Kills / Losses)">KR: <span id="profile-kr-display"
+                                style="color:#3498db; font-weight:bold;">0.00</span></div>
+                    </div>
                 </div>
 
-                <div id="profile-other-controls" style="display: none; flex-direction: column; gap: 10px;">
+                <div id="profile-main-actions"
+                    style="display: none; width: 100%; max-width: 160px; gap: 6px; margin-top: 15px; z-index: 5;">
                     <button id="add-friend-btn"
-                        style="padding: 10px; border-radius: 8px; border: none; background: #3498db; color: white; font-weight: bold; cursor: pointer;">➕
+                        style="flex: 1; padding: 5px; border-radius: 5px; border: none; background: #3498db; color: white; font-weight: bold; cursor: pointer; font-size: 11px; font-family: sans-serif;">➕
                         Add Friend</button>
                     <button id="profile-message-btn"
-                        style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: white; cursor: pointer;">💬
-                        Message</button>
+                        style="width: 28px; padding: 5px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: white; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center;">💬</button>
                 </div>
 
+                <div id="profile-other-controls" style="display: none; flex: 1;"></div>
+
+                <span id="toggle-more-options-btn"
+                    style="display: none; position: absolute; bottom: 25px; right: 25px; color: rgba(255,255,255,0.65); cursor: pointer; font-size: 14px; font-weight: bold; font-family: sans-serif; text-decoration: none; transition: 0.2s; user-select: none;">
+                    ⚙️ More Options
+                </span>
+
                 <button id="profile-options-btn"
-                    style="display: none; position: absolute; bottom: 20px; right: 20px; padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); color: white; font-weight: bold; cursor: pointer; transition: background 0.2s;">⚙️
+                    style="display: none; position: absolute; bottom: 25px; right: 25px; padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.5); color: white; font-weight: bold; cursor: pointer; transition: background 0.2s;">⚙️
                     Options</button>
             </div>
+        </div>
+    </div>
+
+    <div id="more-options-modal"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; z-index: 2500;">
+
+        <div
+            style="width: 500px; height: 300px; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+
+            <div
+                style="padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <button id="back-from-more-options"
+                    style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; transition: 0.2s;">⬅</button>
+                <h3 style="margin: 0; font-family: sans-serif; font-size: 18px; color: white; letter-spacing: 1px;">
+                    Interacciones Adicionales</h3>
+                <div style="width: 24px;"></div>
+            </div>
+
+            <div
+                style="flex: 1; padding: 30px 60px; display: flex; flex-direction: column; justify-content: center; gap: 15px;">
+                <button id="invite-squad-btn"
+                    style="padding: 15px; background: rgba(155, 89, 182, 0.2); border: 1px solid #9b59b6; border-radius: 10px; color: white; cursor: pointer; transition: 0.2s; font-size: 15px; font-weight: bold; text-align: center; letter-spacing: 0.5px;">🏴‍☠️
+                    Invitar al Clan</button>
+                <button
+                    style="padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #777; cursor: not-allowed; font-size: 15px; text-align: center; letter-spacing: 0.5px;">🏠
+                    Invitar a Casa</button>
+            </div>
+
         </div>
     </div>
 
@@ -1397,6 +1472,14 @@
 
             <button id="world-paint-btn" class="tool-btn active" style="background: #27ae60;">🖌️ Paint</button>
             <button id="world-select-btn" class="tool-btn">🔲 Select</button>
+            <button id="btn-make-safezone" class="tool-btn"
+                style="background: #2ecc71; color: black; font-weight: bold; display: none;">🛡️ Crear SafeZone</button>
+
+            <label id="lbl-show-safezones"
+                style="display: none; align-items: center; color: #2ecc71; font-size: 11px; margin-left: 5px; cursor: pointer; font-weight: bold;">
+                <input type="checkbox" id="chk-show-safezones" style="margin-right: 3px; cursor: pointer;"> Ver Zonas
+            </label>
+
             <button id="eraser-btn" class="tool-btn" style="background: rgba(255, 107, 107, 0.4);">🗑️ Erase</button>
             <div class="toolbar-divider"></div>
 
@@ -1459,15 +1542,25 @@
 
         <div id="teleport-settings"
             style="display: none; align-items: center; gap: 5px; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 10px;">
-            <span style="color: #f1c40f; font-size: 11px; font-weight: bold;">⚡ Acción:</span>
+            <span style="color: #f1c40f; font-size: 11px; font-weight: bold;">⚡ Lógica:</span>
+
+            <select id="logic-type-select"
+                style="background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px; font-size: 11px; outline: none;">
+                <option value="none">Normal (Vacío)</option>
+                <option value="teleport">Puerta (TP)</option>
+                <option value="shop">Tienda</option>
+                <option value="safezone">Zona Segura 🛡️</option>
+            </select>
+
             <input type="number" id="tp-dest-x" placeholder="X"
-                style="width: 40px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px;">
+                style="width: 40px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px; display: none;">
             <input type="number" id="tp-dest-y" placeholder="Y"
-                style="width: 40px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px;">
+                style="width: 40px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px; display: none;">
             <input type="text" id="shop-item-id" placeholder="Item ID"
-                style="width: 70px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px;">
+                style="width: 70px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px; display: none;">
+
             <button id="save-tp-btn"
-                style="background: #2ecc71; color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">Save</button>
+                style="background: #2ecc71; color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">Guardar</button>
         </div>
 
         <button id="inspect-copy-btn" class="tool-btn" style="background: #3498db; border: none; color: white;">📋 Copy
@@ -1497,7 +1590,47 @@
         // --- NUEVO: LIENZO INVISIBLE PARA EL FLASH DE DAÑO ---
         const flashCanvas = document.createElement('canvas');
         const flashCtx = flashCanvas.getContext('2d');
+        const safeZoneUI = document.getElementById('safezone-ui'); // <--- PEGA ESTA LÍNEA AQUÍ
 
+        // --- VARIABLES DE LA PANTALLA DE CARGA ---
+        let isCinematicLoading = true;
+        let cinematicTimer = 0;
+        let totalAssetsToLoad = 0;
+        let assetsLoaded = 0;
+
+        function updateLoadingBar(text) {
+            const fill = document.getElementById('loading-bar-fill');
+            const txt = document.getElementById('loading-text');
+            if (txt && text) txt.innerText = text;
+
+            if (fill && totalAssetsToLoad > 0) {
+                const pct = (assetsLoaded / totalAssetsToLoad) * 100;
+                fill.style.width = pct + '%';
+            }
+
+            // Si ya cargó todo, quitamos la barra de carga Y ENTRAMOS DIRECTO AL JUEGO
+            if (totalAssetsToLoad > 0 && assetsLoaded >= totalAssetsToLoad) {
+                if (txt) txt.innerText = "¡Mundo Listo!";
+                setTimeout(() => {
+                    const screen = document.getElementById('loading-screen');
+                    if (screen) screen.style.opacity = '0';
+
+                    setTimeout(() => {
+                        if (screen) screen.style.display = 'none';
+
+                        // 👇 LA MAGIA: Apagamos el dron y devolvemos el control al instante 👇
+                        isCinematicLoading = false;
+
+                        // Asegurarnos de que la ventana de Login esté escondida
+                        if (authOverlay) {
+                            authOverlay.style.display = 'none';
+                            authOverlay.style.opacity = '0';
+                            authOverlay.style.pointerEvents = 'none';
+                        }
+                    }, 800);
+                }, 1000);
+            }
+        }
 
         // --- 0. MULTI-TILESET SYSTEM (DINÁMICO DESDE MONGODB) ---
         let TILESET_CONFIG = [];
@@ -1536,6 +1669,7 @@
         let selectedTileId = 0;
         const TILE_SIZE = 16; // Your tileset looks like a 16px grid
         const worldMap = {};  // Stores "x,y": tileId
+        let safeZones = [];   // <--- NUEVO: MEMORIA DE ZONAS SEGURAS
 
         // Disable the right-click / long-press context menu everywhere
         window.addEventListener('contextmenu', function (e) {
@@ -1800,6 +1934,9 @@
             authOverlay.style.display = 'none';
             authOverlay.style.opacity = '0';
             authOverlay.style.pointerEvents = 'none';
+
+            // 👇 NUEVO: Aterrizar el dron si entras como invitado 👇
+            isCinematicLoading = false;
         });
 
         // (Optional but nice) Close the app tray if they click the canvas
@@ -1811,10 +1948,20 @@
 
 
         // Connect to the live cloud server
-        const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
+        //const ws = new WebSocket('wss://my-chat-server-ihxw.onrender.com');
 
         // Connect locally for testing the database
         //const ws = new WebSocket('ws://localhost:8080');
+
+        // --- CONEXIÓN INTELIGENTE (LOCAL vs PRODUCCIÓN) ---
+        // Si estás en tu PC (localhost), usa tu servidor local. 
+        // Si estás en GitHub Pages o LirosMusic, usa el servidor de la nube (Render).
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+        // RECUERDA: Cambia la URL de Render por la de tu servidor real cuando lo subas
+        const wsUrl = isLocal ? 'ws://localhost:8080' : 'wss://my-chat-server-ihxw.onrender.com';
+
+        const ws = new WebSocket(wsUrl);
 
         // --- WEBSOCKET CONNECTION STATE ---
         authMessage.style.color = '#f1c40f'; // Yellow
@@ -1892,6 +2039,32 @@
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
+            // --- NUEVO: CASTIGO DEL SERVIDOR (RUBBERBANDING ANTI-HACKS) ---
+            if (data.type === 'force_position') {
+                // 1. Regresar físicamente al personaje
+                player.worldX = data.x;
+                player.worldY = data.y;
+
+                // 2. DESTRUIR EL HACK EN LA MEMORIA RAM DEL NAVEGADOR
+                player.speed = 4; // Si inyectaron speedhack, se lo matamos a 4
+                player.vx = 0;
+                player.vy = 0;
+                lastNetworkString = ""; // Obliga al navegador a sincronizarse de golpe
+
+                // 3. Efecto visual de castigo (Pantallazo Rojo)
+                const overlay = document.getElementById('fade-overlay');
+                if (overlay) {
+                    overlay.style.background = 'red'; // Pantalla roja de alerta
+                    overlay.style.opacity = '0.5';
+                    setTimeout(() => {
+                        overlay.style.opacity = '0';
+                        setTimeout(() => { overlay.style.background = 'black'; }, 200);
+                    }, 100);
+                }
+
+                console.warn("🚔 [ANTI-CHEAT] Movimiento ilegal bloqueado por el servidor.");
+                return; // Detenemos la ejecución
+            }
 
             // --- NEW: AUTHENTICATION RESPONSES ---
             if (data.type === 'auth_error') {
@@ -1948,7 +2121,7 @@
                             ${logoHtml}
                             <div>
                                 <div style="color: ${sq.isLeader ? '#f1c40f' : 'white'}; font-weight: bold; font-family: sans-serif; font-size: 16px;">
-                                    ${sq.isLeader ? '👑 ' : ''}${sq.name}
+                                    ${sq.isLeader ? '👑 ' : ''}${escapeHTML(sq.name)}
                                 </div>
                                 <div style="color: #aaa; font-size: 12px; font-family: sans-serif; margin-top: 4px;">👥 ${sq.memberCount} Miembros</div>
                             </div>
@@ -2061,20 +2234,21 @@
             }
             else if (data.type === 'no_squad') {
                 alert("Aún no perteneces a ningún Squad. ¡Crea uno o busca uno al cual unirte!");
-            }// --- RESPUESTAS DEL SISTEMA DE SQUADS ---
+            }// --- ÉXITO DE CLAN (CREAR, ACEPTAR O INVITAR) ---
             else if (data.type === 'squad_success') {
-                document.getElementById('squad-create-modal').style.display = 'none';
-                document.getElementById('confirm-create-squad').innerText = "Pagar 2000 🪙 y Fundar";
-
-                // ACTUALIZAR MONEDAS EN PANTALLA
                 if (data.newCoins !== undefined) {
                     player.coins = data.newCoins;
                     const coinsDisplay = document.getElementById('profile-coins-display');
                     if (coinsDisplay) coinsDisplay.innerText = player.coins;
                 }
-                player.squadName = data.squadName;
-                player.squadLogo = data.squadLogo;
-                alert(data.message); // Notificación de éxito
+
+                // 👇 EL FIX: Solo actualizar si el servidor realmente nos envió un nombre nuevo
+                if (data.squadName !== undefined) {
+                    player.squadName = data.squadName;
+                    player.squadLogo = data.squadLogo;
+                }
+
+                alert(data.message);
             }
             else if (data.type === 'squad_error') {
                 document.getElementById('squad-create-msg').style.color = "#ff6b6b";
@@ -2123,24 +2297,43 @@
                 authOverlay.style.pointerEvents = 'none';
                 authOverlay.style.opacity = '0';
 
+                // --- NUEVO: CONTADOR DE CARGA ---
+                let weaponCount = Object.values(data.weaponsDB).filter(w => w.src).length;
+                totalAssetsToLoad = weaponCount + data.tilesetsDB.length;
+                assetsLoaded = 0;
+                updateLoadingBar("Descargando mapas y armas...");
+
                 // GUARDAR DB DE ARMAS
                 WEAPONS = data.weaponsDB;
                 for (let wId in WEAPONS) {
                     if (WEAPONS[wId].src) {
                         const img = new Image();
-                        img.onload = () => { renderHudHotbar(); };
+                        img.onload = () => {
+                            assetsLoaded++;
+                            updateLoadingBar();
+                            renderHudHotbar();
+                        };
                         img.src = WEAPONS[wId].src;
                         loadedWeaponSprites[wId] = img;
                     }
                 }
 
-                // --- NUEVO: GUARDAR DB DE TILESETS Y DESCARGAR IMÁGENES ---
+                // GUARDAR DB DE TILESETS Y DESCARGAR IMÁGENES
                 TILESET_CONFIG = data.tilesetsDB;
                 TILESET_CONFIG.forEach(ts => {
                     const img = new Image();
+                    img.onload = () => {
+                        assetsLoaded++;
+                        updateLoadingBar();
+                    };
                     img.src = ts.src;
                     loadedTilesets[ts.id] = img;
                 });
+
+                // Escudo por si no hay nada que descargar
+                if (totalAssetsToLoad === 0) {
+                    assetsLoaded = 1; totalAssetsToLoad = 1; updateLoadingBar("¡Listo!");
+                }
 
                 myId = data.id;
                 player.worldX = data.players[myId].worldX;
@@ -2151,7 +2344,25 @@
                 player.squadName = data.players[myId].squadName;
                 player.squadLogo = data.players[myId].squadLogo;
                 player.squad = data.players[myId].squad;
+                safeZones = data.safeZones || [];
+                // 👇 NUEVO: SINCRONIZAR SALUD AL APARECER 👇
+                player.hp = data.players[myId].hp !== undefined ? data.players[myId].hp : 100;
+                player.isDead = data.players[myId].isDead || false;
 
+                // 🛑 EL FIX: LEER KILLS Y LOSSES AL RECARGAR LA PÁGINA 🛑
+                player.kills = data.players[myId].kills || 0;
+                player.losses = data.players[myId].losses || 0;
+
+                // Actualizar la Isla Dinámica visualmente
+                const islandFill = document.getElementById('island-hp-fill');
+                const islandText = document.getElementById('island-hp-text');
+                if (islandText && islandFill) {
+                    islandText.innerText = `${player.hp} / 100`;
+                    islandFill.style.width = `${player.hp}%`;
+                    if (player.hp > 50) islandFill.style.backgroundColor = '#2ecc71';
+                    else if (player.hp > 25) islandFill.style.backgroundColor = '#f1c40f';
+                    else islandFill.style.backgroundColor = '#e74c3c';
+                }
                 for (let id in data.players) {
                     if (id !== myId) {
                         otherPlayers[id] = data.players[id];
@@ -2171,6 +2382,10 @@
                         };
                     });
                 }
+            } else if (data.type === 'new_safezone') {
+                // 👇 NUEVO: AGREGAR ZONA NUEVA EN TIEMPO REAL 👇
+                safeZones.push(data.zone);
+                console.log("Nueva zona segura recibida:", data.zone.name);
             }
             else if (data.type === 'tile_update') {
                 if (data.tileId === -1) {
@@ -2209,9 +2424,29 @@
             else if (data.type === 'shoot') {
                 spawnProjectile(data.x, data.y, data.angle, data.id, data.weaponId);
             }
-            // --- NEW: RECIBIR ACTUALIZACIÓN DE VIDA DESDE EL SERVIDOR ---
             // --- RECIBIR ACTUALIZACIÓN DE VIDA DESDE EL SERVIDOR ---
             else if (data.type === 'hp_update') {
+
+                // 👇 NUEVO: ACTUALIZAR KILLS Y LOSSES EN LA MEMORIA RAM LOCAL 👇
+                if (data.isDead) {
+                    // Actualizar al Tirador
+                    if (data.shooterId === myId) {
+                        player.kills = data.shooterKills;
+                        spawnDamageText(player.worldX, player.worldY, "+1 Kill", true); // Flota texto verde
+                    } else if (otherPlayers[data.shooterId]) {
+                        otherPlayers[data.shooterId].kills = data.shooterKills;
+                    }
+
+                    // Actualizar a la Víctima
+                    if (data.targetId === myId) {
+                        player.losses = data.targetLosses;
+                        // 🛑 EL FIX: AVISO VISUAL DE DERROTA 🛑
+                        spawnDamageText(player.worldX, player.worldY, "+1 Loss", false);
+                    } else if (otherPlayers[data.targetId]) {
+                        otherPlayers[data.targetId].losses = data.targetLosses;
+                    }
+                }
+
                 if (data.targetId === myId) {
                     player.hp = data.newHp;
                     player.isDead = data.isDead;
@@ -2296,6 +2531,8 @@
                 authOverlay.style.display = 'none';
                 authOverlay.style.opacity = '0';
                 authOverlay.style.pointerEvents = 'none';
+                // 👇 NUEVO: Aterrizar el dron tras loguearse 👇
+                isCinematicLoading = false;
 
                 // SAVE THE TOKEN TO BROWSER MEMORY!
                 if (data.token) {
@@ -2393,6 +2630,22 @@
                         drawW, drawH
                     );
                 }
+            }// --- RECIBIR INVITACIÓN A UN CLAN ---
+            else if (data.type === 'squad_invite') {
+                pendingRequests.push(data); // Reutilizamos la misma fila de notificaciones
+
+                document.getElementById('notif-btn-container').style.display = 'block';
+                document.getElementById('friend-notif-badge').style.display = 'flex';
+                document.getElementById('friend-notif-badge').innerText = pendingRequests.length;
+                wakeUpIsland(5000);
+
+                if (nCtx) {
+                    nCtx.clearRect(0, 0, notifCanvas.width, notifCanvas.height);
+                    const pFrameW = idleSprite.width / 8;
+                    const pFrameH = idleSprite.height / 6;
+                    const drawW = 32; const drawH = 32 * ((pFrameH / 2) / pFrameW);
+                    nCtx.drawImage(idleSprite, data.senderFrameX * pFrameW, data.senderFrameY * pFrameH, pFrameW, pFrameH / 2, (notifCanvas.width - drawW) / 2, (notifCanvas.height - drawH) / 2 + 3, drawW, drawH);
+                }
             }
         };
 
@@ -2440,15 +2693,41 @@
         let lastNetworkString = "";
 
         function spawnDamageText(x, y, amount, isHeal = false) {
-            if (!amount || amount === 0) return;
+            let textToShow;
+
+            // Si es un número puro (ej. daño o curación), hacemos la matemática normal
+            if (typeof amount === 'number') {
+                textToShow = isHeal ? "+" + Math.abs(amount) : Math.abs(amount).toString();
+            } else {
+                // Si ya es un texto con letras (ej. "+1 Kill"), lo dejamos exactamente como viene
+                textToShow = amount;
+            }
+
+            // Elegimos el color: Verde si es "isHeal" (recompensas/curación), Amarillo para daño
+            let textColor = isHeal ? '#2ecc71' : '#f1c40f';
+
             damageTexts.push({
-                x: x + (Math.random() * 16 - 8),
-                y: y - 10,
-                text: isHeal ? "+" + Math.abs(amount) : Math.abs(amount).toString(),
-                color: isHeal ? "#2ecc71" : "#f1c40f", // Verde si cura, amarillo si es daño
-                life: 60,
-                maxLife: 60
+                x: x + (Math.random() * 20 - 10), // Ligera aleatoriedad para que no se encimen
+                y: y - 20,
+                text: textToShow,
+                color: textColor,
+                life: 50,      // Duración del texto en pantalla
+                maxLife: 50
             });
+        }
+
+        // 🛡️ ESCUDO ANTI-XSS: Convierte código malicioso en texto inofensivo
+        function escapeHTML(str) {
+            if (!str) return "";
+            return str.toString().replace(/[&<>'"]/g,
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
         }
 
         // --- BULLET SPAWNER DINÁMICO ---
@@ -3157,76 +3436,68 @@
         const modalAvatarCanvas = document.getElementById('modal-avatar-canvas');
         const modalCtx = modalAvatarCanvas ? modalAvatarCanvas.getContext('2d') : null;
 
+        // --- UPGRADED: NOTIFICATION BUTTON ACTIONS ---
         notifToggle.addEventListener('click', () => {
             if (pendingRequests.length > 0) {
-                const req = pendingRequests[0];
+                const req = pendingRequests[0]; // Solo miramos, no la sacamos aún
 
-                // Set the generalized text
-                notifText.innerText = `${req.senderUsername} has added you to their friends list. Would you like to add them back?`;
-
-                // Draw their STATIC forward-facing half-body!
-                if (modalCtx) {
-                    modalCtx.clearRect(0, 0, modalAvatarCanvas.width, modalAvatarCanvas.height);
-                    const pFrameW = idleSprite.width / 8;
-                    const pFrameH = idleSprite.height / 6;
-
-                    const cropW = pFrameW;
-                    const cropH = pFrameH / 2; // Upper half
-                    const cropX = 0; // Column 0 (Idle)
-                    const cropY = 0; // Row 0 (Facing Forward/Down)
-
-                    const drawW = 40;
-                    const drawH = 40 * (cropH / cropW);
-
-                    // Draw them anchored to the bottom of the little 45x45 box
-                    modalCtx.drawImage(
-                        idleSprite,
-                        cropX, cropY, cropW, cropH,
-                        (modalAvatarCanvas.width - drawW) / 2, modalAvatarCanvas.height - drawH,
-                        drawW, drawH
-                    );
+                // LA MAGIA BLINDADA (ANTI-XSS): Cambiar texto y color según el tipo
+                if (req.type === 'friend_request') {
+                    notifText.innerHTML = `<span id="safe-notif-name" style="color:#3498db; font-weight:bold;"></span> te ha enviado una solicitud de amistad. ¿Aceptas?`;
+                    document.getElementById('safe-notif-name').innerText = req.senderUsername; // Inserta el nombre como texto puro
+                } else if (req.type === 'squad_invite') {
+                    notifText.innerHTML = `<span id="safe-notif-name" style="color:#9b59b6; font-weight:bold;"></span> te invita a unirte a su clan: <span id="safe-notif-squad" style="color:#f1c40f; font-weight:bold;"></span>. ¿Aceptas?`;
+                    document.getElementById('safe-notif-name').innerText = req.senderUsername;
+                    document.getElementById('safe-notif-squad').innerText = `[${req.squadName}]`;
                 }
 
+                // ... (El código de dibujar el avatar déjalo igual) ...
+                if (modalCtx) {
+                    modalCtx.clearRect(0, 0, modalAvatarCanvas.width, modalAvatarCanvas.height);
+                    const pFrameW = idleSprite.width / 8; const pFrameH = idleSprite.height / 6;
+                    const drawW = 40; const drawH = 40 * ((pFrameH / 2) / pFrameW);
+                    modalCtx.drawImage(idleSprite, 0, 0, pFrameW, pFrameH / 2, (modalAvatarCanvas.width - drawW) / 2, modalAvatarCanvas.height - drawH, drawW, drawH);
+                }
                 notifModal.style.display = 'flex';
             }
         });
 
-        // If you hit YES
+        // SI PRESIONAS YES
         notifYesBtn.addEventListener('click', () => {
             if (pendingRequests.length > 0) {
-                const req = pendingRequests.shift();
+                const req = pendingRequests.shift(); // Sacamos la petición
 
-                ws.send(JSON.stringify({ type: 'add_friend', friendAccountId: req.senderAccountId, isReply: true }));
-
-                if (!player.friends) player.friends = [];
-                if (!player.friends.includes(req.senderAccountId)) {
-                    player.friends.push(req.senderAccountId);
+                if (req.type === 'friend_request') {
+                    ws.send(JSON.stringify({ type: 'add_friend', friendAccountId: req.senderAccountId, isReply: true }));
+                    if (!player.friends) player.friends = [];
+                    if (!player.friends.includes(req.senderAccountId)) player.friends.push(req.senderAccountId);
+                }
+                else if (req.type === 'squad_invite') {
+                    // Si aceptó el clan, enviarlo al servidor
+                    ws.send(JSON.stringify({ type: 'accept_squad_invite', squadId: req.squadId }));
                 }
 
-                if (pendingRequests.length === 0) {
-                    notifBtnContainer.style.display = 'none';
-                    notifModal.style.display = 'none';
-                } else {
-                    document.getElementById('friend-notif-badge').innerText = pendingRequests.length;
-                    notifModal.style.display = 'none';
-                }
+                checkPendingRequests();
             }
         });
 
-        // If you hit NO
+        // SI PRESIONAS NO
         notifNoBtn.addEventListener('click', () => {
             if (pendingRequests.length > 0) {
-                pendingRequests.shift();
-
-                if (pendingRequests.length === 0) {
-                    notifBtnContainer.style.display = 'none';
-                    notifModal.style.display = 'none';
-                } else {
-                    document.getElementById('friend-notif-badge').innerText = pendingRequests.length;
-                    notifModal.style.display = 'none';
-                }
+                pendingRequests.shift(); // Simplemente la borramos sin hacer nada
+                checkPendingRequests();
             }
         });
+
+        function checkPendingRequests() {
+            if (pendingRequests.length === 0) {
+                notifBtnContainer.style.display = 'none';
+                notifModal.style.display = 'none';
+            } else {
+                document.getElementById('friend-notif-badge').innerText = pendingRequests.length;
+                notifModal.style.display = 'none';
+            }
+        }
 
         // --- 2. PALETTE RESIZING LOGIC ---
         paletteResizer.addEventListener('touchstart', (e) => {
@@ -3336,6 +3607,60 @@
             }
             drawPalette();
         };
+
+        // 👇 NUEVO: LÓGICA DEL BOTÓN "CREAR ZONA SEGURA" Y CHECKBOX 👇
+        const btnMakeSafeZone = document.getElementById('btn-make-safezone');
+        const lblShowSafezones = document.getElementById('lbl-show-safezones');
+        const chkShowSafezones = document.getElementById('chk-show-safezones');
+        let showSafeZoneVisuals = false; // Memoria del interruptor
+
+        // Cuando le damos clic al checkbox, actualiza la memoria
+        chkShowSafezones.addEventListener('change', (e) => {
+            showSafeZoneVisuals = e.target.checked;
+        });
+
+        // Mostrar el botón y el checkbox solo cuando activamos la herramienta de Select
+        worldSelectBtn.addEventListener('click', () => {
+            btnMakeSafeZone.style.display = 'inline-block';
+            lblShowSafezones.style.display = 'flex';
+        });
+        worldPaintBtn.addEventListener('click', () => {
+            btnMakeSafeZone.style.display = 'none';
+            lblShowSafezones.style.display = 'none';
+        });
+        eraserBtn.addEventListener('click', () => {
+            btnMakeSafeZone.style.display = 'none';
+            lblShowSafezones.style.display = 'none';
+        });
+
+        btnMakeSafeZone.addEventListener('click', () => {
+            if (!mapSelectionBox) {
+                alert("⚠️ Primero usa la herramienta 'Select' para arrastrar y marcar un área en el mapa.");
+                return;
+            }
+
+            const zoneName = prompt("🛡️ Nombra esta Zona Segura (ej. 'Spawn Principal'):");
+            if (!zoneName) return; // Si cancela, no hacemos nada
+
+            // Convertimos los cuadritos (Grid) en Coordenadas Reales (World)
+            const xMin = mapSelectionBox.minX * TILE_SIZE;
+            const yMin = mapSelectionBox.minY * TILE_SIZE;
+            const xMax = (mapSelectionBox.maxX + 1) * TILE_SIZE;
+            const yMax = (mapSelectionBox.maxY + 1) * TILE_SIZE;
+
+            // Se lo enviamos al Servidor
+            ws.send(JSON.stringify({
+                type: 'create_safezone',
+                name: zoneName,
+                xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax
+            }));
+
+            alert(`✅ Zona Segura '${zoneName}' creada con éxito.`);
+            // Limpiamos la herramienta
+            mapSelectionBox = null;
+            worldPaintBtn.click();
+        });
+        // 👆 FIN DE LA LÓGICA DE ZONA SEGURA 👆
 
         // --- NEW: UNDO & REDO HISTORY STACKS ---
         const undoStack = [];
@@ -4069,29 +4394,32 @@
             }
         };
 
-        // --- NUEVO: GUARDAR COORDENADAS DE TELETRANSPORTE ---
+        // --- LÓGICA DEL MENÚ DESPLEGABLE DEL EDITOR ---
+        const logicSelect = document.getElementById('logic-type-select');
         const tpDestX = document.getElementById('tp-dest-x');
         const tpDestY = document.getElementById('tp-dest-y');
+        const shopItemIdInput = document.getElementById('shop-item-id');
         const saveTpBtn = document.getElementById('save-tp-btn');
+
+        logicSelect.onchange = () => {
+            tpDestX.style.display = (logicSelect.value === 'teleport') ? 'block' : 'none';
+            tpDestY.style.display = (logicSelect.value === 'teleport') ? 'block' : 'none';
+            shopItemIdInput.style.display = (logicSelect.value === 'shop') ? 'block' : 'none';
+        };
 
         saveTpBtn.onclick = () => {
             if (inspectingCoord) {
                 const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
-                const dx = parseInt(document.getElementById('tp-dest-x').value);
-                const dy = parseInt(document.getElementById('tp-dest-y').value);
-                const itemId = document.getElementById('shop-item-id').value.trim();
+                const tType = logicSelect.value === 'none' ? null : logicSelect.value;
+                const dx = parseInt(tpDestX.value);
+                const dy = parseInt(tpDestY.value);
+                const itemId = shopItemIdInput.value.trim();
 
-                // LA MAGIA: Si escribes un ID, el motor sabe que es una tienda. Si no, es un teletransporte.
-                let tType = 'teleport';
-                if (itemId !== "") tType = 'shop';
-
-                // 1. Guardar localmente
                 worldMap[inspectingCoord].triggerType = tType;
                 worldMap[inspectingCoord].destX = isNaN(dx) ? null : dx;
                 worldMap[inspectingCoord].destY = isNaN(dy) ? null : dy;
                 worldMap[inspectingCoord].itemId = itemId;
 
-                // 2. Enviar al Servidor
                 ws.send(JSON.stringify({
                     type: 'update_tile_metadata',
                     x: gx, y: gy, layer: gl,
@@ -4099,9 +4427,9 @@
                     triggerType: tType, destX: isNaN(dx) ? null : dx, destY: isNaN(dy) ? null : dy, itemId: itemId
                 }));
 
-                saveTpBtn.innerText = "Saved!";
+                saveTpBtn.innerText = "Guardado!";
                 saveTpBtn.style.background = "#27ae60";
-                setTimeout(() => { saveTpBtn.innerText = "Save"; saveTpBtn.style.background = "#2ecc71"; }, 1500);
+                setTimeout(() => { saveTpBtn.innerText = "Guardar"; saveTpBtn.style.background = "#2ecc71"; }, 1500);
             }
         };
 
@@ -4207,6 +4535,7 @@
         // --- PROFILE MODAL LOGIC ---
         const profileModal = document.getElementById('profile-modal');
         const closeProfile = document.getElementById('close-profile');
+        // --- CONECTADO AL CANVAS CLÁSICO GIGANTE ---
         const profileCanvas = document.getElementById('profile-canvas');
         const prCtx = profileCanvas.getContext('2d');
         const profileNameDisplay = document.getElementById('profile-name-display');
@@ -4262,72 +4591,161 @@
             const targetPlayer = (targetId === 'offline') ? { squadName: null } : otherPlayers[targetId] || (targetId === 'self' ? player : { squadName: null });
             const tagContainer = document.getElementById('profile-squad-tag-container');
 
-            if (targetPlayer && targetPlayer.squadName) {
-                tagContainer.style.display = 'flex';
-                document.getElementById('profile-squad-name').innerText = `(${targetPlayer.squadName})`;
+            // FIX: Escudo Anti-Crash para el contenedor del Tag
+            if (tagContainer) {
+                if (targetPlayer && targetPlayer.squadName) {
+                    tagContainer.style.display = 'flex';
+                    const nameSpan = document.getElementById('profile-squad-name');
+                    if (nameSpan) nameSpan.innerText = `(${targetPlayer.squadName})`;
 
-                const logoImg = document.getElementById('profile-squad-logo');
-                if (targetPlayer.squadLogo) {
-                    logoImg.src = targetPlayer.squadLogo;
-                    logoImg.style.display = 'block';
+                    const logoImg = document.getElementById('profile-squad-logo');
+                    if (logoImg) {
+                        if (targetPlayer.squadLogo) {
+                            logoImg.src = targetPlayer.squadLogo;
+                            logoImg.style.display = 'block';
+                        } else {
+                            logoImg.style.display = 'none';
+                        }
+                    }
                 } else {
-                    logoImg.style.display = 'none';
+                    tagContainer.style.display = 'none';
                 }
-            } else {
-                tagContainer.style.display = 'none';
             }
 
-            // Actualizar monedas de forma segura
+            // Actualizar monedas de forma segura (Escudo Anti-Crash activado)
             const coinsDisplay = document.getElementById('profile-coins-display');
-            if (targetId === 'self') {
-                coinsDisplay.innerText = player.coins || 0;
-            } else if (targetId === 'offline') {
-                coinsDisplay.innerText = "?"; // Si está offline no podemos ver su dinero en vivo
-            } else {
-                coinsDisplay.innerText = otherPlayers[targetId].coins || 0;
+            if (coinsDisplay) {
+                if (targetId === 'self') {
+                    coinsDisplay.innerText = player.coins || 0;
+                } else if (targetId === 'offline') {
+                    coinsDisplay.innerText = "?";
+                } else {
+                    coinsDisplay.innerText = otherPlayers[targetId].coins || 0;
+                }
+            }
+            // 👇 NUEVO: Actualizar Kills, Losses y Calcular el KR 👇
+            const killsDisplay = document.getElementById('profile-kills-display');
+            const lossesDisplay = document.getElementById('profile-losses-display');
+            const krDisplay = document.getElementById('profile-kr-display');
+
+            if (killsDisplay && lossesDisplay && krDisplay) {
+                let k = 0; let l = 0;
+
+                if (targetId === 'self') {
+                    k = player.kills || 0;
+                    l = player.losses || 0;
+                } else if (targetId === 'offline') {
+                    k = "?"; l = "?";
+                } else if (otherPlayers[targetId]) {
+                    k = otherPlayers[targetId].kills || 0;
+                    l = otherPlayers[targetId].losses || 0;
+                }
+
+                killsDisplay.innerText = k;
+                lossesDisplay.innerText = l;
+
+                if (k === "?" || l === "?") {
+                    krDisplay.innerText = "?";
+                } else {
+                    // Matemáticas del KR: Si no has muerto, tu KR es igual a tus Kills. Si no, Kills entre Losses.
+                    let kr = l === 0 ? k.toFixed(2) : (k / l).toFixed(2);
+                    krDisplay.innerText = kr;
+                }
             }
 
-            profileModal.style.display = 'flex';
+            // Validar que el modal exista antes de abrirlo
+            if (typeof profileModal !== 'undefined' && profileModal) {
+                profileModal.style.display = 'flex';
+            }
+
+            // --- ACTUALIZACIÓN DE VISIBILIDAD REDISEÑO ---
+            const mainActionsDiv = document.getElementById('profile-main-actions');
+
+            // 👇 EL FIX: Declarar todas las variables ANTES de usarlas 👇
+            const moreOptionsBtn = document.getElementById('toggle-more-options-btn');
+            const moreOptionsModal = document.getElementById('more-options-modal');
+            const backFromMoreOptions = document.getElementById('back-from-more-options');
+            const inviteSquadBtn = document.getElementById('invite-squad-btn');
 
             if (targetId === 'self') {
-                profileOptionsBtn.style.display = 'block';
-                profileOtherControls.style.display = 'none';
+                if (typeof profileOptionsBtn !== 'undefined' && profileOptionsBtn) profileOptionsBtn.style.display = 'block';
+                if (mainActionsDiv) mainActionsDiv.style.display = 'none'; // Ocultar botones principales en ti
+                if (moreOptionsBtn) moreOptionsBtn.style.display = 'none'; // Ocultar "Más Opciones" en ti
             } else {
-                profileOptionsBtn.style.display = 'none';
-                profileOtherControls.style.display = 'flex';
-                addFriendBtn.style.display = 'block';
+                if (typeof profileOptionsBtn !== 'undefined' && profileOptionsBtn) profileOptionsBtn.style.display = 'none';
 
-                // Conseguir el ID de la base de datos (incluso si está offline)
+                // ENCENDER LOS NUEVOS CONTENEDORES
+                if (mainActionsDiv) mainActionsDiv.style.display = 'flex';
+                if (moreOptionsBtn) moreOptionsBtn.style.display = 'block';
+
+                if (typeof addFriendBtn !== 'undefined' && addFriendBtn) addFriendBtn.style.display = 'block';
+
                 const targetAccId = (targetId === 'offline') ? offlineFriendAccountId : otherPlayers[targetId].accountId;
-
-                // Verificar usando el ID real
                 const isFriend = player.friends && player.friends.includes(targetAccId);
 
-                if (isFriend) {
-                    addFriendBtn.innerText = "❌ Eliminar Amigo";
-                    addFriendBtn.style.background = "rgba(231, 76, 60, 0.2)";
-                    addFriendBtn.style.border = "1px solid #e74c3c";
-                    addFriendBtn.style.color = "#e74c3c";
+                if (typeof addFriendBtn !== 'undefined' && addFriendBtn) {
 
-                    addFriendBtn.onclick = () => {
-                        ws.send(JSON.stringify({ type: 'remove_friend', targetId: targetAccId }));
-                        profileModal.style.display = 'none'; // Cerramos la ventana al eliminar
-                    };
-                } else {
-                    addFriendBtn.innerText = "➕ Agregar Amigo";
+                    // Aseguramos que el botón SIEMPRE tenga su color azul por defecto
                     addFriendBtn.style.background = "#3498db";
                     addFriendBtn.style.border = "none";
                     addFriendBtn.style.color = "white";
 
-                    addFriendBtn.onclick = () => {
-                        ws.send(JSON.stringify({ type: 'add_friend', friendAccountId: targetAccId }));
-                        addFriendBtn.innerText = "✓ Enviado";
-                        addFriendBtn.style.background = "#27ae60";
-                        if (!player.friends) player.friends = [];
-                        player.friends.push(targetAccId);
+                    if (isFriend) {
+                        addFriendBtn.innerText = "❌ Unfriend";
+
+                        addFriendBtn.onclick = () => {
+                            ws.send(JSON.stringify({ type: 'remove_friend', targetId: targetAccId }));
+                            if (typeof profileModal !== 'undefined') profileModal.style.display = 'none';
+                        };
+                    } else {
+                        addFriendBtn.innerText = "➕ Add Friend";
+
+                        addFriendBtn.onclick = () => {
+                            ws.send(JSON.stringify({ type: 'add_friend', friendAccountId: targetAccId }));
+                            addFriendBtn.innerText = "✓ Sent"; // Solo cambia el texto, el color se queda azul
+
+                            if (!player.friends) player.friends = [];
+                            player.friends.push(targetAccId);
+                        };
+                    }
+                }
+
+                // --- LÓGICA DE MÁS OPCIONES (MODAL SEPARADO SIN CAMBIOS DE COLOR) ---
+                if (moreOptionsBtn && moreOptionsModal) {
+                    moreOptionsBtn.onclick = () => {
+                        if (typeof profileModal !== 'undefined') profileModal.style.display = 'none';
+                        moreOptionsModal.style.display = 'flex';
+
+                        if (inviteSquadBtn) {
+                            inviteSquadBtn.innerText = "🏴‍☠️ Invitar al Clan";
+                            // Siempre se queda con su color morado por defecto
+                            inviteSquadBtn.style.background = "rgba(155, 89, 182, 0.2)";
+                            inviteSquadBtn.style.borderColor = "#9b59b6";
+                            inviteSquadBtn.style.color = "white";
+                        }
                     };
                 }
-            }
+
+                if (backFromMoreOptions) {
+                    backFromMoreOptions.onclick = () => {
+                        moreOptionsModal.style.display = 'none';
+                        if (typeof profileModal !== 'undefined') profileModal.style.display = 'flex';
+                    };
+                }
+
+                if (inviteSquadBtn) {
+                    inviteSquadBtn.onclick = () => {
+                        if (!player.squad) {
+                            alert("Primero debes equipar el Tag de tu Clan para invitar a otros.");
+                            return;
+                        }
+                        ws.send(JSON.stringify({ type: 'send_squad_invite', targetAccountId: targetAccId }));
+
+                        // Solo cambia el texto, el color se queda morado
+                        inviteSquadBtn.innerText = "✓ Invitación Enviada";
+                    };
+                }
+            } // Fin del 'else' (es otro jugador)
             drawProfileAnimation();
         }
 
@@ -4347,28 +4765,30 @@
             optionsModal.style.display = 'none';
         });
 
-        // 3. The Isolated Walking Animation for the UI
+        // 3. The Isolated Walking Animation for the UI (PERFECTAMENTE CENTRADO)
         function drawProfileAnimation() {
-            if (!isProfileOpen) return; // Stop loop when closed
+            if (!isProfileOpen) return;
 
             prCtx.clearRect(0, 0, profileCanvas.width, profileCanvas.height);
-
-            // --- EL FIX: APAGAR EL SUAVIZADO PARA QUE EL PIXEL ART QUEDE NÍTIDO ---
             prCtx.imageSmoothingEnabled = false;
 
-            // Advance fake animation frame
             profileAnimFrame = (profileAnimFrame + 0.1) % 8;
             const fX = Math.floor(profileAnimFrame);
-            const fY = 0; // Always walk straight down towards the camera
+            const fY = 0;
 
             const pFrameW = walkSprite.width / 8;
             const pFrameH = walkSprite.height / 6;
 
-            // Draw them MASSIVE on the profile canvas
+            const drawScale = 4.5;
+            const drawW = pFrameW * drawScale;
+            const drawH = pFrameH * drawScale;
+
+            // EL FIX: Ahora está centrado exactamente a la mitad sin desplazamientos extras
             prCtx.drawImage(
                 walkSprite,
                 fX * pFrameW, fY * pFrameH, pFrameW, pFrameH,
-                10, 20, 130, 130 * (pFrameH / pFrameW)
+                (profileCanvas.width - drawW) / 2, (profileCanvas.height - drawH) / 2,
+                drawW, drawH
             );
 
             requestAnimationFrame(drawProfileAnimation);
@@ -4398,7 +4818,11 @@
         // BOTÓN "ATRÁS" EN EL CHAT
         backToInboxBtn.addEventListener('click', () => {
             pmModal.style.display = 'none';
-            currentChatTarget = "";
+
+            // 👇 EL FIX: Limpiar las variables correctas 👇
+            currentChatTargetId = "";
+            currentChatTargetName = "";
+
             inboxModal.style.display = 'flex'; // Reabrir Inbox
             ws.send(JSON.stringify({ type: 'get_inbox' })); // Actualizar lista
         });
@@ -4494,7 +4918,7 @@
                 const topRow = document.createElement('div');
                 topRow.style.display = "flex"; topRow.style.justifyContent = "space-between";
                 topRow.innerHTML = `
-                    <span style="color: #f1c40f; font-weight: bold; font-family: sans-serif; font-size: 15px;">${chat.targetUser}</span>
+                    <span style="color: #f1c40f; font-weight: bold; font-family: sans-serif; font-size: 15px;">${escapeHTML(chat.targetUser)}</span>
                     <span style="color: #777; font-family: sans-serif; font-size: 11px;">${formatPMTime(chat.time)}</span>
                 `;
 
@@ -4818,15 +5242,31 @@
                 slot.onclick = () => {
                     if (player.activeSlot === i) {
                         player.equippedWeapon = (player.equippedWeapon === "none") ? player.hotbar[i] : "none";
-                        player.ammo = WEAPONS[player.equippedWeapon] ? WEAPONS[player.equippedWeapon].magSize : 0;
                     } else {
                         player.activeSlot = i;
                         player.equippedWeapon = player.hotbar[i] || "none";
                     }
 
+                    // --- EL FIX: CONGELAMIENTO (RELOAD FREEZE) AL SACAR EL ARMA ---
+                    if (player.reloadTimeout) clearTimeout(player.reloadTimeout); // Cancela recargas previas
+
+                    const stats = WEAPONS[player.equippedWeapon];
+                    if (stats) {
+                        player.ammo = 0; // El arma sale sin balas listas
+                        player.isReloading = true; // 🧊 Congela al jugador
+
+                        // Inicia el tiempo de espera del arma
+                        player.reloadTimeout = setTimeout(() => {
+                            player.ammo = stats.magSize;
+                            player.isReloading = false; // 🟢 Descongela al jugador
+                        }, stats.reloadTime);
+                    } else {
+                        player.ammo = 0;
+                        player.isReloading = false;
+                    }
+
                     renderHudHotbar();
 
-                    // --- NUEVO: AVISAR AL SERVIDOR QUE CAMBIAMOS DE ARMA ---
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ type: 'equip_weapon', weaponId: player.equippedWeapon }));
                     }
@@ -4995,11 +5435,15 @@
                 // Solo recargar si nos faltan balas
                 if (stats && player.ammo < stats.magSize) {
                     player.isReloading = true;
-                    setTimeout(() => {
+
+                    if (player.reloadTimeout) clearTimeout(player.reloadTimeout);
+
+                    player.reloadTimeout = setTimeout(() => {
                         player.ammo = stats.magSize;
                         player.isReloading = false;
                     }, stats.reloadTime);
-                }
+   
+             }
             }
         };
 
@@ -5266,6 +5710,10 @@
         }
 
         function update() {
+            // Congelar al jugador en la oscuridad mientras carga
+            if (isCinematicLoading) {
+                player.vx = 0; player.vy = 0; player.isMoving = false; isShooting = false;
+            }
             // --- EL FIX: Declarar el centro de la pantalla desde el principio ---
             const screenCenterX = window.innerWidth / 2;
             const screenCenterY = window.innerHeight / 2;
@@ -5343,7 +5791,9 @@
                 }
             }
 
-            // --- NUEVO: DETECCIÓN DE TELETRANSPORTE Y TIENDAS (CAPA 15) ---
+            // --- DETECCIÓN DE LÓGICA (CAPA 15) ---
+            player.inSafeZone = false;
+
             if (!player.isDead && !editMode && !player.isTeleporting) {
                 const currentGridX = Math.floor(player.worldX / TILE_SIZE);
                 const currentGridY = Math.floor(player.worldY / TILE_SIZE);
@@ -5351,41 +5801,44 @@
                 const logicTile = worldMap[`${currentGridX},${currentGridY},15`];
 
                 if (logicTile) {
-                    // 1. ES UN TELETRANSPORTE
                     if (logicTile.triggerType === 'teleport') {
                         player.isTeleporting = true;
-                        player.vx = 0; player.vy = 0;
-                        player.isMoving = false;
-
+                        player.vx = 0; player.vy = 0; player.isMoving = false;
                         const fade = document.getElementById('fade-overlay');
                         fade.style.opacity = '1';
-
                         setTimeout(() => {
                             player.worldX = (logicTile.destX * TILE_SIZE) + (TILE_SIZE / 2);
                             player.worldY = (logicTile.destY * TILE_SIZE) + (TILE_SIZE / 2);
                             lastNetworkString = "";
-
-                            setTimeout(() => {
-                                fade.style.opacity = '0';
-                                player.isTeleporting = false;
-                            }, 200);
+                            setTimeout(() => { fade.style.opacity = '0'; player.isTeleporting = false; }, 200);
                         }, 250);
                     }
-                    // 2. ES UNA TIENDA (SHOP)
                     else if (logicTile.triggerType === 'shop' && logicTile.itemId) {
-                        // Solo abrirla si no está ya abierta y no la acabamos de cerrar
                         if (!isShopOpen && lastShopTile !== currentTileKey) {
                             openShopModal(logicTile.itemId);
                             lastShopTile = currentTileKey;
                         }
                     }
                 } else {
-                    // Si el jugador ya caminó y salió del bloque de la tienda, reseteamos la memoria
-                    // para que pueda volver a entrar si regresa.
-                    if (lastShopTile !== currentTileKey && !isShopOpen) {
-                        lastShopTile = null;
-                    }
+                    if (lastShopTile !== currentTileKey && !isShopOpen) lastShopTile = null;
                 }
+            }
+            // 👇 NUEVO: ESCÁNER MATEMÁTICO DE ZONAS SEGURAS (AABB) 👇
+            player.inSafeZone = false;
+            for (let i = 0; i < safeZones.length; i++) {
+                let z = safeZones[i];
+                if (player.worldX >= z.xMin && player.worldX <= z.xMax &&
+                    player.worldY >= z.yMin && player.worldY <= z.yMax) {
+
+                    player.inSafeZone = true;
+                    isShooting = false; // Bloquea el gatillo localmente
+                    break;
+                }
+            }
+
+            // 👇 NUEVO: MOSTRAR/OCULTAR EL TEXTO EN PANTALLA 👇
+            if (safeZoneUI) {
+                safeZoneUI.style.display = player.inSafeZone ? 'block' : 'none';
             }
 
             // --- NUEVO FIX: EL HITBOX REAL DEL JUGADOR ---
@@ -5420,7 +5873,9 @@
             // --- 3. SHOOTING & RELOADING PHYSICS ---
             const currentWeaponStats = WEAPONS[player.equippedWeapon] || WEAPONS["none"];
 
-            if (isShooting && player.equippedWeapon !== "none" && !player.isReloading) {
+
+            // Bloquear el disparo si está en zona segura
+            if (isShooting && player.equippedWeapon !== "none" && !player.isReloading && !player.inSafeZone) {
                 if (Date.now() - lastShotTime > currentWeaponStats.fireRate) {
 
                     if (player.ammo > 0) {
@@ -5546,6 +6001,19 @@
                 if (p.life <= 0 || checkWall(p.x, p.y) || hitSomeone) {
                     projectiles.splice(i, 1);
                 }
+            }
+
+            // === EL HACK MAESTRO DE LA CÁMARA CINEMÁTICA ===
+            let realPlayerX = player.worldX;
+            let realPlayerY = player.worldY;
+
+            if (isCinematicLoading) {
+                cinematicTimer += 0.002; // Velocidad del dron (súbela a 0.005 si quieres que vuele más rápido)
+
+                // EL FIX: Usamos realPlayerX y realPlayerY como el centro de la órbita.
+                // 400 y 300 es la distancia en píxeles hacia afuera (una órbita ovalada).
+                player.worldX = realPlayerX + (Math.cos(cinematicTimer) * 400);
+                player.worldY = realPlayerY + (Math.sin(cinematicTimer) * 300);
             }
 
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -5749,10 +6217,11 @@
             // --- B. DRAW LOCAL PLAYER ---
             const scaledWidth = frameWidth * zoomLevel;
             const scaledHeight = frameHeight * zoomLevel;
-            const drawX = Math.round(screenCenterX - (scaledWidth / 2));
 
-            // The Body's Y Coordinate (STATIC)
-            let drawY = Math.round(screenCenterY - (scaledHeight / 2));
+            // EL FIX: Usar 'realPlayerX' para que tu personaje se quede físicamente en el piso 
+            // aunque la cámara cinemática se haya ido a volar a otro lado.
+            const drawX = Math.round(screenCenterX + ((realPlayerX - player.worldX) * zoomLevel) - (scaledWidth / 2));
+            let drawY = Math.round(screenCenterY + ((realPlayerY - player.worldY) * zoomLevel) - (scaledHeight / 2));
 
             // --- NEW: THE INDEPENDENT GUN WOBBLE (LOCAL) ---
             let localGunOffsetY = 0;
@@ -5895,6 +6364,32 @@
                         ctx.strokeStyle = '#f1c40f'; ctx.lineWidth = 2 * zoomLevel; ctx.strokeRect(bx, by, TILE_SIZE * zoomLevel, TILE_SIZE * zoomLevel);
                     }
                 }
+                // --- NUEVO: VISUALIZAR ZONAS SEGURAS (GAFAS DE RAYOS X) ---
+                if (showSafeZoneVisuals) {
+                    for (let i = 0; i < safeZones.length; i++) {
+                        let z = safeZones[i];
+
+                        const w = (z.xMax - z.xMin) * zoomLevel;
+                        const h = (z.yMax - z.yMin) * zoomLevel;
+                        const bx = Math.round(screenCenterX + (z.xMin - player.worldX) * zoomLevel);
+                        const by = Math.round(screenCenterY + (z.yMin - player.worldY) * zoomLevel);
+
+                        ctx.strokeStyle = 'rgba(46, 204, 113, 0.8)';
+                        ctx.lineWidth = 2 * zoomLevel;
+                        ctx.strokeRect(bx, by, w, h);
+                        ctx.fillStyle = 'rgba(46, 204, 113, 0.15)';
+                        ctx.fillRect(bx, by, w, h);
+
+                        ctx.fillStyle = "#2ecc71";
+                        ctx.font = `bold ${10 * zoomLevel}px sans-serif`;
+                        ctx.textAlign = "center";
+                        ctx.lineWidth = 3 * zoomLevel;
+                        ctx.strokeStyle = "black";
+                        ctx.lineJoin = "round";
+                        ctx.strokeText("🛡️ " + z.name, bx + (w / 2), by + (h / 2));
+                        ctx.fillText("🛡️ " + z.name, bx + (w / 2), by + (h / 2));
+                    }
+                }
             }
 
             // === DIBUJAR EL FOGONAZO (MUZZLE FLASH) ===
@@ -5996,6 +6491,12 @@
 
             // --- NEW: UPDATE THE MINIMAP IF OPEN ---
             if (isMapOpen) drawMinimap();
+
+            // Restaurar la posición física real para que la red y la física sigan perfectas
+            if (isCinematicLoading) {
+                player.worldX = realPlayerX;
+                player.worldY = realPlayerY;
+            }
 
             requestAnimationFrame(update);
         }

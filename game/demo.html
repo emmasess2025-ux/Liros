@@ -794,6 +794,24 @@
 
     <canvas id="gameCanvas"></canvas>
 
+    <div id="disconnect-screen"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif; backdrop-filter: blur(8px);">
+        <h1
+            style="color: #e74c3c; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">
+            Connection Lost</h1>
+        <p
+            style="font-size: 18px; margin-bottom: 25px; color: #ecf0f1; text-align: center; max-width: 500px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);">
+            The server has gone to sleep due to inactivity.
+        </p>
+        <button onclick="location.reload()"
+            style="padding: 12px 24px; font-size: 16px; font-weight: bold; background: #2ecc71; color: #000; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s;">
+            Reload and Wake Server
+        </button>
+        <p style="font-size: 13px; color: #bdc3c7; margin-top: 20px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);">
+            (It may take up to 30-50 seconds to wake up)
+        </p>
+    </div>
+
     <div id="auth-overlay" style="display: none; opacity: 0; pointer-events: none;">
         <div id="auth-box">
             <button id="close-auth-btn"
@@ -1516,7 +1534,12 @@
             <button id="close-palette"
                 style="background: none; border: none; color: white; cursor: pointer; font-size: 16px;">✖</button>
         </div>
-
+        <div
+            style="padding: 5px 10px 5px 25px; background: rgba(0,0,0,0.6); border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <input type="text" id="tab-search" placeholder="🔍 Search categories (e.g., 'weapons', 'walls')..."
+                autocomplete="off"
+                style="width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.8); color: white; outline: none; font-family: sans-serif; font-size: 12px;">
+        </div>
         <div id="tileset-tabs"
             style="display: flex; overflow-x: auto; background: rgba(0,0,0,0.5); padding: 8px 10px 8px 25px; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); scrollbar-width: none;">
         </div>
@@ -1562,7 +1585,9 @@
             <button id="save-tp-btn"
                 style="background: #2ecc71; color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">Guardar</button>
         </div>
-
+        <button id="inspect-rotate-btn" class="tool-btn"
+            style="background: #e67e22; border: none; color: white; font-weight: bold; margin-right: 10px;">🔄
+            Rotate</button>
         <button id="inspect-copy-btn" class="tool-btn" style="background: #3498db; border: none; color: white;">📋 Copy
             L<span id="copy-layer-num"></span></button>
         <button id="inspect-copy-below-btn" class="tool-btn" style="background: #2980b9; border: none; color: white;">👇
@@ -2037,6 +2062,12 @@
             }
         });
 
+        // 👇 NUEVO: DETECTOR DE CIERRE DE CONEXIÓN 👇
+        ws.onclose = () => {
+            console.error('El servidor ha cerrado la conexión (Render Sleep Mode).');
+            document.getElementById('disconnect-screen').style.display = 'flex';
+        };
+
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             // --- NUEVO: CASTIGO DEL SERVIDOR (RUBBERBANDING ANTI-HACKS) ---
@@ -2378,7 +2409,8 @@
                         worldMap[`${t.x},${t.y},${l}`] = {
                             tileId: t.tileId, l: l, hasCollision: t.hasCollision || false,
                             triggerType: t.triggerType, destX: t.destX, destY: t.destY,
-                            itemId: t.itemId // <--- AÑADE ESTO
+                            itemId: t.itemId,
+                            rotation: t.rotation || 0 // <--- ¡FALTABA ESTO!
                         };
                     });
                 }
@@ -2404,7 +2436,8 @@
                     } else {
                         const existing = worldMap[`${t.x},${t.y},${t.l}`] || { hasCollision: false };
                         worldMap[`${t.x},${t.y},${t.l}`] = {
-                            tileId: t.tileId, l: t.l, hasCollision: existing.hasCollision
+                            tileId: t.tileId, l: t.l, hasCollision: existing.hasCollision,
+                            rotation: t.rotation || 0 // <--- ¡FALTABA ESTO!
                         };
                     }
                 });
@@ -3173,8 +3206,28 @@
         let inspectingCoord = null;
         let pCanvas, pCtx, PALETTE_SCALE, cols;
 
-        // 👇 Pega ESTO JUSTO AQUÍ 👇
+        const tabSearchInput = document.getElementById('tab-search');
+        const tilesetTabsContainer = document.getElementById('tileset-tabs');
 
+        tabSearchInput.addEventListener('input', (e) => {
+            // Convertimos lo que escribes a minúsculas para que no importe si usas mayúsculas
+            const query = e.target.value.toLowerCase().trim();
+
+            // Obtenemos todos los botones de los tabs generados
+            const tabs = tilesetTabsContainer.querySelectorAll('button');
+
+            tabs.forEach(tab => {
+                // Obtenemos el texto del botón (ej. "🔫 Weapons" o "🧱 Walls")
+                const tabName = tab.innerText.toLowerCase();
+
+                // Si el nombre del tab incluye lo que escribiste, lo mostramos. Si no, lo ocultamos.
+                if (tabName.includes(query)) {
+                    tab.style.display = 'block'; // o 'inline-block' dependiendo de tu flexbox original
+                } else {
+                    tab.style.display = 'none';
+                }
+            });
+        });
         // --- LÓGICA DEL BOTÓN DE EDIT MODE ---
         appEditMode.addEventListener('click', () => {
             appTray.classList.remove('open'); // Cerrar el menú de apps
@@ -3527,6 +3580,77 @@
 
         let selectStart = null, selectEnd = null, isDraggingBox = false;
         let selectedGrid = { w: 1, h: 1, tiles: [[0]] };
+
+        // --- NUEVO: VARIABLES PARA ARRASTRAR Y ROTAR SELECCIONES ---
+        let isDraggingSelection = false;
+        let dragOffsetX = 0, dragOffsetY = 0;
+        let dragOriginalMinX = 0, dragOriginalMinY = 0;
+        let draggedTilesBuffer = [];
+
+        // FUNCIÓN MAESTRA 1: Recoger bloques del piso
+        function captureAndClearSelection() {
+            let captured = [];
+            let deleteOps = [];
+            for (let r = mapSelectionBox.minY; r <= mapSelectionBox.maxY; r++) {
+                for (let c = mapSelectionBox.minX; c <= mapSelectionBox.maxX; c++) {
+                    for (let l = 0; l <= 15; l++) {
+                        const key = `${c},${r},${l}`;
+                        if (worldMap[key] && worldMap[key].tileId !== -1) {
+                            captured.push({
+                                x: c, y: r, l: l, tileId: worldMap[key].tileId,
+                                hasCollision: worldMap[key].hasCollision, triggerType: worldMap[key].triggerType,
+                                destX: worldMap[key].destX, destY: worldMap[key].destY, itemId: worldMap[key].itemId,
+                                rotation: worldMap[key].rotation || 0 // <-- Añadir esto
+                            });
+                            deleteOps.push({ x: c, y: r, l: l, prevId: worldMap[key].tileId, newId: -1 });
+                            delete worldMap[key];
+                        }
+                    }
+                }
+            }
+            if (deleteOps.length > 0) {
+                const bulkNetwork = deleteOps.map(op => ({ x: op.x, y: op.y, l: op.l, tileId: -1 }));
+                ws.send(JSON.stringify({ type: 'place_tiles_bulk', tiles: bulkNetwork }));
+                recordHistory(deleteOps);
+            }
+            return captured;
+        }
+
+        // FUNCIÓN MAESTRA 2: Pegar bloques arrastrados
+        function pasteSelectionBuffer(tilesArray, offsetX, offsetY) {
+            let placeOps = [];
+            let bulkNetwork = [];
+            tilesArray.forEach(t => {
+                const nx = t.x + offsetX;
+                const ny = t.y + offsetY;
+                const key = `${nx},${ny},${t.l}`;
+                const prevId = worldMap[key] ? worldMap[key].tileId : -1;
+
+                worldMap[key] = {
+                    tileId: t.tileId, l: t.l, hasCollision: t.hasCollision,
+                    triggerType: t.triggerType, destX: t.destX, destY: t.destY, itemId: t.itemId,
+                    rotation: t.rotation || 0 // <-- Añadir esto
+                };
+
+                // Asegúrate de enviar la rotación al servidor en el bulk
+                placeOps.push({ x: nx, y: ny, l: t.l, prevId: prevId, newId: t.tileId, rotation: t.rotation || 0 });
+                bulkNetwork.push({ x: nx, y: ny, l: t.l, tileId: t.tileId, rotation: t.rotation || 0 });
+
+                // Sincronizar colisiones lógicas si el bloque las tenía
+                if (t.hasCollision || t.triggerType) {
+                    ws.send(JSON.stringify({
+                        type: 'update_tile_metadata', x: nx, y: ny, layer: t.l,
+                        hasCollision: t.hasCollision, triggerType: t.triggerType,
+                        destX: t.destX, destY: t.destY, itemId: t.itemId
+                    }));
+                }
+            });
+
+            if (placeOps.length > 0) {
+                ws.send(JSON.stringify({ type: 'place_tiles_bulk', tiles: bulkNetwork }));
+                recordHistory(placeOps);
+            }
+        }
 
         // NEW: Map Selection Memory
         let mapSelectStart = null, mapSelectEnd = null, isDraggingMapBox = false;
@@ -4224,47 +4348,81 @@
 
         // --- ENLAZAR EVENTOS DE RATÓN (PC) ---
         canvas.addEventListener('mousedown', (e) => {
-            // e.button === 0 es clic izquierdo, target 'gameCanvas' ignora si das clic en botones
-            if (e.button !== 0 || e.target.id !== 'gameCanvas') return;
+            if (e.target.id !== 'gameCanvas') return;
 
-            // 1. Si estamos en Modo Edición, usamos el clic para pintar/seleccionar el mapa
+            // 1. DRAG DE SELECCIÓN CON CLICK DERECHO (e.button === 2)
+            if (editMode && e.button === 2 && worldMode === 'select' && mapSelectionBox) {
+                const gridPos = getWorldGridXY(e.clientX, e.clientY);
+                if (gridPos.x >= mapSelectionBox.minX && gridPos.x <= mapSelectionBox.maxX &&
+                    gridPos.y >= mapSelectionBox.minY && gridPos.y <= mapSelectionBox.maxY) {
+
+                    isDraggingSelection = true;
+                    dragOriginalMinX = mapSelectionBox.minX;
+                    dragOriginalMinY = mapSelectionBox.minY;
+                    dragOffsetX = gridPos.x - mapSelectionBox.minX;
+                    dragOffsetY = gridPos.y - mapSelectionBox.minY;
+
+                    draggedTilesBuffer = captureAndClearSelection();
+                    return; // Detenemos la ejecución aquí
+                }
+            }
+
+            // Si NO es clic izquierdo (0), ignoramos el resto
+            if (e.button !== 0) return;
+
+            // Lógica normal de Click Izquierdo
             if (editMode) {
                 handleEditStart(e.clientX, e.clientY);
                 return;
             }
 
-            // 2. Si estamos jugando normal, revisamos si le dimos clic a un personaje
             const clickX = (e.clientX - (window.innerWidth / 2)) / zoomLevel + player.worldX;
             const clickY = (e.clientY - (window.innerHeight / 2)) / zoomLevel + player.worldY;
-            const HIT_RADIUS = 20; // Qué tan exacto debe ser el clic (20px)
+            const HIT_RADIUS = 20;
 
-            // ¿Clic en nosotros mismos?
             if (Math.abs(clickX - player.worldX) < HIT_RADIUS && Math.abs(clickY - player.worldY) < HIT_RADIUS) {
-                openProfile('self', player.username);
-                return;
+                openProfile('self', player.username); return;
             }
-
-            // ¿Clic en otro jugador (amigos/enemigos)?
             for (let id in otherPlayers) {
                 if (Math.abs(clickX - otherPlayers[id].worldX) < HIT_RADIUS && Math.abs(clickY - otherPlayers[id].worldY) < HIT_RADIUS) {
-                    openProfile(id, otherPlayers[id].username);
-                    return;
+                    openProfile(id, otherPlayers[id].username); return;
                 }
             }
         });
 
         window.addEventListener('mousemove', (e) => {
-            // --- NUEVO: Update Radar HUD ---
             if (editMode && coordHelper && e.target.id === 'gameCanvas') {
                 const gridPos = getWorldGridXY(e.clientX, e.clientY);
                 coordHelper.innerText = `X: ${gridPos.x} | Y: ${gridPos.y}`;
             }
+
+            // 2. ACTUALIZAR CAJA MIENTRAS ARRASTRAMOS
+            if (editMode && isDraggingSelection && mapSelectionBox) {
+                const gridPos = getWorldGridXY(e.clientX, e.clientY);
+                const w = mapSelectionBox.maxX - mapSelectionBox.minX;
+                const h = mapSelectionBox.maxY - mapSelectionBox.minY;
+
+                mapSelectionBox.minX = gridPos.x - dragOffsetX;
+                mapSelectionBox.maxX = mapSelectionBox.minX + w;
+                mapSelectionBox.minY = gridPos.y - dragOffsetY;
+                mapSelectionBox.maxY = mapSelectionBox.minY + h;
+                return;
+            }
+
             handleEditMove(e.clientX, e.clientY, e);
         });
 
         window.addEventListener('mouseup', (e) => {
-            if (e.button !== 0) return;
-            handleEditEnd(e.clientX, e.clientY);
+            // 3. SOLTAR EL CLICK DERECHO Y PEGAR LOS BLOQUES
+            if (editMode && isDraggingSelection && e.button === 2) {
+                isDraggingSelection = false;
+                const finalOffsetX = mapSelectionBox.minX - dragOriginalMinX;
+                const finalOffsetY = mapSelectionBox.minY - dragOriginalMinY;
+                pasteSelectionBuffer(draggedTilesBuffer, finalOffsetX, finalOffsetY);
+                return;
+            }
+
+            if (e.button === 0) handleEditEnd(e.clientX, e.clientY);
         });
 
         // --- 7. INSPECTOR ACTIONS (Handles Single & Bulk) ---
@@ -4316,6 +4474,45 @@
             worldSelectBtn.style.background = 'rgba(255,255,255,0.1)';
             tileInspector.style.display = 'none';
             mapSelectionBox = null;
+        }
+
+        // --- NUEVO: LÓGICA DE ROTACIÓN (90 GRADOS) ---
+        const inspectRotateBtn = document.getElementById('inspect-rotate-btn');
+        if (inspectRotateBtn) {
+            inspectRotateBtn.onclick = () => {
+                if (!mapSelectionBox) return;
+
+                // 1. Recogemos los bloques actuales
+                const tiles = captureAndClearSelection();
+
+                const oldW = (mapSelectionBox.maxX - mapSelectionBox.minX) + 1;
+                const oldH = (mapSelectionBox.maxY - mapSelectionBox.minY) + 1;
+
+                let rotatedTiles = [];
+                tiles.forEach(t => {
+                    // Convertimos a coordenadas locales (0,0)
+                    const lx = t.x - mapSelectionBox.minX;
+                    const ly = t.y - mapSelectionBox.minY;
+
+                    // Fórmula de Rotación 90° a la derecha
+                    const nx = oldH - 1 - ly;
+                    const ny = lx;
+
+                    rotatedTiles.push({
+                        ...t,
+                        x: mapSelectionBox.minX + nx,
+                        y: mapSelectionBox.minY + ny,
+                        rotation: ((t.rotation || 0) + 90) % 360 // <-- Girar la imagen 90 grados
+                    });
+                });
+
+                // 2. Ajustamos la caja de selección a sus nuevas dimensiones
+                mapSelectionBox.maxX = mapSelectionBox.minX + oldH - 1;
+                mapSelectionBox.maxY = mapSelectionBox.minY + oldW - 1;
+
+                // 3. Pegamos los bloques rotados
+                pasteSelectionBuffer(rotatedTiles, 0, 0);
+            };
         }
 
         // Conectar Botones de Copiado
@@ -4433,7 +4630,7 @@
             }
         };
 
-        // --- UPGRADED MINIMAP DRAW ENGINE ---
+        // --- UPGRADED MINIMAP DRAW ENGINE (OPTIMIZADO O(1)) ---
         function drawMinimap() {
             if (!mCtx) return;
             mCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
@@ -4452,39 +4649,60 @@
             const mapRadiusX = (minimapCanvas.width / 2) / scale;
             const mapRadiusY = (minimapCanvas.height / 2) / scale;
 
-            // 1. DRAW TILES
-            // (¡Aquí borramos la línea que daba error!)
+            // 👇 NUEVO: CÁLCULO DE CUADRÍCULA VISIBLE (ADIÓS LAG) 👇
+            const startX = Math.floor((cameraX - mapRadiusX) / TILE_SIZE);
+            const endX = Math.ceil((cameraX + mapRadiusX) / TILE_SIZE);
+            const startY = Math.floor((cameraY - mapRadiusY) / TILE_SIZE);
+            const endY = Math.ceil((cameraY + mapRadiusY) / TILE_SIZE);
 
+            // 1. DRAW TILES (Bucle Optimizado de alta velocidad)
             for (let currentLayer = 0; currentLayer <= 15; currentLayer++) {
-                for (let key in worldMap) {
-                    const tileData = worldMap[key];
-                    if (!tileData || tileData.l !== currentLayer) continue;
+                for (let tx = startX; tx <= endX; tx++) {
+                    for (let ty = startY; ty <= endY; ty++) {
 
-                    const [tx, ty] = key.split(',').map(Number);
-                    const worldTileX = tx * TILE_SIZE;
-                    const worldTileY = ty * TILE_SIZE;
+                        // Buscamos directamente la llave, tarda microsegundos
+                        const key = `${tx},${ty},${currentLayer}`;
+                        const tileData = worldMap[key];
 
-                    // Culling: Skip if tile is off the mini-map canvas
-                    if (Math.abs(worldTileX - cameraX) > mapRadiusX + TILE_SIZE ||
-                        Math.abs(worldTileY - cameraY) > mapRadiusY + TILE_SIZE) continue;
+                        // Si no hay bloque aquí, saltamos al instante
+                        if (!tileData) continue;
 
-                    const drawX = (worldTileX - cameraX) * scale + (minimapCanvas.width / 2);
-                    const drawY = (worldTileY - cameraY) * scale + (minimapCanvas.height / 2);
+                        const worldTileX = tx * TILE_SIZE;
+                        const worldTileY = ty * TILE_SIZE;
 
-                    // --- LA MAGIA MULTI-TILESET EN EL MINIMAPA ---
-                    const tsData = getTilesetData(tileData.tileId);
-                    if (!tsData || !tsData.img) continue;
+                        const drawX = (worldTileX - cameraX) * scale + (minimapCanvas.width / 2);
+                        const drawY = (worldTileY - cameraY) * scale + (minimapCanvas.height / 2);
 
-                    // El cálculo de tilesPerRow YA ESTÁ AQUÍ ADENTRO correctamente
-                    const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
-                    const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
-                    const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
+                        // --- LA MAGIA MULTI-TILESET EN EL MINIMAPA ---
+                        const tsData = getTilesetData(tileData.tileId);
+                        if (!tsData || !tsData.img) continue;
 
-                    mCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, minimapZoom, minimapZoom);
+                        const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
+                        const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
+                        const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
+
+                        // 👇 NUEVO: ROTACIÓN PARA EL MINIMAPA 👇
+                        const tileRotation = tileData.rotation || 0;
+
+                        if (tileRotation !== 0) {
+                            const exactSize = minimapZoom;
+                            const centerX = drawX + (exactSize / 2);
+                            const centerY = drawY + (exactSize / 2);
+
+                            mCtx.save();
+                            mCtx.translate(centerX, centerY);
+                            mCtx.rotate(tileRotation * Math.PI / 180);
+                            mCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, -exactSize / 2, -exactSize / 2, exactSize, exactSize);
+                            mCtx.restore();
+                        } else {
+                            // Dibuja normal si no hay rotación
+                            mCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, minimapZoom, minimapZoom);
+                        }
+                    }
                 }
             }
 
-            // 1. ADD 'targetName' TO THE END OF THE PARAMETERS
+            // 2. ADD 'targetName' TO THE END OF THE PARAMETERS (SIN TOCAR)
             function drawMinimapPlayer(pX, pY, pFrameX, pFrameY, pImage, color, targetAccountId) {
                 const mX = (pX - cameraX) * scale + (minimapCanvas.width / 2);
                 const mY = (pY - cameraY) * scale + (minimapCanvas.height / 2);
@@ -4503,7 +4721,6 @@
                 const glowRadius = drawSizeW * 0.03;
                 const glowOffsetY = drawSizeH * 0.60;
 
-                // --- THE FIX: Use targetAccountId instead of name ---
                 const isFriend = (player.friends && player.friends.includes(targetAccountId));
 
                 if (isFriend || color === "#f1c40f") {
@@ -4521,14 +4738,15 @@
                 );
             }
 
-            // 3. DRAW OTHER PLAYERS (Pass accountId at the end)
+            // 3. DRAW OTHER PLAYERS (SIN TOCAR)
             for (let id in otherPlayers) {
                 const p = otherPlayers[id];
                 if (!p || p.worldX === undefined) continue;
                 const pImage = p.isMoving ? walkSprite : idleSprite;
                 drawMinimapPlayer(p.worldX, p.worldY, p.frameX, p.frameY, pImage, getColorForString(p.username), p.accountId);
             }
-            // 4. DRAW LOCAL PLAYER
+
+            // 4. DRAW LOCAL PLAYER (SIN TOCAR)
             drawMinimapPlayer(player.worldX, player.worldY, player.frameX, player.frameY, player.currentImage, "#f1c40f", player.accountId);
         }
 
@@ -5442,8 +5660,7 @@
                         player.ammo = stats.magSize;
                         player.isReloading = false;
                     }, stats.reloadTime);
-   
-             }
+                }
             }
         };
 
@@ -6067,7 +6284,17 @@
                             const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                             const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
 
-                            ctx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, scaledSize, scaledSize);
+                            const tileRotation = tileData.rotation || 0;
+
+                            if (tileRotation !== 0) {
+                                ctx.save(); // Guarda el estado actual de la cámara
+                                ctx.translate(drawX + scaledSize / 2, drawY + scaledSize / 2); // Mueve el centro exacto al medio del cuadro
+                                ctx.rotate(tileRotation * Math.PI / 180); // Gira la cámara
+                                ctx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, -scaledSize / 2, -scaledSize / 2, scaledSize, scaledSize);
+                                ctx.restore(); // Restaura la cámara para que no afecte al resto del mundo
+                            } else {
+                                ctx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, scaledSize, scaledSize);
+                            }
                         }
                     }
                 }
@@ -6356,6 +6583,37 @@
 
                     ctx.strokeStyle = '#8e44ad'; ctx.lineWidth = 2 * zoomLevel; ctx.strokeRect(bx, by, w, h);
                     ctx.fillStyle = 'rgba(142, 68, 173, 0.3)'; ctx.fillRect(bx, by, w, h);
+                    // 👇 NUEVO: EFECTO FANTASMA AL ARRASTRAR 👇
+                    if (isDraggingSelection) {
+                        ctx.globalAlpha = 0.6; // Transparente
+                        const dx = mapSelectionBox.minX - dragOriginalMinX;
+                        const dy = mapSelectionBox.minY - dragOriginalMinY;
+
+                        draggedTilesBuffer.forEach(t => {
+                            const tsData = getTilesetData(t.tileId);
+                            if (!tsData || !tsData.img) return;
+
+                            const drawX = Math.round(screenCenterX + (((t.x + dx) * TILE_SIZE) - player.worldX) * zoomLevel);
+                            const drawY = Math.round(screenCenterY + (((t.y + dy) * TILE_SIZE) - player.worldY) * zoomLevel);
+
+                            const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
+                            const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
+                            const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
+
+                            const tileRot = t.rotation || 0;
+                            const scaledDrawSize = TILE_SIZE * zoomLevel;
+                            if (tileRot !== 0) {
+                                ctx.save();
+                                ctx.translate(drawX + scaledDrawSize / 2, drawY + scaledDrawSize / 2);
+                                ctx.rotate(tileRot * Math.PI / 180);
+                                ctx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, -scaledDrawSize / 2, -scaledDrawSize / 2, scaledDrawSize, scaledDrawSize);
+                                ctx.restore();
+                            } else {
+                                ctx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, scaledDrawSize, scaledDrawSize);
+                            }
+                        });
+                        ctx.globalAlpha = 1.0;
+                    }
                 } else if (inspectingCoord && !mapSelectionBox) {
                     const [gx, gy, gl] = inspectingCoord.split(',').map(Number);
                     if (gl === activeLayer) {

@@ -749,7 +749,7 @@
 
         <h1
             style="color: #f1c40f; font-size: 40px; text-shadow: 0 5px 15px rgba(0,0,0,0.8); margin-bottom: 20px; font-style: italic; letter-spacing: 3px;">
-            MMOARGON v1.6.0 — 04/02/2026</h1>
+            MMOARGON v1.6.0</h1>
 
         <h3 id="loading-text"
             style="color: #aaa; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; font-size: 14px;">
@@ -1571,6 +1571,19 @@
                             <div style="display: flex; justify-content: space-between;"><label>Anim Golpe: <span
                                         id="val-wswg">90</span>°</label><input type="range" id="sl-wswg" min="-360"
                                     max="360" value="90" style="width: 100px;"></div>
+                            <div
+                                style="background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; padding: 10px; border-radius: 8px; margin-top: 10px;">
+                                <label style="color: #ff9f43; font-weight: bold;">Fuerza de Empuje (Knockback): <span
+                                        id="val-kb">0</span>px</label>
+                                <input type="range" id="sl-kb" min="0" max="100" value="0"
+                                    oninput="document.getElementById('val-kb').innerText=this.value">
+
+                                <label
+                                    style="color: #00d2d3; font-weight: bold; margin-top: 10px; display: block;">Hit-Stop
+                                    (Congelar Movimiento): <span id="val-freeze">0</span>ms</label>
+                                <input type="range" id="sl-freeze" min="0" max="100" step="1" value="0"
+                                    oninput="document.getElementById('val-freeze').innerText=this.value">
+                            </div>
                         </div>
 
                         <div style="background: rgba(46, 204, 113, 0.1); padding: 5px; border-left: 3px solid #2ecc71;">
@@ -2269,30 +2282,39 @@
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            // --- NUEVO: CASTIGO DEL SERVIDOR (RUBBERBANDING ANTI-HACKS) ---
+            // --- NUEVO: SISTEMA UNIFICADO DE REPOSICIÓN (KNOCKBACK Y ANTI-HACK) ---
             if (data.type === 'force_position') {
+                if (data.reason === 'knockback') {
+                    player.kbX = (data.x - player.worldX) / 3;
+                    player.kbY = (data.y - player.worldY) / 3;
+
+                    // 🛑 EL FIX 1: Arrancamos el cronómetro de tambaleo
+                    player.staggerTimer = Date.now();
+                    return;
+                }
                 // 1. Regresar físicamente al personaje
                 player.worldX = data.x;
                 player.worldY = data.y;
 
-                // 2. DESTRUIR EL HACK EN LA MEMORIA RAM DEL NAVEGADOR
-                player.speed = 4; // Si inyectaron speedhack, se lo matamos a 4
+                // 2. Detener cualquier inercia de movimiento
                 player.vx = 0;
                 player.vy = 0;
                 lastNetworkString = ""; // Obliga al navegador a sincronizarse de golpe
 
-                // 3. Efecto visual de castigo (Pantallazo Rojo)
-                const overlay = document.getElementById('fade-overlay');
-                if (overlay) {
-                    overlay.style.background = 'red'; // Pantalla roja de alerta
-                    overlay.style.opacity = '0.5';
-                    setTimeout(() => {
-                        overlay.style.opacity = '0';
-                        setTimeout(() => { overlay.style.background = 'black'; }, 200);
-                    }, 100);
+                // 3. 🛑 EL FIX: Si el movimiento forzado NO fue por Knockback, entonces es un castigo Anti-Hack
+                if (data.reason !== 'knockback') {
+                    player.speed = 4; // Matar posible speedhack
+                    const overlay = document.getElementById('fade-overlay');
+                    if (overlay) {
+                        overlay.style.background = 'red';
+                        overlay.style.opacity = '0.5';
+                        setTimeout(() => {
+                            overlay.style.opacity = '0';
+                            setTimeout(() => { overlay.style.background = 'black'; }, 200);
+                        }, 100);
+                    }
+                    console.warn("🚔 [ANTI-CHEAT] Movimiento ilegal bloqueado por el servidor.");
                 }
-
-                console.warn("🚔 [ANTI-CHEAT] Movimiento ilegal bloqueado por el servidor.");
                 return; // Detenemos la ejecución
             }
 
@@ -2662,13 +2684,15 @@
                 }
             }// --- NEW: RECEIVE BULLET FROM ANOTHER PLAYER ---
             else if (data.type === 'shoot') {
+                if (otherPlayers[data.id]) {
+                    otherPlayers[data.id].lastShotTime = Date.now(); // 🛑 EL FIX: Levanta el arma del enemigo
+                }
                 spawnProjectile(data.x, data.y, data.angle, data.id, data.weaponId);
             }// --- VER QUE OTROS DAN ESPADAZOS ---
             else if (data.type === 'player_swing') {
                 if (otherPlayers[data.id]) {
                     otherPlayers[data.id].isSwinging = true;
                     otherPlayers[data.id].swingStartTime = Date.now();
-                    otherPlayers[data.id].swingDuration = 200;
                 }
             }
 
@@ -6449,17 +6473,32 @@
                 setVal('wz', d.wZ !== undefined ? d.wZ : 1); setVal('wx', d.wX || 0); setVal('wy', d.wY || 0); setVal('wrot', d.wRot || 0); setVal('wswg', d.wSwg || 90);
                 setVal('hz', d.hZ !== undefined ? d.hZ : 1); setVal('hx', d.hX || 0); setVal('hy', d.hY || 0); setVal('hrot', d.hRot || 0);
                 setVal('az', d.aZ !== undefined ? d.aZ : 1); setVal('ax', d.aX || 0); setVal('ay', d.aY || 0); setVal('arot', d.aRot || 0);
-
+                setVal('kb', d.kb || 0);
+                setVal('freeze', d.freeze || 0);
                 let tileText = isPickingAccessory ? `[ wX: ${d.wTileX || 0}, wY: ${d.wTileY || 0} ]` : `[ tX: ${d.tX || 13}, tY: ${d.tY || 0} ]`;
                 const coordLabel = document.getElementById('grid-coord-label');
                 if (coordLabel) coordLabel.innerText = `${tileText} (Dir: ${dir})`;
             }
         }
 
+        // --- BOTÓN DE PROBAR ANIMACIÓN INTELIGENTE ---
+        // 🛑 EL FIX: Usar el nombre original de tu botón (btn-preview-swing)
         document.getElementById('btn-preview-swing').onclick = () => {
-            isPreviewSwinging = true;
-            previewSwingStart = Date.now();
-            animatePreview();
+            const wId = player.equippedWeapon;
+            if (wId !== "none" && weaponsDB[wId]) {
+
+                if (weaponsDB[wId].type === 'ranged') {
+                    // Si es pistola: El brazo no hace swing, solo el arma hace Tilt
+                    testAnimPlaying = true;
+                    testAnimStart = Date.now();
+                } else {
+                    // Si es espada: El brazo y el arma hacen el Swing completo
+                    isPreviewSwinging = true;
+                    previewSwingStart = Date.now();
+                }
+
+                if (typeof animatePreview === 'function') animatePreview();
+            }
         };
 
         function animatePreview() {
@@ -6472,6 +6511,9 @@
                 updateSkelPreview(); // Reset a postura normal
             }
         }
+        // 💥 VARIABLES GLOBALES PARA EL PREVIEW DE ANIMACIONES 💥
+        let testAnimPlaying = false;
+        let testAnimStart = 0;
 
         function updateSkelPreview() {
             if (!skelCtx) return;
@@ -6624,19 +6666,49 @@
                 const drawWeapon = () => {
                     skelCtx.save();
                     skelCtx.translate(handX + ((d.wX || 0) * zoom), handY + ((d.wY || 0) * zoom));
-                    skelCtx.rotate(totalWeaponRot);
+
+                    let currentEditorRot = d.wRot || 0;
+
+                    if (weaponsDB[testWeapon]) {
+                        // 1. PISTOLAS (TILT / RECOIL)
+                        if (weaponsDB[testWeapon].type === 'ranged' && testAnimPlaying) {
+                            const elapsed = Date.now() - testAnimStart;
+                            const recoilDuration = 150;
+                            if (elapsed < recoilDuration) {
+                                const progress = elapsed / recoilDuration;
+                                const tiltAmount = Math.sin(progress * Math.PI) * (d.wSwg !== undefined ? d.wSwg : 0);
+                                // 🛑 EL FIX: Se resta directo. ¡Ya no multiplicamos por dirMult para que no salte al revés!
+                                currentEditorRot -= tiltAmount;
+                            } else {
+                                testAnimPlaying = false;
+                            }
+                        }
+                        // 2. ESPADAS (SWING)
+                        else if (weaponsDB[testWeapon].type !== 'ranged' && isPreviewSwinging) {
+                            const elapsed = Date.now() - previewSwingStart;
+                            if (elapsed < 200) {
+                                const progress = elapsed / 200;
+                                // 🛑 EL FIX: Extraer el ángulo de forma segura
+                                const swingArc = d.wSwg !== undefined ? d.wSwg : 90;
+                                currentEditorRot += swingArc * progress;
+                            }
+                        }
+                    }
+
+                    const finalPreviewRot = aimAngle + (currentEditorRot * dirMult * Math.PI / 180);
+                    skelCtx.rotate(finalPreviewRot);
+
                     if (wSprite && wSprite.complete) {
                         const pX = (weaponsDB[testWeapon].pivotX || 0) * zoom;
                         const pY = (weaponsDB[testWeapon].pivotY || 0) * zoom;
                         const frameW = wSprite.width / 8;
                         const frameH = wSprite.height / 6;
 
-                        // 🔥 MAGIA DE PISTOLAS: Elegir la fila correcta 🔥
                         let srcY = 0;
                         if (weaponsDB[testWeapon] && weaponsDB[testWeapon].type === 'ranged') {
-                            let gunRow = dir; // 0=Abajo, 3=Arriba
-                            if (dir === 1) gunRow = 2; // Izquierda usa la fila 2
-                            if (dir === 2) gunRow = 1; // Derecha usa la fila 1
+                            let gunRow = dir;
+                            if (dir === 1) gunRow = 2;
+                            if (dir === 2) gunRow = 1;
                             srcY = gunRow * frameH;
                         }
 
@@ -6831,7 +6903,9 @@
                             tX: safeDirStats.tX !== undefined ? safeDirStats.tX : 13,
                             tY: safeDirStats.tY !== undefined ? safeDirStats.tY : 0,
                             wTileX: safeDirStats.wTileX !== undefined ? safeDirStats.wTileX : null,
-                            wTileY: safeDirStats.wTileY !== undefined ? safeDirStats.wTileY : null
+                            wTileY: safeDirStats.wTileY !== undefined ? safeDirStats.wTileY : null,
+                            kb: parseInt(document.getElementById('sl-kb') ? document.getElementById('sl-kb').value : 0),
+                            freeze: parseInt(document.getElementById('sl-freeze') ? document.getElementById('sl-freeze').value : 0),
                         };
 
                         ws.send(JSON.stringify({
@@ -6922,19 +6996,34 @@
 
             // 🔥 LA ANIMACIÓN DINÁMICA DEL JUEGO REAL 🔥
             let currentAnimRot = d.wRot || 0;
-            if (p.isSwinging) {
+
+            // 1. Animación de Espada (Swing)
+            if (p.isSwinging && stats.type !== 'ranged') {
                 const elapsed = Date.now() - (p.swingStartTime || 0);
                 if (elapsed < (p.swingDuration || 200)) {
                     const progress = elapsed / (p.swingDuration || 200);
-                    currentAnimRot += (d.wSwg || 90) * progress; // Usa el slider de golpe!
+                    currentAnimRot += (d.wSwg || 90) * progress;
                 } else {
-                    p.isSwinging = false; // Finaliza la animación
+                    p.isSwinging = false;
+                }
+            }
+            // 2. Animación de Pistola (Recoil / Tilt)
+            else if (stats.type === 'ranged') {
+                const timeSinceShot = Date.now() - (p.lastShotTime || 0);
+                // El recoil dura una fracción del tiempo de recarga entre balas
+                const recoilDuration = Math.min(150, (stats.fireRate || 300) / 2);
+                if (timeSinceShot < recoilDuration) {
+                    const progress = timeSinceShot / recoilDuration;
+                    // Math.sin crea un efecto resorte: sube rápido y baja suave
+                    const tiltAmount = Math.sin(progress * Math.PI) * (d.wSwg || 0);
+
+                    // Multiplicamos por dirM para que la pistola siempre se levante hacia arriba, 
+                    // sin importar si miras a la izquierda o derecha.
+                    currentAnimRot -= (tiltAmount * dirM);
                 }
             }
 
-            // 🛑 EL FIX: Esta línea DEBE ir hasta abajo, para que sume el 'currentAnimRot' del espadazo
             const totalWeaponRot = baseAimAngle + (currentAnimRot * dirM * Math.PI / 180);
-
             // ==========================================================
             // 🔥 MINI-FUNCIONES DE DIBUJO MODULAR (SINCRONIZADAS AL 100%) 🔥
             // ==========================================================
@@ -7061,9 +7150,25 @@
             /// --- CONTROLES HÍBRIDOS (MOUSE + TOUCH) ---
             if (!player.isDead) {
 
+                // 🛑 EL FIX: SISTEMA DE HIT-STOP SUAVE (SIN JITTER) 🛑
+                let speedMult = 1;
+                if (player.equippedWeapon !== "none" && WEAPONS[player.equippedWeapon]) {
+                    const wStats = WEAPONS[player.equippedWeapon];
+                    const d = wStats.dirStats ? (wStats.dirStats[player.frameY] || wStats.dirStats[0] || {}) : {};
+                    const freezeMs = Number(d.freeze) || 0;
+
+                    if (freezeMs > 0) {
+                        const timeSinceAttack = Date.now() - Math.max(player.swingStartTime || 0, player.lastShotTime || 0);
+                        if (timeSinceAttack < freezeMs) {
+                            // En lugar de detenerlo a 0, lo ralentizamos al 10%. 
+                            // Da sensación de "impacto pesado" pero sin trabar la cámara.
+                            speedMult = 0.1;
+                        }
+                    }
+                }
+
                 // 1. MOVIMIENTO
                 if (!player.isReloading) {
-                    // 💻 Si estamos en PC, usamos el teclado (WASD)
                     if (!isTouchDevice) {
                         let moveX = 0; let moveY = 0;
                         if (keys.w) moveY -= 1;
@@ -7074,18 +7179,38 @@
                         if (moveX !== 0 || moveY !== 0) {
                             const length = Math.sqrt(moveX * moveX + moveY * moveY);
                             moveX /= length; moveY /= length;
-                            player.vx = moveX * player.speed;
-                            player.vy = moveY * player.speed;
+                            player.vx = moveX * (player.speed * speedMult);
+                            player.vy = moveY * (player.speed * speedMult);
                             player.isMoving = true;
                         } else {
-                            player.vx = 0;
-                            player.vy = 0;
-                            player.isMoving = false;
+                            player.vx = 0; player.vy = 0; player.isMoving = false;
                         }
                     } else {
-                        // 📱 Si estamos en CELULAR, el joystick izquierdo ya configuró vx/vy en tiempo real
+                        // Joystick
+                        player.vx *= speedMult;
+                        player.vy *= speedMult;
                         player.isMoving = (player.vx !== 0 || player.vy !== 0);
                     }
+                } else {
+                    player.vx = 0; player.vy = 0; player.isMoving = false;
+                }
+
+                // 💥 NUEVO: MOTOR DE INERCIA Y FRICCIÓN (KNOCKBACK) 💥
+                player.kbX = player.kbX || 0;
+                player.kbY = player.kbY || 0;
+
+                player.vx += player.kbX;
+                player.vy += player.kbY;
+
+                player.kbX *= 0.8;
+                player.kbY *= 0.8;
+                if (Math.abs(player.kbX) < 0.2) player.kbX = 0;
+                if (Math.abs(player.kbY) < 0.2) player.kbY = 0;
+
+                // 🛑 EL FIX 3: La animación se mantiene viva mientras resbales 
+                // O mientras el cronómetro de 300ms siga activo.
+                if (player.kbX !== 0 || player.kbY !== 0 || (Date.now() - (player.staggerTimer || 0) < 1000)) {
+                    player.isMoving = true;
                 }
 
                 // 2. APUNTADO Y DISPARO
@@ -7275,10 +7400,19 @@
                             }
 
                             player.lastShotX = spawnX; player.lastShotY = spawnY;
-
-                            // Disparamos con el ángulo corregido
                             spawnProjectile(spawnX, spawnY, finalAngle, myId, player.equippedWeapon);
                             lastShotTime = Date.now();
+                            player.lastShotTime = Date.now();
+
+                            /// 💥 EL FIX: RETROCESO FÍSICO SUAVE (SELF-KNOCKBACK) 💥
+                            const kbForce = Number(d.kb) || 0;
+                            if (kbForce > 0) {
+                                player.kbX = -(Math.cos(finalAngle) * (kbForce / 2));
+                                player.kbY = -(Math.sin(finalAngle) * (kbForce / 2));
+
+                                // 🛑 EL FIX 2: Arrancamos el cronómetro de retroceso
+                                player.staggerTimer = Date.now();
+                            }
 
                             if (ws.readyState === WebSocket.OPEN) {
                                 ws.send(JSON.stringify({
@@ -7561,6 +7695,16 @@
 
             const localTimeSinceHit = Date.now() - (player.lastHitTime || 0);
             const localIsHit = (localTimeSinceHit < 150);
+
+            // 🛑 EL FIX: FORZAR ANIMACIÓN DE PIERNAS AL ESTAR ARMADO Y TROPEZAR 🛑
+            const isStaggering = (Date.now() - (player.staggerTimer || 0) < 300) || Math.abs(player.kbX) > 0.2 || Math.abs(player.kbY) > 0.2;
+            if (isStaggering && player.equippedWeapon !== "none") {
+                player.staggerTick = (player.staggerTick || 0) + 1;
+                if (player.staggerTick > 4) { // Velocidad a la que mueve las piernas al tropezar
+                    player.staggerTick = 0;
+                    player.frameX = (player.frameX + 1) % 6; // Obliga a reproducir los 6 frames de caminar con arma
+                }
+            }
 
             if (player.isDead) ctx.globalAlpha = 0.3;
             else if (localIsHit) { ctx.shadowBlur = 20 * zoomLevel; ctx.shadowColor = "red"; ctx.globalAlpha = 0.6; }

@@ -932,6 +932,12 @@
             </div>
             <span style="color: #38ef7d;">God Panel</span>
         </div>
+        <div class="app-icon" id="app-skel" style="display: none;">
+            <div class="app-bg"
+                style="background: linear-gradient(135deg, #8e44ad 0%, #c39bd3 100%); box-shadow: 0 0 15px #8e44ad;">🦴
+            </div>
+            <span style="color: #c39bd3;">Skel Edit</span>
+        </div>
     </div>
 
     <div id="god-modal"
@@ -1472,6 +1478,169 @@
         </div>
     </div>
 
+    <div id="skeleton-editor"
+        style="display: none; position: absolute; top: 50px; left: 50px; width: 850px; height: 600px; background: #1e1e1e; border: 1px solid #444; border-radius: 8px; color: white; box-shadow: 0 15px 50px rgba(0,0,0,0.8); z-index: 3500; flex-direction: column; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif;">
+
+        <div id="skel-drag-handle"
+            style="background: #2d2d2d; padding: 10px 15px; cursor: grab; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #111;">
+            <span style="font-size: 14px; font-weight: bold; color: #ccc;">🔧 Gani Master Pro</span>
+            <button onclick="document.getElementById('skeleton-editor').style.display='none'"
+                style="background: none; border: none; color: #888; font-size: 16px; cursor: pointer;">✖</button>
+        </div>
+
+        <div style="display: flex; flex: 1; height: calc(100% - 40px);">
+
+            <div
+                style="width: 350px; background: #252526; border-right: 1px solid #111; display: flex; flex-direction: column;">
+
+                <div style="display: flex; background: #2d2d2d; border-bottom: 1px solid #111;">
+                    <button id="tab-skel-body"
+                        style="flex: 1; padding: 10px; background: #0e639c; color: white; border: none; cursor: pointer; font-size: 12px; font-weight: bold;">🦴
+                        Cuerpo</button>
+                    <button id="tab-skel-weapon"
+                        style="flex: 1; padding: 10px; background: transparent; color: #aaa; border: none; cursor: pointer; font-size: 12px; font-weight: bold;">🔫
+                        Pivote</button>
+                    <button id="tab-skel-melee"
+                        style="flex: 1; padding: 10px; background: transparent; color: #aaa; border: none; cursor: pointer; font-size: 12px; font-weight: bold;">⚔️
+                        Melee</button>
+                </div>
+
+                <div
+                    style="padding: 15px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px;">
+                    <p id="skel-instructions" style="font-size: 11px; color: #aaa; margin: 0; text-align: center;">
+                        Arrastra el <b>Punto Azul</b> para definir la mano global.</p>
+
+                    <div id="skel-anim-controls" style="display: flex; gap: 5px; width: 100%;">
+                        <select id="edit-skel-state" onchange="updateSkelPreview()"
+                            style="flex: 1; padding: 6px; background: #3c3c3c; color: white; border: 1px solid #555; outline: none; font-size: 11px;">
+                            <option value="idle">Idle</option>
+                            <option value="walk_armed">Armed Walk</option>
+                            <option value="walk_unarmed">Unarmed Walk</option>
+                        </select>
+                        <select id="edit-skel-dir" onchange="updateSkelPreview()"
+                            style="flex: 1; padding: 6px; background: #3c3c3c; color: white; border: 1px solid #555; outline: none; font-size: 11px;">
+                            <option value="0">Down</option>
+                            <option value="1">Left</option>
+                            <option value="2">Right</option>
+                            <option value="3">Up</option>
+                        </select>
+                        <input type="number" id="edit-skel-frame" value="0" min="0" max="7"
+                            onchange="updateSkelPreview()"
+                            style="width: 40px; padding: 6px; background: #3c3c3c; color: white; border: 1px solid #555; text-align: center; font-size: 11px;">
+                    </div>
+
+                    <div id="skel-melee-controls"
+                        style="display: none; flex-direction: column; gap: 8px; width: 100%; font-size: 11px; color: #ccc;">
+                        <div id="dir-indicator"
+                            style="text-align: center; color: #e67e22; font-weight: bold; margin-bottom: 2px; background: rgba(230,126,34,0.2); padding: 4px; border-radius: 4px; border: 1px solid #e67e22;">
+                            Modificando: ABAJO (0)</div>
+
+                        <div style="background: rgba(231, 76, 60, 0.1); padding: 5px; border-left: 3px solid #e74c3c;">
+                            <b>🔴 HITBOX (FÍSICA)</b>
+                            <div style="display: flex; justify-content: space-between;"><label>Hit X: <span
+                                        id="val-hitx">0</span>px</label><input type="range" id="sl-hitx" min="-50"
+                                    max="50" value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Hit Y: <span
+                                        id="val-hity">0</span>px</label><input type="range" id="sl-hity" min="-50"
+                                    max="50" value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Hit Rot: <span
+                                        id="val-hitrot">0</span>°</label><input type="range" id="sl-hitrot" min="-180"
+                                    max="180" value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Largo: <span
+                                        id="val-hitlen">40</span>px</label><input type="range" id="sl-hitlen" min="10"
+                                    max="150" value="40" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Ancho: <span
+                                        id="val-hitwid">60</span>°</label><input type="range" id="sl-hitwid" min="10"
+                                    max="360" value="60" style="width: 100px;"></div>
+                        </div>
+
+                        <div style="background: rgba(52, 152, 219, 0.1); padding: 5px; border-left: 3px solid #3498db;">
+                            <b>⚔️ ARMA (ANIMACIÓN)</b>
+                            <div style="display: flex; justify-content: space-between;"><label>Layer (0/1): <span
+                                        id="val-wz">1</span></label><input type="range" id="sl-wz" min="0" max="1"
+                                    value="1" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Arma X: <span
+                                        id="val-wx">0</span>px</label><input type="range" id="sl-wx" min="-50" max="50"
+                                    value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Arma Y: <span
+                                        id="val-wy">0</span>px</label><input type="range" id="sl-wy" min="-50" max="50"
+                                    value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Arma Rot: <span
+                                        id="val-wrot">0</span>°</label><input type="range" id="sl-wrot" min="-180"
+                                    max="180" value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Anim Golpe: <span
+                                        id="val-wswg">90</span>°</label><input type="range" id="sl-wswg" min="-360"
+                                    max="360" value="90" style="width: 100px;"></div>
+                        </div>
+
+                        <div style="background: rgba(46, 204, 113, 0.1); padding: 5px; border-left: 3px solid #2ecc71;">
+                            <b>🖐️ MANO (SPRITE)</b>
+                            <div style="display: flex; justify-content: space-between;"><label>Layer (0/1): <span
+                                        id="val-hz">1</span></label><input type="range" id="sl-hz" min="0" max="1"
+                                    value="1" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Mano X: <span
+                                        id="val-hx">0</span>px</label><input type="range" id="sl-hx" min="-30" max="30"
+                                    value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Mano Y: <span
+                                        id="val-hy">0</span>px</label><input type="range" id="sl-hy" min="-30" max="30"
+                                    value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Mano Rot: <span
+                                        id="val-hrot">0</span>°</label><input type="range" id="sl-hrot" min="-180"
+                                    max="180" value="0" style="width: 100px;"></div>
+                        </div>
+
+                        <div style="background: rgba(155, 89, 182, 0.1); padding: 5px; border-left: 3px solid #9b59b6;">
+                            <b>🎒 ACCESORIO (EXTRA)</b>
+                            <div style="display: flex; justify-content: space-between;"><label>Layer (0/1): <span
+                                        id="val-az">1</span></label><input type="range" id="sl-az" min="0" max="1"
+                                    value="1" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Acc. X: <span
+                                        id="val-ax">0</span>px</label><input type="range" id="sl-ax" min="-30" max="30"
+                                    value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Acc. Y: <span
+                                        id="val-ay">0</span>px</label><input type="range" id="sl-ay" min="-30" max="30"
+                                    value="0" style="width: 100px;"></div>
+                            <div style="display: flex; justify-content: space-between;"><label>Acc. Rot: <span
+                                        id="val-arot">0</span>°</label><input type="range" id="sl-arot" min="-180"
+                                    max="180" value="0" style="width: 100px;"></div>
+                        </div>
+
+                        <button id="btn-preview-swing"
+                            style="padding: 6px; background: #e67e22; border: none; color: white; font-weight: bold; cursor: pointer; margin-top: 5px;">▶️
+                            Probar Animación</button>
+                    </div>
+
+                    <div style="background: #1e1e1e; padding: 0; border: 1px solid #000; cursor: crosshair; display: flex; justify-content: center; align-items: center; height: 256px;"
+                        id="skel-canvas-container">
+                        <canvas id="edit-preview-canvas" width="256" height="256"
+                            style="image-rendering: pixelated;"></canvas>
+                    </div>
+
+                    <button id="save-skel-btn"
+                        style="width: 100%; padding: 10px; background: #0e639c; color: white; font-weight: bold; border: none; cursor: pointer; margin-top: auto;">💾
+                        Guardar Esqueleto</button>
+                </div>
+            </div>
+
+            <div style="flex: 1; background: #1e1e1e; display: flex; flex-direction: column;">
+                <div
+                    style="padding: 10px 15px; background: #252526; border-bottom: 1px solid #111; font-size: 12px; color: #ccc; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span>🖼️ <b>Sprite Picker:</b></span>
+                        <button id="btn-toggle-sheet"
+                            style="display: none; margin-left: 10px; padding: 4px 8px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px;">⚔️
+                            Ver Hoja de Arma</button>
+                    </div>
+                    <span id="grid-coord-label" style="color: #e67e22; font-family: monospace;">[ X: 13, Y: 0 ]</span>
+                </div>
+                <div style="flex: 1; overflow: auto; padding: 20px; position: relative;" id="spritesheet-container">
+                    <canvas id="spritesheet-canvas" style="cursor: crosshair; image-rendering: pixelated;"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <div id="joystick-zone">
         <div id="joystick-knob"></div>
     </div>
@@ -1609,6 +1778,28 @@
     </div>
 
     <script>
+        // --- SEPARAMOS EL ANCHO Y EL ALTO ---
+        const FRAME_SIZE = 48; // Regresamos a 48 porque es el tamaño real de cada celda de tu sprite
+        // --- SEPARAMOS EL ANCHO Y EL ALTO ---
+        const FRAME_WIDTH = 48;
+        const FRAME_HEIGHT = 64;
+
+        // Le dice al código en qué FILA empieza cada animación
+        const SKELETON_DATA = {
+            states: {
+                "idle": 0,           // Filas 0 a 3
+                "walk_armed": 4,     // Filas 4 a 7
+                "walk_unarmed": 8,   // Filas 8 a 11
+                "sit": 12            // Filas 12 a 15
+            },
+            anchors: {}
+        };
+
+        // Función para obtener la llave de un anclaje específico
+        function getFrameKey(state, dir, frameX) {
+            return `${state}_${dir}_${frameX}`;
+        }
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -1882,6 +2073,12 @@
         const walkAimSprite = new Image();
         walkAimSprite.src = 'Walk_while_aim.png';
 
+        const bodyImg = new Image();
+        bodyImg.src = 'body_idle_armed_walk_sit_sprite_1.png'; // Tu archivo de cuerpo
+
+        const headImg = new Image();
+        headImg.src = 'Head_idle_sprite_1.png'; // Tu archivo de cabezas
+
         // --- DICCIONARIO DINÁMICO DE ARMAS ---
         const loadedWeaponSprites = {};
 
@@ -1894,6 +2091,8 @@
         // --- MULTIPLAYER LOGIC ---
         const otherPlayers = {};
         let myId = null;
+        // --- BASE DE DATOS DE ARMAS EN EL CLIENTE ---
+        let weaponsDB = {};
 
         // Auth UI Elements
         const authOverlay = document.getElementById('auth-overlay');
@@ -2361,6 +2560,14 @@
                     loadedTilesets[ts.id] = img;
                 });
 
+                // 👇 AÑADE ESTA LÍNEA AQUÍ 👇
+                weaponsDB = data.weaponsDB;
+
+                // (Esto ya lo tenías)
+                if (data.skeleton) {
+                    SKELETON_DATA.anchors = data.skeleton;
+                }
+
                 // Escudo por si no hay nada que descargar
                 if (totalAssetsToLoad === 0) {
                     assetsLoaded = 1; totalAssetsToLoad = 1; updateLoadingBar("¡Listo!");
@@ -2456,71 +2663,91 @@
             }// --- NEW: RECEIVE BULLET FROM ANOTHER PLAYER ---
             else if (data.type === 'shoot') {
                 spawnProjectile(data.x, data.y, data.angle, data.id, data.weaponId);
+            }// --- VER QUE OTROS DAN ESPADAZOS ---
+            else if (data.type === 'player_swing') {
+                if (otherPlayers[data.id]) {
+                    otherPlayers[data.id].isSwinging = true;
+                    otherPlayers[data.id].swingStartTime = Date.now();
+                    otherPlayers[data.id].swingDuration = 200;
+                }
             }
-            // --- RECIBIR ACTUALIZACIÓN DE VIDA DESDE EL SERVIDOR ---
+
+            // =======================================================================
+            // 💥 RECEPCIÓN MAESTRA DE VIDA, DAÑO, INTERFAZ, KILLS Y LOSSES 💥
+            // =======================================================================
             else if (data.type === 'hp_update') {
 
-                // 👇 NUEVO: ACTUALIZAR KILLS Y LOSSES EN LA MEMORIA RAM LOCAL 👇
+                // --- 1. SI YO RECIBÍ EL DAÑO O LA CURACIÓN ---
+                if (data.targetId === myId) {
+                    player.hp = data.newHp;
+                    player.health = data.newHp; // 🛑 EL FIX: Sincroniza la barra de vida sobre tu cabeza
+                    player.isDead = data.isDead;
+                    player.lastHpUpdateTime = Date.now(); // Para animaciones visuales
+
+                    if (data.damageDealt > 0) {
+                        player.lastHitTime = Date.now();
+                        spawnDamageText(player.worldX, player.worldY, data.damageDealt, false);
+
+                        // Efecto de Pantalla Roja (Sangre)
+                        const overlay = document.getElementById('damage-overlay');
+                        if (overlay) {
+                            overlay.style.opacity = '1';
+                            setTimeout(() => { overlay.style.opacity = '0'; }, 150);
+                        }
+                        if (typeof wakeUpIsland === 'function') wakeUpIsland(3000);
+
+                    } else if (data.damageDealt < 0) {
+                        // Curación (Texto Verde)
+                        spawnDamageText(player.worldX, player.worldY, data.damageDealt, true);
+                        if (typeof wakeUpIsland === 'function') wakeUpIsland(2000);
+                    }
+
+                    // Actualizar la "Isla Dinámica" (UI)
+                    const islandFill = document.getElementById('island-hp-fill');
+                    const islandText = document.getElementById('island-hp-text');
+                    if (islandText) islandText.innerText = `${player.hp} / 100`;
+
+                    if (islandFill) {
+                        islandFill.style.width = `${player.hp}%`;
+                        if (player.hp > 50) islandFill.style.backgroundColor = '#2ecc71'; // Verde
+                        else if (player.hp > 25) islandFill.style.backgroundColor = '#f1c40f'; // Amarillo
+                        else islandFill.style.backgroundColor = '#e74c3c'; // Rojo
+                    }
+                }
+
+                // --- 2. SI OTRO JUGADOR RECIBIÓ EL DAÑO O LA CURACIÓN ---
+                else if (otherPlayers[data.targetId]) {
+                    let enemy = otherPlayers[data.targetId];
+                    enemy.hp = data.newHp;
+                    enemy.health = data.newHp; // 🛑 EL FIX: Sincroniza la barra de vida del enemigo
+                    enemy.isDead = data.isDead;
+                    enemy.lastHpUpdateTime = Date.now();
+
+                    if (data.damageDealt > 0) {
+                        enemy.lastHitTime = Date.now();
+                        spawnDamageText(enemy.worldX, enemy.worldY, data.damageDealt, false);
+                    } else if (data.damageDealt < 0) {
+                        spawnDamageText(enemy.worldX, enemy.worldY, data.damageDealt, true);
+                    }
+                }
+
+                // --- 3. ACTUALIZAR KILLS Y LOSSES EN LA PANTALLA ---
                 if (data.isDead) {
-                    // Actualizar al Tirador
+
+                    // Actualizar al Tirador (El que hizo la kill)
                     if (data.shooterId === myId) {
                         player.kills = data.shooterKills;
-                        spawnDamageText(player.worldX, player.worldY, "+1 Kill", true); // Flota texto verde
+                        spawnDamageText(player.worldX, player.worldY, "+1 Kill", true); // Flota texto verde en ti
                     } else if (otherPlayers[data.shooterId]) {
                         otherPlayers[data.shooterId].kills = data.shooterKills;
                     }
 
-                    // Actualizar a la Víctima
+                    // Actualizar a la Víctima (El que murió)
                     if (data.targetId === myId) {
                         player.losses = data.targetLosses;
-                        // 🛑 EL FIX: AVISO VISUAL DE DERROTA 🛑
-                        spawnDamageText(player.worldX, player.worldY, "+1 Loss", false);
+                        spawnDamageText(player.worldX, player.worldY, "+1 Loss", false); // Flota texto rojo en ti
                     } else if (otherPlayers[data.targetId]) {
                         otherPlayers[data.targetId].losses = data.targetLosses;
-                    }
-                }
-
-                if (data.targetId === myId) {
-                    player.hp = data.newHp;
-                    player.isDead = data.isDead;
-
-                    // --- NUEVO: Registramos que la vida cambió visualmente ---
-                    player.lastHpUpdateTime = Date.now();
-
-                    if (data.damageDealt > 0) {
-                        player.lastHitTime = Date.now(); // Mantenemos esto para la pantalla roja
-                        spawnDamageText(player.worldX, player.worldY, data.damageDealt, false);
-
-                        const overlay = document.getElementById('damage-overlay');
-                        overlay.style.opacity = '1';
-                        setTimeout(() => { overlay.style.opacity = '0'; }, 150);
-
-                        wakeUpIsland(3000);
-                    } else if (data.damageDealt < 0) {
-                        spawnDamageText(player.worldX, player.worldY, data.damageDealt, true);
-                        wakeUpIsland(2000);
-                    }
-
-                    const islandFill = document.getElementById('island-hp-fill');
-                    const islandText = document.getElementById('island-hp-text');
-                    islandText.innerText = `${player.hp} / 100`;
-                    islandFill.style.width = `${player.hp}%`;
-                    if (player.hp > 50) islandFill.style.backgroundColor = '#2ecc71';
-                    else if (player.hp > 25) islandFill.style.backgroundColor = '#f1c40f';
-                    else islandFill.style.backgroundColor = '#e74c3c';
-
-                } else if (otherPlayers[data.targetId]) {
-                    otherPlayers[data.targetId].hp = data.newHp;
-                    otherPlayers[data.targetId].isDead = data.isDead;
-
-                    // --- NUEVO: Registramos que la vida cambió visualmente para el enemigo ---
-                    otherPlayers[data.targetId].lastHpUpdateTime = Date.now();
-
-                    if (data.damageDealt > 0) {
-                        otherPlayers[data.targetId].lastHitTime = Date.now();
-                        spawnDamageText(otherPlayers[data.targetId].worldX, otherPlayers[data.targetId].worldY, data.damageDealt, false);
-                    } else if (data.damageDealt < 0) {
-                        spawnDamageText(otherPlayers[data.targetId].worldX, otherPlayers[data.targetId].worldY, data.damageDealt, true);
                     }
                 }
             }
@@ -2589,14 +2816,17 @@
                 // EL FIX: Comprobamos si los botones existen antes de intentar cambiarles el 'style'
                 const appEditModeBtn = document.getElementById('app-edit-mode');
                 const appGodPanelBtn = document.getElementById('app-god-panel');
+                const appSkelBtn = document.getElementById('app-skel'); // <--- AÑADE ESTO
 
                 // Ocultar o Mostrar el botón del Editor según tu rol
                 if (player.role === 'admin') {
                     if (appEditModeBtn) appEditModeBtn.style.display = 'flex';
                     if (appGodPanelBtn) appGodPanelBtn.style.display = 'flex';
+                    if (appSkelBtn) appSkelBtn.style.display = 'flex'; // <--- AÑADE ESTO
                 } else {
                     if (appEditModeBtn) appEditModeBtn.style.display = 'none';
                     if (appGodPanelBtn) appGodPanelBtn.style.display = 'none';
+                    if (appSkelBtn) appSkelBtn.style.display = 'none'; // <--- AÑADE ESTO
                     editMode = false; // Por si acaso un hacker intenta forzarlo
                 }
                 // Set the active highlight to match the equipped weapon
@@ -2678,6 +2908,20 @@
                     const pFrameH = idleSprite.height / 6;
                     const drawW = 32; const drawH = 32 * ((pFrameH / 2) / pFrameW);
                     nCtx.drawImage(idleSprite, data.senderFrameX * pFrameW, data.senderFrameY * pFrameH, pFrameW, pFrameH / 2, (notifCanvas.width - drawW) / 2, (notifCanvas.height - drawH) / 2 + 3, drawW, drawH);
+                }
+            }
+            // --- RECIBIR ACTUALIZACIÓN DEL GANI EDITOR ---
+            else if (data.type === 'sync_skeleton') {
+                SKELETON_DATA.anchors = data.anchors;
+                console.log("🦴 Animaciones sincronizadas con el servidor");
+            } else if (data.type === 'sync_melee_stats') {
+                if (weaponsDB[data.weaponId]) {
+                    // Aseguramos que el objeto exista
+                    if (!weaponsDB[data.weaponId].dirStats) {
+                        weaponsDB[data.weaponId].dirStats = {};
+                    }
+                    // Sobreescribimos solo la configuración del lado que se editó
+                    weaponsDB[data.weaponId].dirStats[data.direction] = data.stats;
                 }
             }
         };
@@ -3003,62 +3247,39 @@
                 player.frameX = 0; player.tickCount = 0; player.isMoving = currentlyMoving;
             }
 
-            // --- EL FIX TÁCTICO: EL JOYSTICK DERECHO CONTROLA LA MIRADA ---
+            // --- 1. MIRADA (SOLO 4 DIRECCIONES) ---
             let faceAngle;
-
-            // Si está disparando, fuerza al cuerpo a mirar hacia el ángulo de la bala
             if (isShooting && player.equippedWeapon !== "none") {
                 faceAngle = shootAngle;
-            }
-            // Si NO está disparando pero se mueve, mira hacia donde camina
-            else if (player.isMoving) {
+            } else if (player.isMoving) {
                 faceAngle = Math.atan2(player.vy, player.vx);
             }
 
-            // Solo actualizamos la dirección visual si hay un ángulo activo
             if (faceAngle !== undefined) {
                 const deg = faceAngle * (180 / Math.PI);
-
-                if (player.equippedWeapon !== "none") {
-                    player.currentImage = walkAimSprite;
-                    if (deg > 45 && deg <= 135) player.frameY = 0;      // Down
-                    else if (deg > -45 && deg <= 45) player.frameY = 1; // Right
-                    else if (deg > 135 || deg <= -135) player.frameY = 2; // Left
-                    else if (deg > -135 && deg <= -45) player.frameY = 3; // Up
-                } else {
-                    player.currentImage = walkSprite;
-                    if (deg >= 45 && deg <= 135) player.frameY = 0; // Down
-                    else if (deg > 135 || deg < -150) player.frameY = 1; // Left
-                    else if (deg >= -150 && deg < -105) player.frameY = 2; // Up-Left
-                    else if (deg >= -105 && deg <= -75) player.frameY = 3; // Up
-                    else if (deg > -75 && deg <= -30) player.frameY = 4; // Up-Right
-                    else if (deg > -30 && deg < 45) player.frameY = 5; // Right
-                }
+                // 0: Down, 1: Left, 2: Right, 3: Up
+                if (deg > 45 && deg <= 135) player.frameY = 0;
+                else if (deg > 135 || deg <= -135) player.frameY = 1;
+                else if (deg > -45 && deg <= 45) player.frameY = 2;
+                else if (deg > -135 && deg <= -45) player.frameY = 3;
             }
 
-            // --- AVANCE DE LA ANIMACIÓN (PIERNAS) ---
-            if (player.isMoving) {
-                player.tickCount++;
-                if (player.tickCount > player.ticksPerFrame) {
-                    player.tickCount = 0;
-                    player.frameX = (player.frameX + 1) % 8;
-                }
+            // --- 2. ANIMACIÓN DE LAS PIERNAS (DINÁMICA) ---
+            player.tickCount++;
+
+            const speedMod = player.isMoving ? 1 : 2;
+
+            // 🛑 LÍMITES EXACTOS DE TU IMAGEN
+            let maxFrames = 4;
+            if (player.equippedWeapon && player.equippedWeapon !== "none") {
+                maxFrames = player.isMoving ? 6 : 1;
             } else {
-                if (player.equippedWeapon !== "none") {
-                    player.currentImage = walkAimSprite;
-                    // Congela en el frame estático
-                    if (player.frameY === 0) player.frameX = 7;
-                    else if (player.frameY === 1) player.frameX = 0;
-                    else if (player.frameY === 2) player.frameX = 0;
-                    else if (player.frameY === 3) player.frameX = 0;
-                } else {
-                    player.currentImage = idleSprite;
-                    player.tickCount++;
-                    if (player.tickCount > player.ticksPerFrame) {
-                        player.tickCount = 0;
-                        player.frameX = (player.frameX + 1) % 8;
-                    }
-                }
+                maxFrames = player.isMoving ? 8 : 4;
+            }
+
+            if (player.tickCount > player.ticksPerFrame * speedMod) {
+                player.tickCount = 0;
+                player.frameX = (player.frameX + 1) % maxFrames;
             }
         }
 
@@ -3409,6 +3630,40 @@
             godDragHandle.addEventListener('mousedown', (e) => startDragGod(e.clientX, e.clientY, e));
             window.addEventListener('mousemove', (e) => moveGod(e.clientX, e.clientY));
             window.addEventListener('mouseup', () => { isDraggingGod = false; godDragHandle.style.cursor = 'grab'; });
+        }
+
+        // --- LÓGICA DE ARRASTRE PARA EL SKEL EDITOR ---
+        const skelModal = document.getElementById('skeleton-editor');
+        const skelDragHandle = document.getElementById('skel-drag-handle');
+        let isDraggingSkel = false;
+        let skelOffsetX = 0, skelOffsetY = 0;
+
+        function startDragSkel(clientX, clientY, e) {
+            isDraggingSkel = true;
+            if (!skelModal) return;
+            const rect = skelModal.getBoundingClientRect();
+            skelOffsetX = clientX - rect.left;
+            skelOffsetY = clientY - rect.top;
+            if (skelDragHandle) skelDragHandle.style.cursor = 'grabbing';
+            if (e && e.preventDefault) e.preventDefault();
+        }
+
+        function moveSkel(clientX, clientY) {
+            if (!isDraggingSkel || !skelModal) return;
+            let newX = clientX - skelOffsetX;
+            let newY = clientY - skelOffsetY;
+            skelModal.style.left = newX + 'px';
+            skelModal.style.top = newY + 'px';
+        }
+
+        if (skelDragHandle) {
+            skelDragHandle.addEventListener('mousedown', (e) => startDragSkel(e.clientX, e.clientY, e));
+            window.addEventListener('mousemove', (e) => moveSkel(e.clientX, e.clientY));
+            window.addEventListener('mouseup', () => { isDraggingSkel = false; if (skelDragHandle) skelDragHandle.style.cursor = 'grab'; });
+
+            skelDragHandle.addEventListener('touchstart', (e) => startDragSkel(e.touches[0].clientX, e.touches[0].clientY, e), { passive: false });
+            window.addEventListener('touchmove', (e) => { if (e.touches.length > 0) moveSkel(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+            window.addEventListener('touchend', () => { isDraggingSkel = false; if (skelDragHandle) skelDragHandle.style.cursor = 'grab'; });
         }
 
         // --- UPGRADED: MAP UI & PHYSICS ---
@@ -5362,7 +5617,11 @@
                 tCtx.imageSmoothingEnabled = false;
                 const frameW = wSprite.width / 8;
                 const frameH = wSprite.height / 6;
-                tCtx.drawImage(wSprite, 0, 1 * frameH, frameW, frameH, 0, 0, 48, 48);
+
+                // 🛑 EL FIX: Si es Melee dibujamos la Fila 0 (Mirando Abajo). Si es Pistola, la Fila 1 (Lado).
+                const targetRow = (stats.type === 'melee') ? 0 : 1;
+
+                tCtx.drawImage(wSprite, 0, targetRow * frameH, frameW, frameH, 0, 0, 48, 48);
                 return tCanvas;
             }
             // Fallback: Si olvidaste ponerle imagen en MongoDB, usa las letras
@@ -5465,19 +5724,23 @@
                         player.equippedWeapon = player.hotbar[i] || "none";
                     }
 
-                    // --- EL FIX: CONGELAMIENTO (RELOAD FREEZE) AL SACAR EL ARMA ---
-                    if (player.reloadTimeout) clearTimeout(player.reloadTimeout); // Cancela recargas previas
+                    // --- EL FIX: CONGELAMIENTO Y MUNICIÓN INTELIGENTE ---
+                    if (player.reloadTimeout) clearTimeout(player.reloadTimeout);
 
                     const stats = WEAPONS[player.equippedWeapon];
                     if (stats) {
-                        player.ammo = 0; // El arma sale sin balas listas
-                        player.isReloading = true; // 🧊 Congela al jugador
-
-                        // Inicia el tiempo de espera del arma
-                        player.reloadTimeout = setTimeout(() => {
-                            player.ammo = stats.magSize;
-                            player.isReloading = false; // 🟢 Descongela al jugador
-                        }, stats.reloadTime);
+                        if (stats.type === 'melee') {
+                            // Las espadas no tienen balas ni se recargan
+                            player.ammo = Infinity;
+                            player.isReloading = false;
+                        } else {
+                            player.ammo = 0;
+                            player.isReloading = true; // 🧊 Congela al jugador
+                            player.reloadTimeout = setTimeout(() => {
+                                player.ammo = stats.magSize;
+                                player.isReloading = false; // 🟢 Descongela al jugador
+                            }, stats.reloadTime);
+                        }
                     } else {
                         player.ammo = 0;
                         player.isReloading = false;
@@ -5926,11 +6189,842 @@
             return row;
         }
 
-        function update() {
-            // Congelar al jugador en la oscuridad mientras carga
-            if (isCinematicLoading) {
-                player.vx = 0; player.vy = 0; player.isMoving = false; isShooting = false;
+        // --- LÓGICA DE LA APP SKELETON (SKEL) ---
+        const appSkelIcon = document.getElementById('app-skel');
+        if (appSkelIcon) {
+            appSkelIcon.addEventListener('click', () => {
+                // 1. Cierra el menú desplegable del celular para que no estorbe
+                appTray.classList.remove('open');
+
+                // 2. Abre el editor y actualiza la previsualización
+                document.getElementById('skeleton-editor').style.display = 'flex';
+                updateSkelPreview();
+            });
+        }
+
+        // --- MOTOR GANI (BODY, WEAPON, MELEE) ---
+        const skelCanvas = document.getElementById('edit-preview-canvas');
+        const skelCtx = skelCanvas ? skelCanvas.getContext('2d') : null;
+        let draggingAnchor = null;
+        let currentGaniTab = 'body'; // Puede ser 'body', 'weapon' o 'melee'
+        let isPreviewSwinging = false;
+        let previewSwingStart = 0;
+        // --- VARIABLES DEL SPRITE PICKER ---
+        let isPickingAccessory = false; // false = Mano (Cuerpo), true = Accesorio (Arma)
+
+        // Lógica del botón Toggle
+        const btnToggleSheet = document.getElementById('btn-toggle-sheet');
+        if (btnToggleSheet) {
+            btnToggleSheet.onclick = () => {
+                isPickingAccessory = !isPickingAccessory;
+                btnToggleSheet.innerText = isPickingAccessory ? "🦴 Ver Hoja de Cuerpo" : "⚔️ Ver Hoja de Arma";
+                drawSpriteSheetGrid();
+            };
+        }
+
+        // 1. DIBUJAR LA CUADRÍCULA (INTELIGENTE)
+        function drawSpriteSheetGrid() {
+            const ssCanvas = document.getElementById('spritesheet-canvas');
+            if (!ssCanvas) return;
+            const ctx = ssCanvas.getContext('2d');
+            const wId = player.equippedWeapon;
+
+            let activeImg = bodyImg;
+            let isWeaponSheet = false;
+
+            // Decidir si mostramos el Cuerpo o el Arma
+            if (currentGaniTab === 'melee' && isPickingAccessory && wId !== "none" && loadedWeaponSprites[wId]) {
+                activeImg = loadedWeaponSprites[wId];
+                isWeaponSheet = true;
+                document.getElementById('grid-coord-label').innerText = "Seleccionando Accesorio";
+            } else {
+                if (!bodyImg || !bodyImg.complete) return;
+                document.getElementById('grid-coord-label').innerText = "Seleccionando Mano";
             }
+
+            const zoom = 2;
+            ssCanvas.width = activeImg.width * zoom;
+            ssCanvas.height = activeImg.height * zoom;
+
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(activeImg, 0, 0, ssCanvas.width, ssCanvas.height);
+
+            const tileSize = 16 * zoom;
+
+            // Dibujar la malla (Grid)
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= ssCanvas.width; x += tileSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ssCanvas.height); ctx.stroke(); }
+            for (let y = 0; y <= ssCanvas.height; y += tileSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ssCanvas.width, y); ctx.stroke(); }
+
+            // Resaltar el recuadro correcto
+            let selX = 0, selY = 0;
+            if (wId !== "none" && weaponsDB[wId] && weaponsDB[wId].dirStats && weaponsDB[wId].dirStats[currentEditDir]) {
+                const d = weaponsDB[wId].dirStats[currentEditDir];
+                if (isWeaponSheet) {
+                    selX = (d.wTileX || 0) * tileSize;
+                    selY = (d.wTileY || 0) * tileSize;
+                } else {
+                    selX = (d.tX !== undefined ? d.tX : 13) * tileSize;
+                    selY = (d.tY !== undefined ? d.tY : 0) * tileSize;
+                }
+            }
+
+            ctx.strokeStyle = "#e67e22"; ctx.lineWidth = 3;
+            ctx.strokeRect(selX, selY, tileSize, tileSize);
+            ctx.fillStyle = "rgba(230, 126, 34, 0.3)";
+            ctx.fillRect(selX, selY, tileSize, tileSize);
+        }
+
+        // 2. GUARDAR EL CLIC EN LA BASE DE DATOS LOCAL
+        const ssCanvasEl = document.getElementById('spritesheet-canvas');
+        if (ssCanvasEl) {
+            ssCanvasEl.addEventListener('mousedown', (e) => {
+                const wId = player.equippedWeapon;
+                if (wId === "none" || !weaponsDB[wId]) return;
+
+                const rect = ssCanvasEl.getBoundingClientRect();
+                const zoom = 2; const tileSize = 16 * zoom;
+
+                if (!weaponsDB[wId].dirStats) weaponsDB[wId].dirStats = {};
+                if (!weaponsDB[wId].dirStats[currentEditDir]) weaponsDB[wId].dirStats[currentEditDir] = {};
+
+                const gridX = Math.floor((e.clientX - rect.left) / tileSize);
+                const gridY = Math.floor((e.clientY - rect.top) / tileSize);
+
+                // Si estamos en la hoja del arma, guardamos en wTile. Si es cuerpo, en tTile (Mano).
+                if (currentGaniTab === 'melee' && isPickingAccessory) {
+                    weaponsDB[wId].dirStats[currentEditDir].wTileX = gridX;
+                    weaponsDB[wId].dirStats[currentEditDir].wTileY = gridY;
+                } else {
+                    weaponsDB[wId].dirStats[currentEditDir].tX = gridX;
+                    weaponsDB[wId].dirStats[currentEditDir].tY = gridY;
+                }
+
+                drawSpriteSheetGrid();
+                updateSkelPreview();
+            });
+        }
+
+        // Función auxiliar para cambiar UI
+        function switchGaniTab(tab, color, title, instructions) {
+            currentGaniTab = tab;
+            document.getElementById('tab-skel-body').style.background = tab === 'body' ? '#9b59b6' : 'rgba(0,0,0,0.5)';
+            document.getElementById('tab-skel-body').style.color = tab === 'body' ? 'white' : '#aaa';
+            document.getElementById('tab-skel-weapon').style.background = tab === 'weapon' ? '#e74c3c' : 'rgba(0,0,0,0.5)';
+            document.getElementById('tab-skel-weapon').style.color = tab === 'weapon' ? 'white' : '#aaa';
+            document.getElementById('tab-skel-melee').style.background = tab === 'melee' ? '#e67e22' : 'rgba(0,0,0,0.5)';
+            document.getElementById('tab-skel-melee').style.color = tab === 'melee' ? 'white' : '#aaa';
+
+            document.getElementById('skel-anim-controls').style.display = tab === 'body' ? 'flex' : 'none';
+            document.getElementById('skel-melee-controls').style.display = tab === 'melee' ? 'flex' : 'none';
+
+            document.getElementById('skel-instructions').innerHTML = instructions;
+            document.getElementById('save-skel-btn').innerText = title;
+            document.getElementById('save-skel-btn').style.background = color;
+            document.getElementById('save-skel-btn').style.boxShadow = `0 4px 0 ${color}`;
+
+            // Cargar datos al entrar a la pestaña Melee
+            if (tab === 'melee') {
+                const wId = player.equippedWeapon;
+                const stats = weaponsDB[wId];
+
+                // --- MOSTRAR/OCULTAR BOTÓN DE HOJA DE ARMA ---
+                const tBtn = document.getElementById('btn-toggle-sheet');
+                if (tBtn) {
+                    if (tab === 'melee') {
+                        tBtn.style.display = 'inline-block';
+                    } else {
+                        tBtn.style.display = 'none';
+                        isPickingAccessory = false; // Resetear al cuerpo por seguridad
+                        tBtn.innerText = "⚔️ Ver Hoja de Arma";
+                    }
+                }
+
+                // Si es melee, cargamos los datos basados en la dirección actual
+                loadMeleeSlidersForDirection(player.frameY);
+            }
+            // 👇 AÑADE ESTO: Para que dibuje la cuadrícula grande del cuerpo
+            if (tab === 'body') {
+                setTimeout(drawSpriteSheetGrid, 50); // El setTimeout le da tiempo al HTML de abrirse
+            }
+            updateSkelPreview();
+        }
+        // Ocultar o mostrar el botón Toggle de la hoja de sprites
+        const tBtn = document.getElementById('btn-toggle-sheet');
+        if (tBtn) {
+            if (currentGaniTab === 'melee') { // 🛑 EL FIX: Usar currentGaniTab
+                tBtn.style.display = 'inline-block';
+            } else {
+                tBtn.style.display = 'none';
+                isPickingAccessory = false; // Resetear siempre al cuerpo
+                tBtn.innerText = "⚔️ Ver Hoja de Arma";
+            }
+        }
+        document.getElementById('tab-skel-body').onclick = () => switchGaniTab('body', '#9b59b6', '💾 Guardar Esqueleto', "Arrastra el <b>Punto Azul</b> a la mano del jugador.");
+        document.getElementById('tab-skel-weapon').onclick = () => switchGaniTab('weapon', '#e74c3c', '💾 Guardar Pivote de Arma', "Arrastra el <b>Punto Rojo</b> al mango de la pistola.");
+        document.getElementById('tab-skel-melee').onclick = () => switchGaniTab('melee', '#e67e22', '💾 Guardar Hitbox y Animación', "Ajusta los <b>Slidres</b> para definir el área de daño (Rojo).");
+
+        // 1. Añadimos sl-wz, sl-hz, sl-az
+        const sliders = [
+            'sl-hitx', 'sl-hity', 'sl-hitrot', 'sl-hitlen', 'sl-hitwid',
+            'sl-wz', 'sl-wx', 'sl-wy', 'sl-wrot', 'sl-wswg',
+            'sl-hz', 'sl-hx', 'sl-hy', 'sl-hrot',
+            'sl-az', 'sl-ax', 'sl-ay', 'sl-arot'
+        ];
+
+        sliders.forEach(id => {
+            const sliderEl = document.getElementById(id);
+
+            // 🛑 EL ESCUDO: Si el slider no existe en el HTML, lo ignoramos silenciosamente
+            if (!sliderEl) return;
+
+            sliderEl.addEventListener('input', () => {
+                const val = sliderEl.value;
+                const labelEl = document.getElementById('val-' + id.split('-')[1]);
+
+                // 🛑 EL ESCUDO 2: Actualizamos el texto solo si la etiqueta visual existe
+                if (labelEl) labelEl.innerText = val;
+
+                const wId = player.equippedWeapon;
+                if (wId !== "none" && weaponsDB[wId]) {
+                    if (!weaponsDB[wId].dirStats) weaponsDB[wId].dirStats = {};
+                    if (!weaponsDB[wId].dirStats[currentEditDir]) weaponsDB[wId].dirStats[currentEditDir] = {};
+
+                    const d = weaponsDB[wId].dirStats[currentEditDir];
+                    const numVal = parseInt(val);
+
+                    if (id === 'sl-hitx') d.hitX = numVal; if (id === 'sl-hity') d.hitY = numVal;
+                    if (id === 'sl-hitrot') d.hitRot = numVal; if (id === 'sl-hitlen') d.hitLen = numVal; if (id === 'sl-hitwid') d.hitWid = numVal;
+
+                    if (id === 'sl-wz') d.wZ = numVal; if (id === 'sl-wx') d.wX = numVal; if (id === 'sl-wy') d.wY = numVal;
+                    if (id === 'sl-wrot') d.wRot = numVal; if (id === 'sl-wswg') d.wSwg = numVal;
+
+                    if (id === 'sl-hz') d.hZ = numVal; if (id === 'sl-hx') d.hX = numVal; if (id === 'sl-hy') d.hY = numVal; if (id === 'sl-hrot') d.hRot = numVal;
+
+                    if (id === 'sl-az') d.aZ = numVal; if (id === 'sl-ax') d.aX = numVal; if (id === 'sl-ay') d.aY = numVal; if (id === 'sl-arot') d.aRot = numVal;
+                }
+                updateSkelPreview();
+            });
+        });
+
+        function updateMeleeLabels() {
+            document.getElementById('val-rot').innerText = document.getElementById('sl-rot').value;
+            document.getElementById('val-swg').innerText = document.getElementById('sl-swg').value; // NUEVO
+            document.getElementById('val-len').innerText = document.getElementById('sl-len').value;
+            document.getElementById('val-wid').innerText = document.getElementById('sl-wid').value;
+            document.getElementById('val-hx').innerText = document.getElementById('sl-hx').value;
+            document.getElementById('val-hy').innerText = document.getElementById('sl-hy').value;
+            document.getElementById('val-wx').innerText = document.getElementById('sl-wx').value;
+            document.getElementById('val-wy').innerText = document.getElementById('sl-wy').value;
+            document.getElementById('val-ax').innerText = document.getElementById('sl-ax').value;
+            document.getElementById('val-ay').innerText = document.getElementById('sl-ay').value;
+            document.getElementById('val-arot').innerText = document.getElementById('sl-arot').value;
+        }
+
+        // 3. RECARGAR SLIDERS Y ACTUALIZAR ETIQUETA DE DIRECCIÓN
+        let currentEditDir = 0;
+        // 2. Cargar datos al cambiar de lado (WASD)
+        function loadMeleeSlidersForDirection(dir) {
+            currentEditDir = dir;
+            const dirNames = { 0: "ABAJO (0)", 1: "IZQUIERDA (1)", 2: "DERECHA (2)", 3: "ARRIBA (3)" };
+            const dirIndicator = document.getElementById('dir-indicator');
+            if (dirIndicator) dirIndicator.innerText = `Modificando: ${dirNames[dir]}`;
+
+            const wId = player.equippedWeapon;
+            if (wId !== "none" && weaponsDB[wId] && weaponsDB[wId].dirStats) {
+                const d = weaponsDB[wId].dirStats[dir] || weaponsDB[wId].dirStats[0] || {};
+
+                // 🛑 EL ESCUDO ANTI-CRASH 🛑
+                const setVal = (id, val) => {
+                    const slider = document.getElementById('sl-' + id);
+                    const label = document.getElementById('val-' + id);
+                    if (slider) slider.value = val;
+                    if (label) label.innerText = val;
+                };
+
+                setVal('hitx', d.hitX || 0); setVal('hity', d.hitY || 0); setVal('hitrot', d.hitRot || 0);
+                setVal('hitlen', d.hitLen || 40); setVal('hitwid', d.hitWid || 60);
+
+                setVal('wz', d.wZ !== undefined ? d.wZ : 1); setVal('wx', d.wX || 0); setVal('wy', d.wY || 0); setVal('wrot', d.wRot || 0); setVal('wswg', d.wSwg || 90);
+                setVal('hz', d.hZ !== undefined ? d.hZ : 1); setVal('hx', d.hX || 0); setVal('hy', d.hY || 0); setVal('hrot', d.hRot || 0);
+                setVal('az', d.aZ !== undefined ? d.aZ : 1); setVal('ax', d.aX || 0); setVal('ay', d.aY || 0); setVal('arot', d.aRot || 0);
+
+                let tileText = isPickingAccessory ? `[ wX: ${d.wTileX || 0}, wY: ${d.wTileY || 0} ]` : `[ tX: ${d.tX || 13}, tY: ${d.tY || 0} ]`;
+                const coordLabel = document.getElementById('grid-coord-label');
+                if (coordLabel) coordLabel.innerText = `${tileText} (Dir: ${dir})`;
+            }
+        }
+
+        document.getElementById('btn-preview-swing').onclick = () => {
+            isPreviewSwinging = true;
+            previewSwingStart = Date.now();
+            animatePreview();
+        };
+
+        function animatePreview() {
+            if (!isPreviewSwinging) return;
+            updateSkelPreview();
+            if (Date.now() - previewSwingStart < 200) {
+                requestAnimationFrame(animatePreview);
+            } else {
+                isPreviewSwinging = false;
+                updateSkelPreview(); // Reset a postura normal
+            }
+        }
+
+        function updateSkelPreview() {
+            if (!skelCtx) return;
+            const zoom = 3;
+            const centerX = 128 - ((FRAME_WIDTH / 2) * zoom);
+            const centerY = 128 - ((FRAME_HEIGHT / 2) * zoom);
+
+            // Fondo y cuadrícula
+            skelCtx.fillStyle = "#1a1a1a"; skelCtx.fillRect(0, 0, 256, 256);
+            skelCtx.strokeStyle = "#333"; skelCtx.lineWidth = 1;
+            for (let i = 0; i < 256; i += 12) {
+                skelCtx.beginPath(); skelCtx.moveTo(i, 0); skelCtx.lineTo(i, 256); skelCtx.stroke();
+                skelCtx.beginPath(); skelCtx.moveTo(0, i); skelCtx.lineTo(256, i); skelCtx.stroke();
+            }
+            skelCtx.imageSmoothingEnabled = false;
+
+            const testWeapon = player.equippedWeapon;
+
+            // --- MODO 1: CUERPO ---
+            if (currentGaniTab === 'body') {
+                const state = document.getElementById('edit-skel-state').value;
+                const dir = parseInt(document.getElementById('edit-skel-dir').value);
+                const frame = parseInt(document.getElementById('edit-skel-frame').value);
+
+                const fKey = getFrameKey(state, dir, frame);
+                if (!SKELETON_DATA.anchors[fKey]) SKELETON_DATA.anchors[fKey] = { handR: [12, 12], head: [0, 0] };
+                const anchors = SKELETON_DATA.anchors[fKey];
+
+                const baseRow = SKELETON_DATA.states[state] || 0;
+                let maxFrames = 4;
+                if (state === "walk_unarmed") maxFrames = 8;
+                else if (state === "walk_armed") maxFrames = 6;
+                const safeFrame = frame % maxFrames;
+
+                if (bodyImg && bodyImg.complete) skelCtx.drawImage(bodyImg, safeFrame * FRAME_WIDTH, (baseRow + dir) * FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT, centerX, centerY, FRAME_WIDTH * zoom, FRAME_HEIGHT * zoom);
+                if (headImg && headImg.complete) skelCtx.drawImage(headImg, (frame % 4) * FRAME_WIDTH, dir * FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT, centerX + ((anchors.head ? anchors.head[0] : 0) * zoom), centerY + ((anchors.head ? anchors.head[1] : 0) * zoom), FRAME_WIDTH * zoom, FRAME_HEIGHT * zoom);
+
+                const handGizmoX = centerX + (anchors.handR[0] * zoom) + ((FRAME_WIDTH / 2) * zoom);
+                const handGizmoY = centerY + (anchors.handR[1] * zoom) + ((FRAME_HEIGHT / 2) * zoom);
+                drawGizmo(handGizmoX, handGizmoY, '#3498db');
+
+                // --- DIBUJAR ARMA DE PREVISUALIZACIÓN EN LA MANO ---
+                if (testWeapon !== "none" && loadedWeaponSprites[testWeapon]) {
+                    const wSprite = loadedWeaponSprites[testWeapon];
+                    const wStats = weaponsDB[testWeapon] || {};
+                    const pX = (wStats.pivotX || 0) * zoom;
+                    const pY = (wStats.pivotY || 0) * zoom;
+                    const wW = wSprite.width / 8; const wH = wSprite.height / 6;
+
+                    skelCtx.save();
+                    skelCtx.translate(centerX + (anchors.handR[0] * zoom), centerY + (anchors.handR[1] * zoom));
+                    skelCtx.globalAlpha = 0.7;
+                    skelCtx.drawImage(wSprite, 0, 0, wW, wH, -pX - (wW * zoom / 2), -pY - (wH * zoom / 2), wW * zoom, wH * zoom);
+                    skelCtx.restore();
+                }
+            }
+            // --- MODO 2: ARMA PIVOTE ---
+            else if (currentGaniTab === 'weapon') {
+                if (testWeapon !== "none" && loadedWeaponSprites[testWeapon]) {
+                    const wSprite = loadedWeaponSprites[testWeapon];
+                    const wW = wSprite.width / 8; const wH = wSprite.height / 6;
+                    skelCtx.drawImage(wSprite, 0, 0, wW, wH, 128 - ((wW * zoom) / 2), 128 - ((wH * zoom) / 2), wW * zoom, wH * zoom);
+                    const stats = weaponsDB[testWeapon] || {};
+                    const pivotX = stats.pivotX || 0; const pivotY = stats.pivotY || 0;
+                    drawGizmo(128 + (pivotX * zoom), 128 + (pivotY * zoom), '#e74c3c');
+                } else {
+                    skelCtx.fillStyle = "white"; skelCtx.fillText("Equípate un arma primero", 100, 128);
+                }
+            }
+            // --- MODO 3: MELEE HITBOX (CAPAS Z-INDEX) ---
+            else if (currentGaniTab === 'melee') {
+                if (testWeapon === "none" || !loadedWeaponSprites[testWeapon]) {
+                    skelCtx.fillStyle = "white"; skelCtx.fillText("Equípate un arma primero", 100, 128); return;
+                }
+
+                const dir = player.frameY; const frame = player.frameX;
+                const state = player.isMoving ? 'walk_armed' : 'walk_armed';
+
+                if (dir !== currentEditDir) loadMeleeSlidersForDirection(dir);
+
+                // 🔥 FIX A PRUEBA DE BALAS PARA ANCLAS EN EL EDITOR 🔥
+                const fKey = getFrameKey(state, dir, frame);
+                const rawAnchors = SKELETON_DATA.anchors[fKey] || {};
+                const headAnc = rawAnchors.head || [0, 0];
+                const handAnc = rawAnchors.handR || [12, 12];
+                const safeFrame = frame % 6;
+
+                const handX = centerX + (handAnc[0] * zoom) + ((FRAME_WIDTH / 2) * zoom);
+                const handY = centerY + (handAnc[1] * zoom) + ((FRAME_HEIGHT / 2) * zoom);
+
+                const d = weaponsDB[testWeapon].dirStats ? (weaponsDB[testWeapon].dirStats[dir] || {}) : {};
+                const wSprite = loadedWeaponSprites[testWeapon];
+
+                // --- ROTACIÓN MATEMÁTICA AUTOMÁTICA (SOLO PARA MELEE) ---
+                let aimAngle = 0; let dirMult = 1;
+
+                // Si NO es ranged (ej. es una espada), aplicamos la rotación forzada
+                if (weaponsDB[testWeapon] && weaponsDB[testWeapon].type !== 'ranged') {
+                    if (dir === 0) aimAngle = Math.PI / 2;
+                    else if (dir === 1) { aimAngle = Math.PI; dirMult = -1; }
+                    else if (dir === 2) { aimAngle = 0; }
+                    else if (dir === 3) { aimAngle = -Math.PI / 2; dirMult = -1; }
+                }
+                // (Si ES ranged, aimAngle se queda en 0 y dirMult en 1, respetando el dibujo original)
+
+                // Capas
+                const aZ = d.aZ !== undefined ? d.aZ : 1;
+                const wZ = d.wZ !== undefined ? d.wZ : 1;
+                const hZ = d.hZ !== undefined ? d.hZ : 1;
+
+                let currentAnimRot = d.wRot || 0;
+                if (isPreviewSwinging) currentAnimRot += (d.wSwg || 90) * ((Date.now() - previewSwingStart) / 200);
+                const totalWeaponRot = aimAngle + (currentAnimRot * dirMult * Math.PI / 180);
+
+                // --- 🍕 DIBUJAR HITBOX O PUNTA DEL CAÑÓN ---
+                skelCtx.save();
+
+                // 🛑 EL FIX: Usamos 128 (El pecho) en lugar de centerX/Y (La esquina superior)
+                skelCtx.translate(128 + ((d.hitX || 0) * zoom), 128 + ((d.hitY || 0) * zoom));
+
+                if (weaponsDB[testWeapon] && weaponsDB[testWeapon].type === 'ranged') {
+                    // Si es pistola, dibujamos un punto amarillo (Muzzle)
+                    skelCtx.beginPath();
+                    skelCtx.arc(0, 0, 4, 0, Math.PI * 2);
+                    skelCtx.fillStyle = "yellow"; skelCtx.fill();
+                    skelCtx.strokeStyle = "orange"; skelCtx.lineWidth = 2; skelCtx.stroke();
+                    skelCtx.fillStyle = "white"; skelCtx.font = "10px sans-serif";
+                    skelCtx.fillText("Bala", 6, 4);
+                } else {
+                    // Si es Melee, dibujamos el cono de daño
+                    const trueHitAngle = aimAngle + ((d.hitRot || 0) * dirMult * Math.PI / 180);
+                    const halfWidRad = ((d.hitWid || 60) / 2) * Math.PI / 180;
+                    skelCtx.beginPath(); skelCtx.moveTo(0, 0);
+                    skelCtx.arc(0, 0, (d.hitLen || 40) * zoom, trueHitAngle - halfWidRad, trueHitAngle + halfWidRad);
+                    skelCtx.fillStyle = "rgba(231, 76, 60, 0.4)"; skelCtx.fill(); skelCtx.strokeStyle = "#e74c3c"; skelCtx.stroke();
+                }
+                skelCtx.restore();
+
+                // --- FUNCIONES DE DIBUJO MODULARES ---
+                const drawAccessory = () => {
+                    if (d.wTileX !== undefined && d.wTileX !== null && wSprite && wSprite.complete) {
+                        skelCtx.save();
+                        skelCtx.translate(centerX + ((d.aX || 0) * zoom), centerY + ((d.aY || 0) * zoom));
+                        skelCtx.rotate((d.aRot || 0) * Math.PI / 180);
+                        skelCtx.drawImage(wSprite, d.wTileX * 16, d.wTileY * 16, 16, 16, -(16 * zoom) / 2, -(16 * zoom) / 2, 16 * zoom, 16 * zoom);
+                        skelCtx.restore();
+                    }
+                };
+
+                const drawWeapon = () => {
+                    skelCtx.save();
+                    skelCtx.translate(handX + ((d.wX || 0) * zoom), handY + ((d.wY || 0) * zoom));
+                    skelCtx.rotate(totalWeaponRot);
+                    if (wSprite && wSprite.complete) {
+                        const pX = (weaponsDB[testWeapon].pivotX || 0) * zoom;
+                        const pY = (weaponsDB[testWeapon].pivotY || 0) * zoom;
+                        const frameW = wSprite.width / 8;
+                        const frameH = wSprite.height / 6;
+
+                        // 🔥 MAGIA DE PISTOLAS: Elegir la fila correcta 🔥
+                        let srcY = 0;
+                        if (weaponsDB[testWeapon] && weaponsDB[testWeapon].type === 'ranged') {
+                            let gunRow = dir; // 0=Abajo, 3=Arriba
+                            if (dir === 1) gunRow = 2; // Izquierda usa la fila 2
+                            if (dir === 2) gunRow = 1; // Derecha usa la fila 1
+                            srcY = gunRow * frameH;
+                        }
+
+                        skelCtx.drawImage(wSprite, 0, srcY, frameW, frameH, -pX - (frameW * zoom / 2), -pY - (frameH * zoom / 2), frameW * zoom, frameH * zoom);
+                    }
+                    skelCtx.restore();
+                };
+
+                const drawHand = () => {
+                    if (bodyImg && bodyImg.complete) {
+                        skelCtx.save();
+                        skelCtx.translate(handX + ((d.wX || 0) * zoom), handY + ((d.wY || 0) * zoom));
+                        skelCtx.rotate(totalWeaponRot);
+                        skelCtx.translate(((d.hX || 0) * zoom), ((d.hY || 0) * zoom));
+                        skelCtx.rotate((d.hRot || 0) * Math.PI / 180);
+                        skelCtx.drawImage(bodyImg, (d.tX || 13) * 16, (d.tY || 0) * 16, 16, 16, -(16 * zoom) / 2, -(16 * zoom) / 2, 16 * zoom, 16 * zoom);
+                        skelCtx.restore();
+                    }
+                };
+
+                // 🔥 SISTEMA Z-INDEX (ORDEN DE RENDERIZADO) 🔥
+                if (aZ === 0) drawAccessory();
+                if (wZ === 0) drawWeapon();
+                if (hZ === 0) drawHand();
+
+                // DIBUJAR CUERPO
+                if (bodyImg && bodyImg.complete) {
+                    const baseR = SKELETON_DATA.states[state] || 0;
+                    skelCtx.drawImage(bodyImg, safeFrame * FRAME_WIDTH, (baseR + dir) * FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT, centerX, centerY, FRAME_WIDTH * zoom, FRAME_HEIGHT * zoom);
+                }
+
+                // DIBUJAR CABEZA (AHORA USA headAnc SEGURO)
+                if (headImg && headImg.complete) {
+                    skelCtx.drawImage(headImg, (frame % 4) * FRAME_WIDTH, dir * FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT, centerX + (headAnc[0] * zoom), centerY + (headAnc[1] * zoom), FRAME_WIDTH * zoom, FRAME_HEIGHT * zoom);
+                }
+
+                // DIBUJAR LOS DEL FRENTE
+                if (aZ === 1) drawAccessory();
+                if (wZ === 1) drawWeapon();
+                if (hZ === 1) drawHand();
+            }
+        }
+
+        // --- EVENTOS DEL RATÓN INTELIGENTES ---
+        if (skelCanvas) {
+            const canvasContainer = document.getElementById('skel-canvas-container');
+
+            // --- DETECCIÓN DE CLIC EN EL CANVAS DEL EDITOR ---
+            skelCanvas.onmousedown = (e) => {
+                const rect = skelCanvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                const zoom = 3;
+
+                if (currentGaniTab === 'body') {
+                    // Buscar el punto azul (Mano)
+                    const state = document.getElementById('edit-skel-state').value;
+                    const dir = parseInt(document.getElementById('edit-skel-dir').value);
+                    const frame = parseInt(document.getElementById('edit-skel-frame').value);
+                    const fKey = getFrameKey(state, dir, frame);
+                    const anchors = SKELETON_DATA.anchors[fKey] || { handR: [12, 12] };
+
+                    const handX = 128 + (anchors.handR[0] * zoom);
+                    const handY = 128 + (anchors.handR[1] * zoom);
+
+                    if (Math.hypot(mx - handX, my - handY) < 20) draggingAnchor = 'handR';
+                }
+                else if (currentGaniTab === 'weapon') {
+                    // Buscar el punto rojo (Pivote)
+                    const wId = player.equippedWeapon;
+                    if (wId !== "none" && weaponsDB[wId]) {
+                        // El centro del canvas es 128,128
+                        const px = 128 + (weaponsDB[wId].pivotX * zoom);
+                        const py = 128 + (weaponsDB[wId].pivotY * zoom);
+
+                        if (Math.hypot(mx - px, my - py) < 20) draggingAnchor = 'pivot';
+                    }
+                }
+            };
+
+            // --- ARRASTRAR EL PUNTO ---
+            window.addEventListener('mousemove', (e) => {
+                if (!draggingAnchor) return;
+
+                const rect = skelCanvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                const zoom = 3;
+
+                if (draggingAnchor === 'handR' && currentGaniTab === 'body') {
+                    const state = document.getElementById('edit-skel-state').value;
+                    const dir = parseInt(document.getElementById('edit-skel-dir').value);
+                    const frame = parseInt(document.getElementById('edit-skel-frame').value);
+                    const fKey = getFrameKey(state, dir, frame);
+
+                    SKELETON_DATA.anchors[fKey].handR[0] = Math.round((mx - 128) / zoom);
+                    SKELETON_DATA.anchors[fKey].handR[1] = Math.round((my - 128) / zoom);
+                }
+                else if (draggingAnchor === 'pivot' && currentGaniTab === 'weapon') {
+                    const wId = player.equippedWeapon;
+                    if (wId !== "none" && weaponsDB[wId]) {
+                        const newPx = Math.round((mx - 128) / zoom);
+                        const newPy = Math.round((my - 128) / zoom);
+                        weaponsDB[wId].pivotX = newPx;
+                        weaponsDB[wId].pivotY = newPy;
+
+                        // 🛑 EL ESCUDO: Actualizar solo si las cajitas existen en el HTML
+                        const pXInput = document.getElementById('edit-pivot-x');
+                        const pYInput = document.getElementById('edit-pivot-y');
+                        if (pXInput) pXInput.value = newPx;
+                        if (pYInput) pYInput.value = newPy;
+                    }
+                }
+                updateSkelPreview();
+            });
+
+            window.addEventListener('mouseup', () => {
+                draggingAnchor = null;
+                if (canvasContainer) canvasContainer.style.cursor = 'grab';
+            });
+
+            // --- BOTÓN MAESTRO DE GUARDADO ---
+            document.getElementById('save-skel-btn').onclick = () => {
+                const btn = document.getElementById('save-skel-btn');
+                const originalText = btn.innerText;
+                btn.innerText = "Guardando...";
+
+                // 1. SI ESTAMOS EN LA PESTAÑA "CUERPO" (BODY)
+                if (currentGaniTab === 'body') {
+                    ws.send(JSON.stringify({
+                        type: 'save_skeleton_data',
+                        anchors: SKELETON_DATA.anchors
+                    }));
+                    btn.style.background = "#2ecc71";
+                    btn.innerText = "¡Cuerpo Guardado!";
+                }
+
+                // 2. SI ESTAMOS EN LA PESTAÑA "PIVOTE" (WEAPON)
+                else if (currentGaniTab === 'weapon') {
+                    const wId = player.equippedWeapon;
+                    if (wId !== "none" && weaponsDB[wId]) {
+                        ws.send(JSON.stringify({
+                            type: 'update_weapon_pivot',
+                            weaponId: wId,
+                            // 🛑 EL FIX: Leemos directo de la memoria RAM, no del HTML
+                            pivotX: weaponsDB[wId].pivotX || 0,
+                            pivotY: weaponsDB[wId].pivotY || 0
+                        }));
+                        btn.style.background = "#2ecc71";
+                        btn.innerText = "¡Pivote Guardado!";
+                    }
+                }
+
+                // 3. SI ESTAMOS EN LA PESTAÑA "MELEE"
+                else if (currentGaniTab === 'melee') {
+                    const wId = player.equippedWeapon;
+
+                    // 🛑 EL FIX: Quitamos la regla "&& weaponsDB[wId].type === 'melee'"
+                    if (wId !== "none" && weaponsDB[wId]) {
+
+                        const safeDirStats = (weaponsDB[wId].dirStats && weaponsDB[wId].dirStats[currentEditDir])
+                            ? weaponsDB[wId].dirStats[currentEditDir] : {};
+
+                        const updatedDirStats = {
+                            // Hitbox
+                            hitX: parseInt(document.getElementById('sl-hitx').value) || 0,
+                            hitY: parseInt(document.getElementById('sl-hity').value) || 0,
+                            hitRot: parseInt(document.getElementById('sl-hitrot').value) || 0,
+                            hitLen: parseInt(document.getElementById('sl-hitlen').value) || 40,
+                            hitWid: parseInt(document.getElementById('sl-hitwid').value) || 60,
+
+                            // Arma
+                            wZ: parseInt(document.getElementById('sl-wz').value) === 0 ? 0 : 1, // 🔥 NUEVO Z-INDEX
+                            wX: parseInt(document.getElementById('sl-wx').value) || 0,
+                            wY: parseInt(document.getElementById('sl-wy').value) || 0,
+                            wRot: parseInt(document.getElementById('sl-wrot').value) || 0,
+                            wSwg: parseInt(document.getElementById('sl-wswg').value) || 90,
+
+                            // Mano
+                            hZ: parseInt(document.getElementById('sl-hz').value) === 0 ? 0 : 1, // 🔥 NUEVO Z-INDEX
+                            hX: parseInt(document.getElementById('sl-hx').value) || 0,
+                            hY: parseInt(document.getElementById('sl-hy').value) || 0,
+                            hRot: parseInt(document.getElementById('sl-hrot').value) || 0,
+
+                            // Accesorio
+                            aZ: parseInt(document.getElementById('sl-az').value) === 0 ? 0 : 1, // 🔥 NUEVO Z-INDEX
+                            aX: parseInt(document.getElementById('sl-ax').value) || 0,
+                            aY: parseInt(document.getElementById('sl-ay').value) || 0,
+                            aRot: parseInt(document.getElementById('sl-arot').value) || 0,
+
+                            // Tiles del Sprite Picker
+                            tX: safeDirStats.tX !== undefined ? safeDirStats.tX : 13,
+                            tY: safeDirStats.tY !== undefined ? safeDirStats.tY : 0,
+                            wTileX: safeDirStats.wTileX !== undefined ? safeDirStats.wTileX : null,
+                            wTileY: safeDirStats.wTileY !== undefined ? safeDirStats.wTileY : null
+                        };
+
+                        ws.send(JSON.stringify({
+                            type: 'update_melee_stats',
+                            weaponId: wId,
+                            direction: currentEditDir,
+                            stats: updatedDirStats
+                        }));
+
+                        btn.style.background = "#2ecc71";
+                        btn.innerText = "¡Dirección Guardada!";
+                    } else {
+                        alert("⚠️ Equipa un arma tipo 'melee' para guardar estas estadísticas.");
+                        btn.innerText = originalText;
+                    }
+                }
+
+                // Devolver el botón a su estado normal después de 2 segundos
+                setTimeout(() => {
+                    btn.style.background = "#0e639c";
+                    btn.innerText = "💾 Guardar Esqueleto";
+                }, 2000);
+            };
+        }
+
+        function drawGizmo(x, y, color) {
+            skelCtx.fillStyle = color;
+            skelCtx.beginPath(); skelCtx.arc(x, y, 6, 0, Math.PI * 2); skelCtx.fill();
+            skelCtx.strokeStyle = "white"; skelCtx.stroke();
+        }
+
+        function drawModularCharacter(ctx, p, drawX, drawY, zoom) {
+            const dirIdx = p.frameY;
+            let state = "idle";
+            let maxFrames = 4;
+            let displayFrameX = p.frameX;
+
+            // --- LÓGICA DE ESTADOS Y ARMAS ---
+            if (p.equippedWeapon && p.equippedWeapon !== "none") {
+                state = "walk_armed";
+                if (p.isMoving) {
+                    maxFrames = 6;
+                } else {
+                    maxFrames = 6;
+                    displayFrameX = 0;
+                }
+            } else {
+                state = p.isMoving ? "walk_unarmed" : "idle";
+                maxFrames = p.isMoving ? 8 : 4;
+            }
+
+            const safeFrameX = displayFrameX % maxFrames;
+            const baseRow = SKELETON_DATA.states[state] || 0;
+            const offsetX = drawX - ((FRAME_WIDTH / 2) * zoom);
+            const offsetY = drawY - ((FRAME_HEIGHT / 2) * zoom);
+
+            // --- ANCLAS Y POSICIONES BASE (SEGURO) ---
+            const fKey = getFrameKey(state, dirIdx, safeFrameX);
+            const rawAnchors = SKELETON_DATA.anchors[fKey] || {};
+
+            const headAnc = rawAnchors.head || [0, 0];
+            const handAnc = rawAnchors.handR || [12, 12];
+
+            const handX = drawX + (handAnc[0] * zoom);
+            const handY = drawY + (handAnc[1] * zoom);
+
+            // --- EXTRAER ESTADÍSTICAS Y CAPAS (Z-INDEX) ---
+            let stats = {}; let d = {};
+            let aZ = 1, wZ = 1, hZ = 1;
+
+            if (p.equippedWeapon && p.equippedWeapon !== "none" && weaponsDB[p.equippedWeapon]) {
+                stats = weaponsDB[p.equippedWeapon];
+                d = stats.dirStats ? (stats.dirStats[dirIdx] || stats.dirStats[0] || {}) : {};
+                aZ = d.aZ !== undefined ? d.aZ : 1;
+                wZ = d.wZ !== undefined ? d.wZ : 1;
+                hZ = d.hZ !== undefined ? d.hZ : 1;
+            }
+
+            // --- ROTACIÓN MATEMÁTICA AUTOMÁTICA (SOLO PARA MELEE) ---
+            let baseAimAngle = 0; let dirM = 1;
+
+            // Si NO es ranged, aplicamos la rotación forzada
+            if (stats.type !== 'ranged') {
+                if (dirIdx === 0) baseAimAngle = Math.PI / 2;
+                else if (dirIdx === 1) { baseAimAngle = Math.PI; dirM = -1; }
+                else if (dirIdx === 3) { baseAimAngle = -Math.PI / 2; dirM = -1; }
+            }
+
+            // 🔥 LA ANIMACIÓN DINÁMICA DEL JUEGO REAL 🔥
+            let currentAnimRot = d.wRot || 0;
+            if (p.isSwinging) {
+                const elapsed = Date.now() - (p.swingStartTime || 0);
+                if (elapsed < (p.swingDuration || 200)) {
+                    const progress = elapsed / (p.swingDuration || 200);
+                    currentAnimRot += (d.wSwg || 90) * progress; // Usa el slider de golpe!
+                } else {
+                    p.isSwinging = false; // Finaliza la animación
+                }
+            }
+
+            // 🛑 EL FIX: Esta línea DEBE ir hasta abajo, para que sume el 'currentAnimRot' del espadazo
+            const totalWeaponRot = baseAimAngle + (currentAnimRot * dirM * Math.PI / 180);
+
+            // ==========================================================
+            // 🔥 MINI-FUNCIONES DE DIBUJO MODULAR (SINCRONIZADAS AL 100%) 🔥
+            // ==========================================================
+            const drawAccessory = () => {
+                if (p.equippedWeapon && loadedWeaponSprites[p.equippedWeapon] && d.wTileX !== undefined && d.wTileX !== null) {
+                    ctx.save();
+                    // FIX 1: Usar offsetX y offsetY para igualar el "Centro" del Editor
+                    ctx.translate(offsetX + ((d.aX || 0) * zoom), offsetY + ((d.aY || 0) * zoom));
+                    if (d.aRot) ctx.rotate(d.aRot * Math.PI / 180);
+                    ctx.drawImage(loadedWeaponSprites[p.equippedWeapon], d.wTileX * 16, d.wTileY * 16, 16, 16, -(16 * zoom) / 2, -(16 * zoom) / 2, 16 * zoom, 16 * zoom);
+                    ctx.restore();
+                }
+            };
+
+            const drawWeapon = () => {
+                if (p.equippedWeapon && loadedWeaponSprites[p.equippedWeapon]) {
+                    const wSprite = loadedWeaponSprites[p.equippedWeapon];
+                    const pivotX = (stats.pivotX || 0) * zoom;
+                    const pivotY = (stats.pivotY || 0) * zoom;
+
+                    ctx.save();
+                    ctx.translate(handX + ((d.wX || 0) * zoom), handY + ((d.wY || 0) * zoom));
+                    ctx.rotate(totalWeaponRot);
+
+                    const wW = wSprite.width / 8; const wH = wSprite.height / 6;
+
+                    // 🔥 MAGIA DE PISTOLAS EN EL JUEGO REAL 🔥
+                    let srcY = 0;
+                    if (stats.type === 'ranged') {
+                        let gunRow = dirIdx;
+                        if (dirIdx === 1) gunRow = 2;
+                        if (dirIdx === 2) gunRow = 1;
+                        srcY = gunRow * wH;
+                    }
+
+                    ctx.drawImage(wSprite, 0, srcY, wW, wH, -pivotX - ((wW * zoom) / 2), -pivotY - ((wH * zoom) / 2), wW * zoom, wH * zoom);
+                    ctx.restore();
+                }
+            };
+
+            const drawHand = () => {
+                if (p.equippedWeapon && loadedWeaponSprites[p.equippedWeapon] && bodyImg && bodyImg.complete) {
+                    ctx.save();
+                    // FIX 2: Anclaje y herencia de rotación EXACTAMENTE igual que en el Editor
+                    ctx.translate(handX + ((d.wX || 0) * zoom), handY + ((d.wY || 0) * zoom));
+                    ctx.rotate(totalWeaponRot); // Herencia del espadazo
+                    ctx.translate(((d.hX || 0) * zoom), ((d.hY || 0) * zoom)); // Deslizamiento sobre la espada
+                    ctx.rotate((d.hRot || 0) * Math.PI / 180); // Rotación pura de la muñeca
+
+                    ctx.drawImage(bodyImg, (d.tX || 13) * 16, (d.tY || 0) * 16, 16, 16, -(16 * zoom) / 2, -(16 * zoom) / 2, 16 * zoom, 16 * zoom);
+                    ctx.restore();
+                }
+            };
+
+            // ==========================================================
+            // 🔥 RENDERIZADO POR CAPAS (Z-INDEX) 🔥
+            // ==========================================================
+            if (aZ === 0) drawAccessory();
+            if (wZ === 0) drawWeapon();
+            if (hZ === 0) drawHand();
+
+            if (bodyImg && bodyImg.complete) {
+                ctx.drawImage(
+                    bodyImg,
+                    safeFrameX * FRAME_WIDTH, (baseRow + dirIdx) * FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT,
+                    offsetX, offsetY, FRAME_WIDTH * zoom, FRAME_HEIGHT * zoom
+                );
+            }
+
+            if (headImg && headImg.complete) {
+                const headSafeFrame = displayFrameX % 4;
+                ctx.drawImage(
+                    headImg,
+                    headSafeFrame * FRAME_WIDTH, dirIdx * FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT,
+                    offsetX + (headAnc[0] * zoom), offsetY + (headAnc[1] * zoom), FRAME_WIDTH * zoom, FRAME_HEIGHT * zoom
+                );
+            }
+
+            if (aZ === 1) drawAccessory();
+            if (wZ === 1) drawWeapon();
+            if (hZ === 1) drawHand();
+        }
+
+        function update() {
+            // Si por algún error el loading se queda pegado, lo forzamos a cerrar al movernos
+            if (isCinematicLoading && (player.vx !== 0 || player.vy !== 0 || isMouseDown)) {
+                isCinematicLoading = false;
+                document.getElementById('loading-screen').style.display = 'none';
+            }
+            // ... resto del código ...
             // --- EL FIX: Declarar el centro de la pantalla desde el principio ---
             const screenCenterX = window.innerWidth / 2;
             const screenCenterY = window.innerHeight / 2;
@@ -5964,47 +7058,52 @@
                 player.isMoving = false;
             }
 
-            // --- NUEVO: APLICAR CONTROLES DE PC (WASD + MOUSE) ---
-            if (!isTouchDevice && !player.isDead) {
+            /// --- CONTROLES HÍBRIDOS (MOUSE + TOUCH) ---
+            if (!player.isDead) {
 
-                // 1. Movimiento WASD
+                // 1. MOVIMIENTO
                 if (!player.isReloading) {
-                    let moveX = 0;
-                    let moveY = 0;
+                    // 💻 Si estamos en PC, usamos el teclado (WASD)
+                    if (!isTouchDevice) {
+                        let moveX = 0; let moveY = 0;
+                        if (keys.w) moveY -= 1;
+                        if (keys.s) moveY += 1;
+                        if (keys.a) moveX -= 1;
+                        if (keys.d) moveX += 1;
 
-                    if (keys.w) moveY -= 1;
-                    if (keys.s) moveY += 1;
-                    if (keys.a) moveX -= 1;
-                    if (keys.d) moveX += 1;
-
-                    // Normalizar para que no camine más rápido en diagonal
-                    if (moveX !== 0 && moveY !== 0) {
-                        const length = Math.sqrt(moveX * moveX + moveY * moveY);
-                        moveX /= length;
-                        moveY /= length;
+                        if (moveX !== 0 || moveY !== 0) {
+                            const length = Math.sqrt(moveX * moveX + moveY * moveY);
+                            moveX /= length; moveY /= length;
+                            player.vx = moveX * player.speed;
+                            player.vy = moveY * player.speed;
+                            player.isMoving = true;
+                        } else {
+                            player.vx = 0;
+                            player.vy = 0;
+                            player.isMoving = false;
+                        }
+                    } else {
+                        // 📱 Si estamos en CELULAR, el joystick izquierdo ya configuró vx/vy en tiempo real
+                        player.isMoving = (player.vx !== 0 || player.vy !== 0);
                     }
-
-                    player.vx = moveX * player.speed;
-                    player.vy = moveY * player.speed;
-                    player.isMoving = (moveX !== 0 || moveY !== 0);
                 }
 
-                // 2. Apuntar con el Mouse (Matemática conectada a tu variable shootAngle)
-                const dx = mouseX - screenCenterX;
-                const dy = mouseY - screenCenterY;
-                shootAngle = Math.atan2(dy, dx);
+                // 2. APUNTADO Y DISPARO
+                if (!editMode) {
+                    // 💻 Si estamos en PC, el Ratón controla hacia dónde miramos SIEMPRE
+                    if (!isTouchDevice) {
+                        const dx = mouseX - screenCenterX;
+                        const dy = mouseY - screenCenterY;
+                        shootAngle = Math.atan2(dy, dx);
 
-                // 3. Disparar (Clic Izquierdo)
-                // Disparamos SOLAMENTE si NO estamos en Modo Edición y NO estamos muertos
-                if (isMouseDown && player.equippedWeapon !== "none" && !editMode && !player.isDead) {
-                    isShooting = true;
-                } else {
-                    isShooting = false;
-                }
-
-                // --- EL FIX: Apagar gatillo táctil a la fuerza si morimos ---
-                if (player.isDead) {
-                    isShooting = false;
+                        if (isMouseDown && player.equippedWeapon !== "none") {
+                            isShooting = true;
+                        } else {
+                            isShooting = false;
+                        }
+                    }
+                    // 📱 Si estamos en CELULAR, el Joystick Derecho (aimZone) ya controló 
+                    // 'shootAngle' e 'isShooting' al mover el dedo, no sobreescribimos nada aquí.
                 }
             }
 
@@ -6087,42 +7186,116 @@
                 player.worldY -= player.vy; // Hit a wall vertically? Undo Y!
             }
 
-            // --- 3. SHOOTING & RELOADING PHYSICS ---
+            // --- 3. SHOOTING & COMBAT PHYSICS ---
             const currentWeaponStats = WEAPONS[player.equippedWeapon] || WEAPONS["none"];
 
-
-            // Bloquear el disparo si está en zona segura
             if (isShooting && player.equippedWeapon !== "none" && !player.isReloading && !player.inSafeZone) {
-                if (Date.now() - lastShotTime > currentWeaponStats.fireRate) {
+                if (Date.now() - lastShotTime > (currentWeaponStats.fireRate || 300)) {
 
-                    if (player.ammo > 0) {
-                        // DISPARAR
-                        player.ammo--;
-                        let spawnX = player.worldX; let spawnY = player.worldY;
+                    // =========================================================
+                    // 🔥 LÓGICA DE COMBATE MELEE (El Hitbox de Pizza) 🔥
+                    // =========================================================
+                    if (currentWeaponStats.type === 'melee') {
+                        // 1. Activar animación visual del jugador
+                        player.isSwinging = true;
+                        player.swingStartTime = Date.now();
+                        player.swingDuration = 200; // Duración en ms
 
-                        if (player.frameY === 0) { spawnX += 3; spawnY += 18; }
-                        else if (player.frameY === 1) { spawnX += 18; spawnY += 0; }
-                        else if (player.frameY === 2) { spawnX -= 18; spawnY -= 1; }
-                        else if (player.frameY === 3) { spawnX -= 5; spawnY -= 15; }
-
-                        // Guardar para dibujar el fogonazo
-                        player.lastShotX = spawnX; player.lastShotY = spawnY;
-
-                        spawnProjectile(spawnX, spawnY, shootAngle, myId, player.equippedWeapon);
-                        lastShotTime = Date.now();
-
+                        // 🛑 NUEVO: Avisar al servidor para que los demás vean tu animación
                         if (ws.readyState === WebSocket.OPEN) {
-                            ws.send(JSON.stringify({
-                                type: 'shoot', x: spawnX, y: spawnY, angle: shootAngle, weaponId: player.equippedWeapon
-                            }));
+                            ws.send(JSON.stringify({ type: 'melee_swing', weaponId: player.equippedWeapon }));
                         }
-                    } else {
-                        // RECARGAR AUTOMÁTICAMENTE
-                        player.isReloading = true;
-                        setTimeout(() => {
-                            player.ammo = currentWeaponStats.magSize;
-                            player.isReloading = false;
-                        }, currentWeaponStats.reloadTime);
+
+                        // 2. Extraer datos matemáticos del Gani Editor
+                        const dir = player.frameY;
+                        let aimAngle = 0; let dirMult = 1;
+                        if (dir === 0) aimAngle = Math.PI / 2;
+                        else if (dir === 1) { aimAngle = Math.PI; dirMult = -1; }
+                        else if (dir === 2) { aimAngle = 0; }
+                        else if (dir === 3) { aimAngle = -Math.PI / 2; dirMult = -1; }
+
+                        const d = currentWeaponStats.dirStats ? (currentWeaponStats.dirStats[dir] || {}) : {};
+                        const hitRotRad = (d.hitRot || 0) * Math.PI / 180;
+                        const trueHitAngle = aimAngle + (hitRotRad * dirMult);
+                        const halfWidRad = ((d.hitWid || 60) / 2) * Math.PI / 180;
+                        const hitRange = d.hitLen || 40;
+
+                        const hitOriginX = player.worldX + (d.hitX || 0);
+                        const hitOriginY = player.worldY + (d.hitY || 0);
+
+                        // 3. Escanear a todos los enemigos vivos
+                        for (let id in otherPlayers) {
+                            let enemy = otherPlayers[id];
+                            if (enemy.worldX !== undefined && !enemy.isDead) {
+                                // A. ¿Está suficientemente cerca?
+                                const dist = Math.hypot(enemy.worldX - hitOriginX, enemy.worldY - hitOriginY);
+                                if (dist <= hitRange) {
+                                    // B. ¿Está dentro del ángulo de la espada?
+                                    const angleToEnemy = Math.atan2(enemy.worldY - hitOriginY, enemy.worldX - hitOriginX);
+                                    let angleDiff = angleToEnemy - trueHitAngle;
+
+                                    // Normalizar para no volvernos locos con Pi
+                                    while (angleDiff <= -Math.PI) angleDiff += Math.PI * 2;
+                                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+                                    if (Math.abs(angleDiff) <= halfWidRad) {
+                                        // ¡GOLPE CONFIRMADO! Envía el daño al server
+                                        if (ws.readyState === WebSocket.OPEN) {
+                                            ws.send(JSON.stringify({ type: 'damage_player', targetId: id, weaponId: player.equippedWeapon }));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        lastShotTime = Date.now();
+                    }
+                    // =========================================================
+                    // 🔫 LÓGICA DE DISPARO RANGED (Pistolas)
+                    // =========================================================
+                    else {
+                        if (player.ammo > 0) {
+                            player.ammo--;
+
+                            // 🔥 LEER LA PUNTA DEL CAÑÓN DESDE EL EDITOR GANI 🔥
+                            const dir = player.frameY;
+                            const d = currentWeaponStats.dirStats ? (currentWeaponStats.dirStats[dir] || {}) : {};
+
+                            // Nace del pecho + lo que hayas movido los sliders de Hit X y Hit Y
+                            let spawnX = player.worldX + (d.hitX || 0);
+                            let spawnY = player.worldY + (d.hitY || 0);
+
+                            // 🔥 EL FIX DE PARALAJE PARA PC (Ratón) 🔥
+                            let finalAngle = shootAngle; // Por defecto usa el del Joystick (Celular)
+                            if (!isTouchDevice) {
+                                // Convertir la mira del ratón a coordenadas del mapa real
+                                const mouseWorldX = player.worldX + (mouseX - window.innerWidth / 2) / zoomLevel;
+                                const mouseWorldY = player.worldY + (mouseY - window.innerHeight / 2) / zoomLevel;
+                                // Calcular ángulo desde el cañón de la pistola hacia el ratón
+                                finalAngle = Math.atan2(mouseWorldY - spawnY, mouseWorldX - spawnX);
+                            }
+
+                            player.lastShotX = spawnX; player.lastShotY = spawnY;
+
+                            // Disparamos con el ángulo corregido
+                            spawnProjectile(spawnX, spawnY, finalAngle, myId, player.equippedWeapon);
+                            lastShotTime = Date.now();
+
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({
+                                    type: 'shoot',
+                                    x: spawnX,
+                                    y: spawnY,
+                                    angle: finalAngle, // Mandamos el ángulo perfecto al servidor
+                                    weaponId: player.equippedWeapon
+                                }));
+                            }
+                        } else {
+                            player.isReloading = true;
+                            setTimeout(() => {
+                                player.ammo = currentWeaponStats.magSize;
+                                player.isReloading = false;
+                            }, currentWeaponStats.reloadTime);
+                        }
                     }
                 }
             }
@@ -6130,31 +7303,35 @@
             // --- ACTUALIZAR UI DE MUNICIÓN EN TIEMPO REAL ---
             const ammoDisplay = document.getElementById('ammo-display');
             if (player.equippedWeapon !== "none" && WEAPONS[player.equippedWeapon]) {
-                ammoDisplay.style.display = 'flex'; // Usar flex para centrado perfecto
 
-                // ALINEACIÓN PERFECTA: Leer la posición Y de la ranura activa
-                const activeSlotElem = document.getElementById('hud-slot-' + player.activeSlot);
-                if (activeSlotElem) {
-                    const rect = activeSlotElem.getBoundingClientRect();
-                    // Colocar el contador exactamente a la mitad de la ranura
-                    ammoDisplay.style.top = (rect.top + rect.height / 2) + 'px';
-                    ammoDisplay.style.transform = 'translateY(-50%)';
-                }
-
-                const ammoCurrentElem = document.getElementById('ammo-current');
-                const ammoMaxElem = document.getElementById('ammo-max');
-                const maxAmmo = WEAPONS[player.equippedWeapon].magSize;
-
-                if (player.isReloading) {
-                    ammoCurrentElem.style.color = "#e74c3c";
-                    ammoCurrentElem.innerText = "↻";
-                    ammoMaxElem.innerText = "RELOAD";
-                    ammoDisplay.style.borderColor = "#e74c3c";
+                // 🛑 EL FIX: Ocultar UI si es Melee
+                if (WEAPONS[player.equippedWeapon].type === 'melee') {
+                    ammoDisplay.style.display = 'none';
                 } else {
-                    ammoCurrentElem.style.color = player.ammo > (maxAmmo * 0.3) ? "#2ecc71" : "#e74c3c";
-                    ammoCurrentElem.innerText = player.ammo;
-                    ammoMaxElem.innerText = maxAmmo;
-                    ammoDisplay.style.borderColor = "#f1c40f";
+                    ammoDisplay.style.display = 'flex';
+
+                    const activeSlotElem = document.getElementById('hud-slot-' + player.activeSlot);
+                    if (activeSlotElem) {
+                        const rect = activeSlotElem.getBoundingClientRect();
+                        ammoDisplay.style.top = (rect.top + rect.height / 2) + 'px';
+                        ammoDisplay.style.transform = 'translateY(-50%)';
+                    }
+
+                    const ammoCurrentElem = document.getElementById('ammo-current');
+                    const ammoMaxElem = document.getElementById('ammo-max');
+                    const maxAmmo = WEAPONS[player.equippedWeapon].magSize;
+
+                    if (player.isReloading) {
+                        ammoCurrentElem.style.color = "#e74c3c";
+                        ammoCurrentElem.innerText = "↻";
+                        ammoMaxElem.innerText = "RELOAD";
+                        ammoDisplay.style.borderColor = "#e74c3c";
+                    } else {
+                        ammoCurrentElem.style.color = player.ammo > (maxAmmo * 0.3) ? "#2ecc71" : "#e74c3c";
+                        ammoCurrentElem.innerText = player.ammo;
+                        ammoMaxElem.innerText = maxAmmo;
+                        ammoDisplay.style.borderColor = "#f1c40f";
+                    }
                 }
             } else {
                 ammoDisplay.style.display = 'none';
@@ -6202,11 +7379,15 @@
                         // Verificamos que no sea el dueño Y que el enemigo no esté muerto (!enemy.isDead)
                         if (enemy.worldX !== undefined && !enemy.isDead && p.owner !== id && Math.hypot(p.x - enemy.worldX, p.y - enemy.worldY) < HITBOX_RADIUS) {
                             hitSomeone = true;
-
                             // SOLO SI YO DISPARÉ LA BALA, YO LE DIGO AL SERVIDOR QUE HUBO DAÑO
                             if (p.owner === myId) {
                                 if (ws.readyState === WebSocket.OPEN) {
-                                    ws.send(JSON.stringify({ type: 'damage_player', targetId: id }));
+                                    ws.send(JSON.stringify({
+                                        type: 'damage_player',
+                                        targetId: id,
+                                        // 🛑 EL FIX: Mandar el ID del arma para que el servidor sepa el daño
+                                        weaponId: p.weapon
+                                    }));
                                 }
                             }
                             break;
@@ -6329,221 +7510,79 @@
                 player.frameY = 0;
             }
 
-            // --- A. DRAW OTHER PLAYERS ---
+            // === A. DRAW OTHER PLAYERS ===
             for (let id in otherPlayers) {
                 const p = otherPlayers[id];
                 if (!p || p.worldX === undefined || !p.username) continue;
 
-                // --- EL FIX: Estas 4 líneas deben ir ADENTRO del ciclo for ---
-                const pWeaponSprite = loadedWeaponSprites[p.equippedWeapon];
-                const gunReady = pWeaponSprite && pWeaponSprite.complete && pWeaponSprite.naturalWidth > 0;
-                const gunFrameW = gunReady ? pWeaponSprite.width / 8 : 0;
-                const gunFrameH = gunReady ? pWeaponSprite.height / 6 : 0;
-
-                // --- 1. THE SMOOTHING FIX ---
-                // Lowered from 0.3 to 0.15. This stretches their movement over the 
-                // full 50ms gap between network packets so they never completely stop!
+                // Suavizado de red
                 p.worldX += (p.targetX - p.worldX) * 0.15;
                 p.worldY += (p.targetY - p.worldY) * 0.15;
 
-                // --- 2. THE LOCAL ANIMATION FIX ---
-                // We advance their animation frames locally at 60fps so their legs 
-                // move buttery smooth, instead of waiting for the 20fps network!
+                // Animación local para otros jugadores
                 p.tickCount = p.tickCount || 0;
+                p.tickCount++;
 
-                if (p.isMoving) {
-                    p.tickCount++;
-                    if (p.tickCount > player.ticksPerFrame) {
-                        p.tickCount = 0;
-                        p.frameX = (p.frameX + 1) % 8;
-                    }
+                const speedMod = p.isMoving ? 1 : 2;
+
+                let maxFrames = 4;
+                if (p.equippedWeapon && p.equippedWeapon !== "none") {
+                    maxFrames = p.isMoving ? 6 : 1;
                 } else {
-                    if (p.equippedWeapon === "none") {
-                        p.tickCount++;
-                        if (p.tickCount > player.ticksPerFrame) {
-                            p.tickCount = 0;
-                            p.frameX = (p.frameX + 1) % 8;
-                        }
-                    }
+                    maxFrames = p.isMoving ? 8 : 4;
                 }
 
-                let pImage = (p.equippedWeapon !== "none") ? walkAimSprite : (p.isMoving ? walkSprite : idleSprite);
-
-                if (!pImage.complete || pImage.naturalWidth === 0) continue;
-                if (p.equippedWeapon !== "none" && p.frameY > 3) p.frameY = 0;
-
-                const pFrameWidth = pImage.width / 8;
-                const pFrameHeight = pImage.height / 6;
-
-                // ... (Keep the rest of your drawing logic exactly the same from here down!)
-
-                const pScaledWidth = pFrameWidth * zoomLevel;
-                const pScaledHeight = pFrameHeight * zoomLevel;
-                const pDrawX = Math.round(screenCenterX + ((p.worldX - player.worldX) * zoomLevel) - (pScaledWidth / 2));
-
-                // The Body's Y Coordinate (STATIC)
-                let pDrawY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel) - (pScaledHeight / 2));
-
-                // --- NEW: THE INDEPENDENT GUN WOBBLE ---
-                let pGunOffsetY = 0;
-                if (!p.isMoving && p.equippedWeapon !== "none") {
-                    pGunOffsetY = (Math.floor(Date.now() / 450) % 2) * zoomLevel;
+                if (p.tickCount > player.ticksPerFrame * speedMod) {
+                    p.tickCount = 0;
+                    p.frameX = (p.frameX + 1) % maxFrames;
                 }
+                if (p.frameY > 3) p.frameY = 0; // Escudo anti-crash
+                const pDrawX = Math.round(screenCenterX + ((p.worldX - player.worldX) * zoomLevel));
+                const pDrawY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel));
 
-                let pDrawFrameX = p.frameX;
-                if (p.equippedWeapon !== "none" && p.frameY === 1) pDrawFrameX = 7 - p.frameX;
-
-                const isFacingDown = (p.frameY === 0);
-
-                // --- THE MOBILE FIX: ESTADO VISUAL COMPATIBLE CON CELULARES ---
                 const timeSinceHit = Date.now() - (p.lastHitTime || 0);
                 const isHit = (timeSinceHit < 150);
 
-                if (p.isDead) {
-                    ctx.globalAlpha = 0.3; // Modo Fantasma (100% compatible en móviles)
-                } else if (isHit) {
-                    // En lugar de filtro, usamos un aura roja intensa y bajamos la opacidad para que parpadee
-                    ctx.shadowBlur = 20 * zoomLevel;
-                    ctx.shadowColor = "red";
-                    ctx.globalAlpha = 0.6;
-                }
+                if (p.isDead) ctx.globalAlpha = 0.3;
+                else if (isHit) { ctx.shadowBlur = 20 * zoomLevel; ctx.shadowColor = "red"; ctx.globalAlpha = 0.6; }
 
-                // 1. Draw Gun BEHIND
-                if (!isFacingDown && p.equippedWeapon !== "none" && gunReady) {
-                    ctx.drawImage(pWeaponSprite, pDrawFrameX * gunFrameW, p.frameY * gunFrameH, gunFrameW, gunFrameH, pDrawX, pDrawY + pGunOffsetY, pScaledWidth, pScaledHeight);
-                }
+                // 👇 DIBUJO LIMPIO DEL ENSAMBLADOR 👇
+                drawModularCharacter(ctx, p, pDrawX, pDrawY, zoomLevel);
 
-                // --- 2. DRAW BODY IN TWO HALVES ---
-                const pHalfH = pFrameHeight / 2;
-                const pScaleHalfH = pScaledHeight / 2;
-
-                // 2a. Bottom Half (Legs)
-                ctx.drawImage(pImage, pDrawFrameX * pFrameWidth, p.frameY * pFrameHeight + pHalfH, pFrameWidth, pHalfH, pDrawX, pDrawY + pScaleHalfH, pScaledWidth, pScaleHalfH);
-
-                // 2b. Top Half (Head & Torso)
-                ctx.drawImage(pImage, pDrawFrameX * pFrameWidth, p.frameY * pFrameHeight, pFrameWidth, pHalfH, pDrawX, pDrawY + pGunOffsetY, pScaledWidth, pScaleHalfH);
-
-                // 3. Draw Gun IN FRONT
-                if (isFacingDown && p.equippedWeapon !== "none" && gunReady) {
-                    ctx.drawImage(pWeaponSprite, pDrawFrameX * gunFrameW, p.frameY * gunFrameH, gunFrameW, gunFrameH, pDrawX, pDrawY + pGunOffsetY, pScaledWidth, pScaledHeight);
-                }
-
-                // Si le pegaron, dibujamos una mancha de sangre/impacto roja sobre su pecho
                 if (isHit && !p.isDead) {
                     ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-                    ctx.beginPath();
-                    ctx.arc(pDrawX + (pScaledWidth / 2), pDrawY + (pScaledHeight / 2), 12 * zoomLevel, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(pDrawX, pDrawY, 12 * zoomLevel, 0, Math.PI * 2); ctx.fill();
                 }
-
-                // SIEMPRE resetear los efectos para no manchar el resto del juego
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1.0;
+                ctx.shadowBlur = 0; ctx.globalAlpha = 1.0;
             }
 
-            // --- B. DRAW LOCAL PLAYER ---
-            const scaledWidth = frameWidth * zoomLevel;
-            const scaledHeight = frameHeight * zoomLevel;
+            // === B. DRAW LOCAL PLAYER ===
+            if (player.frameY > 3) player.frameY = 0;
 
-            // EL FIX: Usar 'realPlayerX' para que tu personaje se quede físicamente en el piso 
-            // aunque la cámara cinemática se haya ido a volar a otro lado.
-            const drawX = Math.round(screenCenterX + ((realPlayerX - player.worldX) * zoomLevel) - (scaledWidth / 2));
-            let drawY = Math.round(screenCenterY + ((realPlayerY - player.worldY) * zoomLevel) - (scaledHeight / 2));
+            const localTimeSinceHit = Date.now() - (player.lastHitTime || 0);
+            const localIsHit = (localTimeSinceHit < 150);
 
-            // --- NEW: THE INDEPENDENT GUN WOBBLE (LOCAL) ---
-            let localGunOffsetY = 0;
-            if (!player.isMoving && player.equippedWeapon !== "none") {
-                localGunOffsetY = (Math.floor(Date.now() / 450) % 2) * zoomLevel;
+            if (player.isDead) ctx.globalAlpha = 0.3;
+            else if (localIsHit) { ctx.shadowBlur = 20 * zoomLevel; ctx.shadowColor = "red"; ctx.globalAlpha = 0.6; }
+
+            // 👇 DIBUJO LIMPIO DEL ENSAMBLADOR PARA TI 👇
+            drawModularCharacter(ctx, player, screenCenterX, screenCenterY, zoomLevel);
+
+            if (localIsHit && !player.isDead) {
+                ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+                ctx.beginPath(); ctx.arc(screenCenterX, screenCenterY, 12 * zoomLevel, 0, Math.PI * 2); ctx.fill();
             }
+            ctx.shadowBlur = 0; ctx.globalAlpha = 1.0;
 
-            let localDrawFrameX = player.frameX;
-            if (player.equippedWeapon !== "none" && player.frameY === 1) localDrawFrameX = 7 - player.frameX;
-
-            const localFacingDown = (player.frameY === 0);
-            const localWeaponSprite = loadedWeaponSprites[player.equippedWeapon];
-            const gunReady = localWeaponSprite && localWeaponSprite.complete && localWeaponSprite.naturalWidth > 0;
-            const localGunW = gunReady ? localWeaponSprite.width / 8 : 0;
-            const localGunH = gunReady ? localWeaponSprite.height / 6 : 0;
-
-            if (player.currentImage.complete && player.currentImage.naturalWidth > 0) {
-
-                // --- THE MOBILE FIX: TU PROPIO ESTADO VISUAL ---
-                const localTimeSinceHit = Date.now() - (player.lastHitTime || 0);
-                const localIsHit = (localTimeSinceHit < 150);
-
-                if (player.isDead) {
-                    ctx.globalAlpha = 0.3; // Fantasma
-                } else if (localIsHit) {
-                    ctx.shadowBlur = 20 * zoomLevel;
-                    ctx.shadowColor = "red";
-                    ctx.globalAlpha = 0.6; // Parpadeo rojo
-                }
-
-                // 1. Draw Gun BEHIND 
-                if (!localFacingDown && player.equippedWeapon !== "none" && gunReady) {
-                    ctx.drawImage(localWeaponSprite, localDrawFrameX * localGunW, player.frameY * localGunH, localGunW, localGunH, drawX, drawY + localGunOffsetY, scaledWidth, scaledHeight);
-                }
-
-                // --- 2. DRAW BODY IN TWO HALVES ---
-                const localHalfH = frameHeight / 2;
-                const localScaleHalfH = scaledHeight / 2;
-
-                // 2a. Bottom Half (Legs)
-                ctx.drawImage(player.currentImage, localDrawFrameX * frameWidth, player.frameY * frameHeight + localHalfH, frameWidth, localHalfH, drawX, drawY + localScaleHalfH, scaledWidth, localScaleHalfH);
-
-                // 2b. Top Half (Head & Torso)
-                ctx.drawImage(player.currentImage, localDrawFrameX * frameWidth, player.frameY * frameHeight, frameWidth, localHalfH, drawX, drawY + localGunOffsetY, scaledWidth, localScaleHalfH);
-
-                // 3. Draw Gun IN FRONT 
-                if (localFacingDown && player.equippedWeapon !== "none" && gunReady) {
-                    ctx.drawImage(localWeaponSprite, localDrawFrameX * localGunW, player.frameY * localGunH, localGunW, localGunH, drawX, drawY + localGunOffsetY, scaledWidth, scaledHeight);
-                }
-
-                // Sangre/Mancha en el pecho al recibir daño
-                if (localIsHit && !player.isDead) {
-                    ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-                    ctx.beginPath();
-                    ctx.arc(drawX + (scaledWidth / 2), drawY + (scaledHeight / 2), 12 * zoomLevel, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1.0;
-
-                // --- NUEVO: CLONAR AL JUGADOR EN LA ISLA DINÁMICA ---
-                const avatarCanvas = document.getElementById('island-avatar');
-                if (avatarCanvas) {
-                    const aCtx = avatarCanvas.getContext('2d');
-                    aCtx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height); // Limpiar frame anterior
-
-                    // Escalar para que tu sprite encaje perfectamente en el cuadro de 40x40
-                    const aScale = 24 / Math.max(frameWidth, frameHeight);
-                    const aW = frameWidth * aScale;
-                    const aH = frameHeight * aScale;
-                    const aX = (avatarCanvas.width - aW) / 2;
-                    const aY = (avatarCanvas.height - aH) / 2;
-
-                    const aHalfH = frameHeight / 2;
-                    const aScaleHalfH = aH / 2;
-                    const aGunScaleW = localGunW * aScale;
-                    const aGunScaleH = localGunH * aScale;
-                    // Escalar el "respiro" del arma
-                    const aGunOffsetY = localGunOffsetY ? (localGunOffsetY / zoomLevel) * aScale : 0;
-
-                    if (player.isDead) aCtx.globalAlpha = 0.3;
-
-                    // Dibujar exactamente con el mismo frame de animación que tienes en el mapa
-                    if (!localFacingDown && player.equippedWeapon !== "none" && gunReady) {
-                        aCtx.drawImage(localWeaponSprite, localDrawFrameX * localGunW, player.frameY * localGunH, localGunW, localGunH, aX, aY + aGunOffsetY, aGunScaleW, aGunScaleH);
-                    }
-                    aCtx.drawImage(player.currentImage, localDrawFrameX * frameWidth, player.frameY * frameHeight + aHalfH, frameWidth, aHalfH, aX, aY + aScaleHalfH, aW, aScaleHalfH);
-                    aCtx.drawImage(player.currentImage, localDrawFrameX * frameWidth, player.frameY * frameHeight, frameWidth, aHalfH, aX, aY + aGunOffsetY, aW, aScaleHalfH);
-
-                    if (localFacingDown && player.equippedWeapon !== "none" && gunReady) {
-                        aCtx.drawImage(localWeaponSprite, localDrawFrameX * localGunW, player.frameY * localGunH, localGunW, localGunH, aX, aY + aGunOffsetY, aGunScaleW, aGunScaleH);
-                    }
-                    aCtx.globalAlpha = 1.0;
-                }
+            // --- ISLA DINÁMICA AVATAR (Simplificado para evitar lag) ---
+            const avatarCanvas = document.getElementById('island-avatar');
+            if (avatarCanvas && headImg && headImg.complete) {
+                const aCtx = avatarCanvas.getContext('2d');
+                aCtx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
+                if (player.isDead) aCtx.globalAlpha = 0.3;
+                // Antes decía 48, 48, 48, 48
+                aCtx.drawImage(headImg, player.frameX * FRAME_SIZE, player.frameY * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE, -4, -8, 24, 24);
+                aCtx.globalAlpha = 1.0;
             }
 
             // --- NEW: DRAW PROJECTILES (GHOSTLY GREEN ORBS) ---
@@ -6698,25 +7737,36 @@
             }
 
             // === 5. DRAW NAMETAGS, BUBBLES & HEALTH BARS ===
+            const scaledWidth = FRAME_SIZE * zoomLevel;
+            const scaledHeight = FRAME_SIZE * zoomLevel;
+
             for (let id in otherPlayers) {
                 const p = otherPlayers[id];
                 if (!p || p.worldX === undefined || !p.username) continue;
 
-                const pDrawX = Math.round(screenCenterX + ((p.worldX - player.worldX) * zoomLevel) - (scaledWidth / 2));
-                const pDrawY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel) - (scaledHeight / 2));
+                // Centro exacto del otro jugador
+                const pCenterX = Math.round(screenCenterX + ((p.worldX - player.worldX) * zoomLevel));
+                const pCenterY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel));
+
+                // Esquina superior izquierda (para que la barra y el nombre floten arriba de la cabeza)
+                const pTopLeftX = pCenterX - (scaledWidth / 2);
+                const pTopLeftY = pCenterY - (scaledHeight / 2);
 
                 const currentHp = p.hp !== undefined ? p.hp : 100;
-                drawHealthBar(pDrawX, pDrawY, currentHp, 100, scaledWidth, p.lastHpUpdateTime);
-                drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pDrawX, pDrawY, scaledWidth);
-                drawNametag(p.username, pDrawX, pDrawY, scaledWidth, scaledHeight, getColorForString(p.username));
-                drawSquadTag(p, pDrawX, pDrawY, scaledWidth, scaledHeight); // <--- AÑADIDO PARA OTROS
+                drawHealthBar(pTopLeftX, pTopLeftY, currentHp, 100, scaledWidth, p.lastHpUpdateTime);
+                drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pTopLeftX, pTopLeftY, scaledWidth);
+                drawNametag(p.username, pTopLeftX, pTopLeftY, scaledWidth, scaledHeight, getColorForString(p.username));
+                drawSquadTag(p, pTopLeftX, pTopLeftY, scaledWidth, scaledHeight);
             }
 
-            // Dibujar TU barra de vida
-            drawHealthBar(drawX, drawY, player.hp, player.maxHp, scaledWidth, player.lastHpUpdateTime);
-            drawDynamicBubble(player.message, player.messageTimer, player.isTyping, drawX, drawY, scaledWidth);
-            drawNametag(player.username, drawX, drawY, scaledWidth, scaledHeight, "#f1c40f");
-            drawSquadTag(player, drawX, drawY, scaledWidth, scaledHeight); // <--- AÑADIDO PARA TI
+            // Dibujar TU barra de vida, nombre y clan
+            const myTopLeftX = screenCenterX - (scaledWidth / 2);
+            const myTopLeftY = screenCenterY - (scaledHeight / 2);
+
+            drawHealthBar(myTopLeftX, myTopLeftY, player.hp, player.maxHp || 100, scaledWidth, player.lastHpUpdateTime);
+            drawDynamicBubble(player.message, player.messageTimer, player.isTyping, myTopLeftX, myTopLeftY, scaledWidth);
+            drawNametag(player.username, myTopLeftX, myTopLeftY, scaledWidth, scaledHeight, "#f1c40f");
+            drawSquadTag(player, myTopLeftX, myTopLeftY, scaledWidth, scaledHeight);
 
             if (player.messageTimer > 0) player.messageTimer--;
 
@@ -6755,7 +7805,11 @@
                 player.worldX = realPlayerX;
                 player.worldY = realPlayerY;
             }
-
+            // --- ACTUALIZAR EL LABORATORIO MELEE EN VIVO ---
+            const skelEd = document.getElementById('skeleton-editor');
+            if (skelEd && skelEd.style.display !== 'none' && currentGaniTab === 'melee') {
+                updateSkelPreview();
+            }
             requestAnimationFrame(update);
         }
 

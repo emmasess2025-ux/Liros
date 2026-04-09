@@ -740,6 +740,200 @@
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
             flex-shrink: 0;
         }
+
+        /* ========================================================= */
+        /* 🏗️ MODAL JUNKYARD PRO (Glassmorphism & Two Columns) */
+        /* ========================================================= */
+        #junkyard-modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            /* Efecto Glassmorphism */
+            background: rgba(18, 25, 33, 0.85);
+            /* Tono oscuro profundo semi-transparente */
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            /* Borde sutil */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9);
+
+            color: white;
+            z-index: 1000;
+            width: 580px;
+            /* Más ancho para las dos columnas */
+            height: 400px;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        /* Cabecera */
+        #junkyard-modal h2 {
+            margin: 0;
+            padding: 15px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e67e22;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 18px;
+        }
+
+        /* Contenedor Principal (Flexbox) */
+        .junkyard-body {
+            display: flex;
+            flex: 1;
+            height: calc(100% - 100px);
+            /* Restar header y footer */
+        }
+
+        /* COLUMNA IZQUIERDA (LISTA) */
+        .junkyard-left {
+            width: 60%;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #junkyard-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        /* Barras de desplazamiento estilizadas */
+        #junkyard-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #junkyard-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        /* Fila de Basura Interactiva */
+        .trash-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .trash-row:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .trash-row.selected {
+            background: rgba(230, 126, 34, 0.15);
+            border-color: rgba(230, 126, 34, 0.4);
+        }
+
+        /* COLUMNA DERECHA (PREVISUALIZADOR) */
+        .junkyard-right {
+            width: 40%;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #trash-visualizer {
+            width: 100%;
+            text-align: center;
+            display: none;
+            /* Se muestra al seleccionar */
+        }
+
+        #junk-preview-canvas {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            image-rendering: pixelated;
+            margin-bottom: 10px;
+        }
+
+        #visualizer-placeholder {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7f8c8d;
+            font-size: 13px;
+            font-style: italic;
+            text-align: center;
+        }
+
+        /* Footer y Botones */
+        .junkyard-footer {
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-green {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-green:hover {
+            background: #2ecc71;
+        }
+
+        .btn-red {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-red:hover {
+            background: #e74c3c;
+        }
+
+        /* Inputs y Selectores */
+        .junk-quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .junk-quantity-selector input {
+            width: 60px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 5px;
+            border-radius: 4px;
+            text-align: center;
+            font-family: monospace;
+        }
     </style>
 </head>
 
@@ -1120,12 +1314,59 @@
 
             <div>
                 <h4 style="margin: 0 0 10px 0; color: #3498db; font-family: sans-serif;">Outfits & Gear</h4>
-                <div
-                    style="background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.2); border-radius: 10px; padding: 30px; text-align: center; color: #aaa; font-family: sans-serif; font-size: 14px;">
-                    👕 Wardrobe coming soon...
+                <div id="wardrobe-container"
+                    style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+
+                    <canvas id="wardrobe-preview-canvas" width="96" height="128"
+                        style="background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px inset rgba(255,255,255,0.2); image-rendering: pixelated; width: 96px; height: 128px; box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);"></canvas>
+
+                    <div
+                        style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 5px;">
+                        <button id="hat-prev" class="tool-btn"
+                            style="font-size: 14px; padding: 5px 12px; background: rgba(255,255,255,0.1); border: none;">◀</button>
+                        <div style="text-align: center;">
+                            <div style="color: #e74c3c; font-weight: bold; font-size: 10px; letter-spacing: 1px;">
+                                ACCESORIO</div>
+                            <div id="hat-name-display" style="color: white; font-size: 13px; font-family: sans-serif;">
+                                Ninguno</div>
+                        </div>
+                        <button id="hat-next" class="tool-btn"
+                            style="font-size: 14px; padding: 5px 12px; background: rgba(255,255,255,0.1); border: none;">▶</button>
+                    </div>
+
+                    <div
+                        style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 5px;">
+                        <button id="head-prev" class="tool-btn"
+                            style="font-size: 14px; padding: 5px 12px; background: rgba(255,255,255,0.1); border: none;">◀</button>
+                        <div style="text-align: center;">
+                            <div style="color: #f1c40f; font-weight: bold; font-size: 10px; letter-spacing: 1px;">CABEZA
+                            </div>
+                            <div id="head-name-display" style="color: white; font-size: 13px; font-family: sans-serif;">
+                                Cabeza Base</div>
+                        </div>
+                        <button id="head-next" class="tool-btn"
+                            style="font-size: 14px; padding: 5px 12px; background: rgba(255,255,255,0.1); border: none;">▶</button>
+                    </div>
+
+                    <div
+                        style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 5px;">
+                        <button id="body-prev" class="tool-btn"
+                            style="font-size: 14px; padding: 5px 12px; background: rgba(255,255,255,0.1); border: none;">◀</button>
+                        <div style="text-align: center;">
+                            <div style="color: #3498db; font-weight: bold; font-size: 10px; letter-spacing: 1px;">CUERPO
+                            </div>
+                            <div id="body-name-display" style="color: white; font-size: 13px; font-family: sans-serif;">
+                                Cuerpo Base</div>
+                        </div>
+                        <button id="body-next" class="tool-btn"
+                            style="font-size: 14px; padding: 5px 12px; background: rgba(255,255,255,0.1); border: none;">▶</button>
+                    </div>
+
+                    <button id="save-wardrobe-btn"
+                        style="width: 100%; padding: 12px; background: #2ecc71; color: black; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: 5px; box-shadow: 0 4px 0 #27ae60; transition: 0.1s;">💾
+                        Equipar Atuendo</button>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -1477,6 +1718,57 @@
 
         </div>
     </div>
+    <div id="junkyard-modal">
+        <h2>Junkyard</h2>
+
+        <div class="junkyard-body">
+            <div class="junkyard-left">
+                <div id="junkyard-list">
+                </div>
+            </div>
+
+            <div class="junkyard-right">
+                <div id="visualizer-placeholder">
+                    Selecciona un objeto de la lista para inspeccionarlo o elige "Toda la Mochila".
+                </div>
+
+                <div id="trash-visualizer"
+                    style="display:none; width: 100%; height: 100%; flex-direction: column; align-items: center;">
+                </div>
+            </div>
+        </div>
+
+        <div class="junkyard-footer" style="justify-content: flex-end;">
+            <button class="btn-red" id="btn-close-junkyard">Close</button>
+        </div>
+    </div>
+
+    <div class="junkyard-footer">
+        <button class="btn-green" id="btn-sell-all">Sell all your trash</button>
+        <button class="btn-red" id="btn-close-junkyard">Close</button>
+    </div>
+    </div>
+
+    <div id="item-detail-modal"
+        style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(18, 25, 33, 0.9); backdrop-filter:blur(15px); border-radius:12px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 15px 35px rgba(0,0,0,0.9); color:white; z-index:99999; width:280px; text-align:center; padding:20px; font-family:'Segoe UI', sans-serif;">
+
+        <div
+            style="background:rgba(0,0,0,0.4); border-radius:8px; padding:15px; margin-bottom:15px; border:1px solid rgba(255,255,255,0.05); display:inline-block;">
+            <canvas id="item-detail-canvas" width="64" height="64" style="image-rendering:pixelated;"></canvas>
+        </div>
+
+        <h2 id="item-detail-name" style="margin:0 0 5px 0; color:#f1c40f; font-size:18px;">Nombre</h2>
+        <div id="item-detail-qty" style="color:#bdc3c7; font-size:12px; font-weight:bold; margin-bottom:15px;">Cantidad:
+            x1</div>
+
+        <div id="item-detail-stats"
+            style="background:rgba(0,0,0,0.2); padding:10px; border-radius:6px; font-size:12px; color:#bdc3c7; text-align:left; margin-bottom:15px; min-height:60px;">
+        </div>
+
+        <button id="btn-equip-item" class="btn-green"
+            style="width:100%; margin-bottom:10px; padding:10px; display:none;">🗡️ Equipar</button>
+        <button id="btn-close-item-detail" class="btn-red" style="width:100%; padding:8px;">Cerrar</button>
+    </div>
 
     <div id="skeleton-editor"
         style="display: none; position: absolute; top: 50px; left: 50px; width: 850px; height: 600px; background: #1e1e1e; border: 1px solid #444; border-radius: 8px; color: white; box-shadow: 0 15px 50px rgba(0,0,0,0.8); z-index: 3500; flex-direction: column; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif;">
@@ -1754,8 +2046,18 @@
                 <option value="none">Normal (Vacío)</option>
                 <option value="teleport">Puerta (TP)</option>
                 <option value="shop">Tienda</option>
+                <option value="base">🏰 Base de Captura (Turf War)</option>
                 <option value="safezone">Zona Segura 🛡️</option>
+                <option value="junkyard">🏗️ El Yonke (Vender)</option>
             </select>
+
+            <div id="base-settings"
+                style="display:none; align-items:center; gap:5px; margin-left: 5px; padding-left: 5px; border-left: 1px solid rgba(255,255,255,0.2);">
+                <input type="text" id="ins-turf-name" placeholder="Nombre: Base Central"
+                    style="width: 120px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px; font-size:11px;">
+                <input type="number" id="ins-turf-hp" placeholder="HP: 5000" value="5000"
+                    style="width: 60px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px; font-size:11px;">
+            </div>
 
             <input type="number" id="tp-dest-x" placeholder="X"
                 style="width: 40px; background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 3px; display: none;">
@@ -1796,6 +2098,7 @@
         // --- SEPARAMOS EL ANCHO Y EL ALTO ---
         const FRAME_WIDTH = 48;
         const FRAME_HEIGHT = 64;
+        let centralBase = null;
 
         // Le dice al código en qué FILA empieza cada animación
         const SKELETON_DATA = {
@@ -1812,6 +2115,304 @@
         function getFrameKey(state, dir, frameX) {
             return `${state}_${dir}_${frameX}`;
         }
+
+        let isJunkyardOpen = false;
+        let lastJunkyardTile = null;
+
+        let CLIENT_TRASH_CATALOG = [];
+
+        // =========================================================
+        // 🏗️ SISTEMA DEL YONKE (INTERFAZ DINÁMICA)
+        // =========================================================
+        let currentSelectedTrashId = null;
+
+        function openJunkyardModal() {
+            const listDiv = document.getElementById('junkyard-list');
+            listDiv.innerHTML = '';
+
+            // Resetear la pantalla derecha
+            currentSelectedTrashId = null;
+            document.getElementById('trash-visualizer').style.display = 'none';
+            document.getElementById('visualizer-placeholder').style.display = 'flex';
+
+            let totalEarned = 0;
+            let trashCounts = {};
+            let hasItems = false;
+
+            // 1. Contar items
+            if (player.inventory) {
+                player.inventory.forEach(item => {
+                    let id = (typeof item === 'object') ? item.id : item;
+                    let qty = (typeof item === 'object') ? (item.quantity || 1) : 1;
+
+                    if (id && id.startsWith('trash_')) {
+                        trashCounts[id] = (trashCounts[id] || 0) + qty;
+                        hasItems = true;
+                    }
+                });
+            }
+
+            // 2. Generar filas
+            if (!hasItems) {
+                listDiv.innerHTML = '<p style="color: #95a5a6; text-align:center; padding: 20px; font-style:italic;">No traes basura en tu inventario.</p>';
+            } else {
+                // A. Filas individuales
+                CLIENT_TRASH_CATALOG.forEach(t => {
+                    if (trashCounts[t.id]) {
+                        const qty = trashCounts[t.id];
+                        totalEarned += (qty * t.value);
+
+                        const row = document.createElement('div');
+                        row.className = 'trash-row';
+                        row.id = `row-${t.id}`;
+                        row.onclick = () => selectTrashItemForPreview(t.id, qty);
+
+                        // 🛑 EL FIX: Añadimos un pequeño <canvas> para el icono al lado del nombre
+                        row.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <canvas id="icon-${t.id}" width="16" height="16" style="width:20px; height:20px; image-rendering:pixelated;"></canvas>
+                        <div style="font-weight:bold; font-size:13px;">${t.name}</div>
+                    </div>
+                    <div style="color:#bdc3c7; font-weight:bold; font-family: monospace;">x${qty}</div>
+                `;
+                        listDiv.appendChild(row);
+
+                        // Dibujamos el sprite en el canvas pequeñito de la lista
+                        setTimeout(() => {
+                            const ctx = document.getElementById(`icon-${t.id}`)?.getContext('2d');
+                            if (ctx && trashSpritesheet.complete) {
+                                ctx.imageSmoothingEnabled = false;
+                                ctx.drawImage(trashSpritesheet, t.sx, t.sy, 16, 16, 0, 0, 16, 16);
+                            }
+                        }, 10);
+                    }
+                });
+
+                // B. 🛑 EL FIX: Fila especial de "TODA LA MOCHILA" al final de la lista
+                const allRow = document.createElement('div');
+                allRow.className = 'trash-row';
+                allRow.id = 'row-all';
+                allRow.style.borderTop = '1px dashed rgba(255,255,255,0.2)';
+                allRow.style.marginTop = '10px';
+                allRow.style.background = 'rgba(39, 174, 96, 0.1)';
+
+                allRow.onclick = () => selectAllTrashForPreview(trashCounts, totalEarned);
+                allRow.innerHTML = `
+            <div style="font-weight:bold; font-size:13px; color:#2ecc71;">📦 Vender Toda la Mochila</div>
+            <div style="text-align:right; color:#2ecc71; font-weight:bold;">+${totalEarned} 🪙</div>
+        `;
+                listDiv.appendChild(allRow);
+            }
+
+            document.getElementById('junkyard-modal').style.display = 'flex';
+        }
+
+        // --- PANTALLA DERECHA: VENTA INDIVIDUAL ---
+        function selectTrashItemForPreview(itemId, totalOwned) {
+            const oldRow = document.querySelector('.trash-row.selected');
+            if (oldRow) oldRow.classList.remove('selected');
+            document.getElementById(`row-${itemId}`).classList.add('selected');
+
+            currentSelectedTrashId = itemId;
+            document.getElementById('visualizer-placeholder').style.display = 'none';
+            const vis = document.getElementById('trash-visualizer');
+            vis.style.display = 'flex';
+
+            const t = CLIENT_TRASH_CATALOG.find(x => x.id === itemId);
+
+            // Inyectamos el HTML dinámico para 1 solo ítem
+            vis.innerHTML = `
+        <canvas id="junk-preview-canvas" width="64" height="64" style="background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); image-rendering: pixelated; margin-bottom: 10px;"></canvas>
+        <div style="font-weight: bold; color: #f1c40f; margin-bottom: 5px; font-size: 16px;">${t.name}</div>
+        <div style="font-size: 11px; color: #bdc3c7; margin-bottom: 15px;">Valor: <span style="color: #2ecc71;">${t.value} 🪙 c/u</span></div>
+        
+        <div style="display:flex; align-items:center; gap:5px; margin-bottom:15px; background:rgba(0,0,0,0.3); padding:8px; border-radius:6px;">
+            <label style="font-size: 12px; color: #7f8c8d;">Vender:</label>
+            <input type="number" id="sell-quantity-input" min="1" max="${totalOwned}" value="1" style="width:50px; text-align:center; background:rgba(0,0,0,0.8); color:white; border:1px solid #555; border-radius:4px; outline:none;">
+            <span style="font-size: 12px; color: #7f8c8d;"> / ${totalOwned}</span>
+        </div>
+
+        <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; width:100%; text-align:center;">
+            <span style="font-size: 11px; color:#bdc3c7">Ganancia:</span>
+            <div style="font-size: 24px; font-weight: bold; color: #2ecc71;" id="calc-junk-payout">+${t.value} 🪙</div>
+        </div>
+        <button class="btn-green" style="width: 100%; margin-top:auto;" id="btn-sell-action">Sell selection</button>
+    `;
+
+            // Dibujar el icono grande
+            setTimeout(() => {
+                const cctx = document.getElementById('junk-preview-canvas')?.getContext('2d');
+                if (cctx && trashSpritesheet.complete) {
+                    cctx.imageSmoothingEnabled = false;
+                    cctx.drawImage(trashSpritesheet, t.sx, t.sy, 16, 16, 0, 0, 64, 64);
+                }
+            }, 10);
+
+            // Lógica matemática del input
+            const sqi = document.getElementById('sell-quantity-input');
+            sqi.oninput = () => {
+                let val = parseInt(sqi.value) || 0;
+                if (val > totalOwned) { val = totalOwned; sqi.value = val; } // Limitar al máximo
+                if (val < 1) val = 1;
+                document.getElementById('calc-junk-payout').innerText = `+${val * t.value} 🪙`;
+            };
+
+            // Botón Vender Individual
+            document.getElementById('btn-sell-action').onclick = () => {
+                const qty = parseInt(sqi.value) || 1;
+                if (ws.readyState === WebSocket.OPEN && qty > 0) {
+                    ws.send(JSON.stringify({ type: 'sell_individual_trash', itemId: itemId, quantity: qty }));
+                }
+            };
+        }
+
+        // --- PANTALLA DERECHA: DESGLOSE DE "TODO" ---
+        function selectAllTrashForPreview(trashCounts, totalEarned) {
+            const oldRow = document.querySelector('.trash-row.selected');
+            if (oldRow) oldRow.classList.remove('selected');
+            document.getElementById('row-all').classList.add('selected');
+
+            currentSelectedTrashId = 'all';
+            document.getElementById('visualizer-placeholder').style.display = 'none';
+            const vis = document.getElementById('trash-visualizer');
+            vis.style.display = 'flex';
+
+            // 🛑 EL FIX CSS: Agregamos flex: 1 y min-height: 0 para un scroll perfecto interno
+            let breakdownHTML = `<div style="width:100%; flex: 1; min-height: 0; overflow-y: auto; text-align:left; background:rgba(0,0,0,0.4); border-radius:6px; padding:10px; margin-bottom:15px; border:1px solid rgba(255,255,255,0.05);">`;
+
+            CLIENT_TRASH_CATALOG.forEach(t => {
+                if (trashCounts[t.id]) {
+                    const qty = trashCounts[t.id];
+                    breakdownHTML += `
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
+                    <span style="color:#bdc3c7;">${t.name} <span style="color:#7f8c8d;">(x${qty})</span></span>
+                    <span style="color:#2ecc71; font-family:monospace;">+${qty * t.value}</span>
+                </div>`;
+                }
+            });
+            breakdownHTML += `</div>`;
+
+            // 🛑 EL FIX CSS: Agregamos flex-shrink: 0 a los textos y al botón para protegerlos del colapso
+            vis.innerHTML = `
+        <div style="font-weight: bold; color: #2ecc71; margin-bottom: 10px; font-size: 18px; flex-shrink: 0;">📦 Lote Completo</div>
+        <div style="font-size: 11px; color: #7f8c8d; margin-bottom: 5px; flex-shrink: 0;">Recibo de Venta:</div>
+        
+        ${breakdownHTML}
+
+        <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; width:100%; text-align:center; flex-shrink: 0;">
+            <span style="font-size: 11px; color:#bdc3c7">Ganancia Total:</span>
+            <div style="font-size: 26px; font-weight: bold; color: #2ecc71;">+${totalEarned} 🪙</div>
+        </div>
+        <button class="btn-green" style="width: 100%; flex-shrink: 0;" id="btn-sell-action">Liquidar Toda la Mochila</button>
+    `;
+
+            // Botón Vender Todo
+            document.getElementById('btn-sell-action').onclick = () => {
+                const btn = document.getElementById('btn-sell-action');
+
+                // Efecto visual de que sí le diste clic
+                btn.innerText = "Procesando venta...";
+                btn.style.background = "#7f8c8d";
+                btn.disabled = true;
+
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'sell_all_trash' }));
+                }
+            };
+        }
+
+        // Botón Cerrar Global
+        document.getElementById('btn-close-junkyard').onclick = () => {
+            document.getElementById('junkyard-modal').style.display = 'none';
+            isJunkyardOpen = false;
+        };
+
+        // --- NUEVO: FUNCIÓN DE PREVISUALIZACIÓN Y VENTA INDIVIDUAL ---
+        const sellQtyInput = document.getElementById('sell-quantity-input');
+
+        // --- PANTALLA DERECHA: VENTA INDIVIDUAL ---
+        function selectTrashItemForPreview(itemId, totalOwned) {
+            // 1. Efecto visual de selección en la lista
+            const oldRow = document.querySelector('.trash-row.selected');
+            if (oldRow) oldRow.classList.remove('selected');
+            document.getElementById(`row-${itemId}`).classList.add('selected');
+
+            // 2. Activar pantalla derecha
+            currentSelectedTrashId = itemId;
+            document.getElementById('visualizer-placeholder').style.display = 'none';
+            const vis = document.getElementById('trash-visualizer');
+            vis.style.display = 'flex';
+
+            // 3. Obtener los datos del ítem
+            const t = CLIENT_TRASH_CATALOG.find(x => x.id === itemId);
+
+            // 4. Inyectar TODO el HTML dinámico (Esto reemplaza a los viejos innerText)
+            vis.innerHTML = `
+        <canvas id="junk-preview-canvas" width="64" height="64" style="background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); image-rendering: pixelated; margin-bottom: 10px;"></canvas>
+        <div style="font-weight: bold; color: #f1c40f; margin-bottom: 5px; font-size: 16px;">${t.name}</div>
+        <div style="font-size: 11px; color: #bdc3c7; margin-bottom: 15px;">Valor: <span style="color: #2ecc71;">${t.value} 🪙 c/u</span></div>
+        
+        <div style="display:flex; align-items:center; gap:5px; margin-bottom:15px; background:rgba(0,0,0,0.3); padding:8px; border-radius:6px;">
+            <label style="font-size: 12px; color: #7f8c8d;">Vender:</label>
+            <input type="number" id="sell-quantity-input" min="1" max="${totalOwned}" value="1" style="width:50px; text-align:center; background:rgba(0,0,0,0.8); color:white; border:1px solid #555; border-radius:4px; outline:none;">
+            <span style="font-size: 12px; color: #7f8c8d;"> / ${totalOwned}</span>
+        </div>
+
+        <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; width:100%; text-align:center;">
+            <span style="font-size: 11px; color:#bdc3c7">Ganancia:</span>
+            <div style="font-size: 24px; font-weight: bold; color: #2ecc71;" id="calc-junk-payout">+${t.value} 🪙</div>
+        </div>
+        <button class="btn-green" style="width: 100%; margin-top:auto;" id="btn-sell-action">Sell selection</button>
+    `;
+
+            // 5. Dibujar el icono grande en el nuevo Canvas inyectado
+            setTimeout(() => {
+                const cctx = document.getElementById('junk-preview-canvas')?.getContext('2d');
+                if (cctx && trashSpritesheet.complete) {
+                    cctx.imageSmoothingEnabled = false;
+                    cctx.drawImage(trashSpritesheet, t.sx, t.sy, 16, 16, 0, 0, 64, 64);
+                }
+            }, 10);
+
+            // 6. Lógica matemática del input (Al escribir la cantidad, actualiza el precio)
+            const sqi = document.getElementById('sell-quantity-input');
+            sqi.oninput = () => {
+                let val = parseInt(sqi.value) || 0;
+                if (val > totalOwned) { val = totalOwned; sqi.value = val; } // Evita que vendan más de lo que tienen
+                if (val < 1) val = 1;
+                document.getElementById('calc-junk-payout').innerText = `+${val * t.value} 🪙`;
+            };
+
+            // 7. Conectar el botón de venta
+            document.getElementById('btn-sell-action').onclick = () => {
+                const qty = parseInt(sqi.value) || 1;
+                if (ws.readyState === WebSocket.OPEN && qty > 0) {
+                    ws.send(JSON.stringify({ type: 'sell_individual_trash', itemId: itemId, quantity: qty }));
+                }
+            };
+        }
+
+        // Función matemática para actualizar el texto del total a ganar
+        function updateJunkPayoutCalculation(individualValue) {
+            const qty = parseInt(sellQtyInput.value) || 0;
+            const total = qty * individualValue;
+            document.getElementById('calc-junk-payout').innerText = `+${total} 🪙`;
+        }
+
+        // --- CONECTAR LOS BOTONES DEL YONKE (VERSIÓN NUEVA) ---
+
+        // 1. Botón Cerrar
+        document.getElementById('btn-close-junkyard').onclick = () => {
+            document.getElementById('junkyard-modal').style.display = 'none';
+            isJunkyardOpen = false;
+        };
+        // Botón Cerrar
+        document.getElementById('btn-close-junkyard').onclick = () => {
+            document.getElementById('junkyard-modal').style.display = 'none';
+            isJunkyardOpen = false;
+            // 🛑 BORRAMOS el lastJunkyardTile = null; de aquí.
+            // El juego lo reseteará naturalmente cuando tu personaje camine fuera de la baldosa.
+        };
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1993,11 +2594,32 @@
             }
         });
 
-        // --- ESCUCHAR TECLADO (WASD) ---
+        // --- ESCUCHAR TECLADO (WASD, TAB-CHAT Y ANTI-BUGS) ---
+        window.addEventListener('keydown', (e) => {
+            // 🛑 EL FIX 1: Usar TAB para activar el chat público
+            if (e.key === 'Tab') {
+                e.preventDefault(); // Evita que el navegador seleccione botones locamente
+
+                // Si el chat ya está abierto, lo cerramos (enviamos o cancelamos)
+                if (chatContainer.classList.contains('expanded')) {
+                    sendMessage();
+                } else {
+                    // Si está cerrado, simulamos el clic en el botón de chat
+                    chatToggle.click();
+                }
+            }
+        });
+
         if (!isTouchDevice) {
             window.addEventListener('keydown', (e) => {
+                // 🛑 EL FIX 2: Bloquear WASD si estamos escribiendo en el chat o cualquier input
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+                    // Si presionamos ENTER dentro del chat, enviamos mensaje
+                    if (e.key === 'Enter') sendMessage();
+                    return;
+                }
+
                 const key = e.key.toLowerCase();
-                // Evitar que la pantalla se mueva si usan las flechas en vez de wasd por error
                 if (["w", "a", "s", "d"].includes(key)) {
                     keys[key] = true;
                 }
@@ -2067,6 +2689,8 @@
             isDead: false // <--- ¡NUEVO ESTADO!
         };
 
+
+
         // --- NEW: PROJECTILE DATA & WEAPONS DB ---
         let WEAPONS = {}; // ¡El servidor llenará esto mágicamente al conectar!
         let projectiles = [];
@@ -2075,6 +2699,11 @@
         let shootAngle = 0;
         let lastShotTime = 0;
         // (Borramos el FIRE_RATE fijo, ahora viene de la tabla WEAPONS)
+
+        let groundItems = {};
+        const trashSpritesheet = new Image();
+        trashSpritesheet.src = "items/jobs/junkyard/trash.png"; // Tu PNG custom de 128x32
+        // Este arreglo asume que la animación tiene 8 frames.
 
         const walkSprite = new Image();
         walkSprite.src = 'walk.png';
@@ -2087,10 +2716,10 @@
         walkAimSprite.src = 'Walk_while_aim.png';
 
         const bodyImg = new Image();
-        bodyImg.src = 'body_idle_armed_walk_sit_sprite_1.png'; // Tu archivo de cuerpo
+        bodyImg.src = 'items/players/body/B_D.png'; // Tu archivo de cuerpo
 
         const headImg = new Image();
-        headImg.src = 'Head_idle_sprite_1.png'; // Tu archivo de cabezas
+        headImg.src = 'items/players/head/H_D.png'; // Tu archivo de cabezas
 
         // --- DICCIONARIO DINÁMICO DE ARMAS ---
         const loadedWeaponSprites = {};
@@ -2549,10 +3178,29 @@
                 authOverlay.style.pointerEvents = 'none';
                 authOverlay.style.opacity = '0';
 
-                // --- NUEVO: CONTADOR DE CARGA ---
+                // --- NUEVO: CONTADOR DE CARGA Y DESCARGA DEL CATÁLOGO MÁGICO ---
+                window.MASTER_CATALOG = data.masterCatalog || {};
+                window.loadedItemSprites = window.loadedItemSprites || {};
+
                 let weaponCount = Object.values(data.weaponsDB).filter(w => w.src).length;
-                totalAssetsToLoad = weaponCount + data.tilesetsDB.length;
+                let catalogCount = Object.values(window.MASTER_CATALOG).filter(i => i.src).length;
+
+                totalAssetsToLoad = weaponCount + data.tilesetsDB.length + catalogCount;
                 assetsLoaded = 0;
+
+                // 🛑 EL FIX: Descargar tooooooda la ropa e ítems del Catálogo Maestro
+                for (let itemId in window.MASTER_CATALOG) {
+                    const item = window.MASTER_CATALOG[itemId];
+                    if (item.src) {
+                        const img = new Image();
+                        img.onload = () => {
+                            assetsLoaded++;
+                            updateLoadingBar();
+                        };
+                        img.src = item.src;
+                        window.loadedItemSprites[itemId] = img;
+                    }
+                }
                 updateLoadingBar("Descargando mapas y armas...");
 
                 // GUARDAR DB DE ARMAS
@@ -2612,6 +3260,11 @@
                 // 🛑 EL FIX: LEER KILLS Y LOSSES AL RECARGAR LA PÁGINA 🛑
                 player.kills = data.players[myId].kills || 0;
                 player.losses = data.players[myId].losses || 0;
+                centralBase = data.centralBase; // Guardar la base inicial
+                // 🛑 EL FIX: Cargar la basura que ya estaba tirada cuando entraste
+                groundItems = data.groundItems || {};
+                // 🛑 EL FIX: Guardamos el catálogo dinámico
+                CLIENT_TRASH_CATALOG = data.trashCatalog || [];
 
                 // Actualizar la Isla Dinámica visualmente
                 const islandFill = document.getElementById('island-hp-fill');
@@ -2643,6 +3296,31 @@
                         };
                     });
                 }
+            }// (Pon esto junto a tus otros else if, por ejemplo debajo de 'shoot' o 'hp_update')
+            else if (data.type === 'spawn_item') {
+                groundItems[data.id] = data.item;
+            }
+            else if (data.type === 'remove_item') {
+                delete groundItems[data.id];
+            } else if (data.type === 'sell_success') {
+                player.inventory = data.newInventory;
+                if (data.newCoins !== undefined) player.coins = data.newCoins;
+
+                // Cierra la tienda al vender
+                document.getElementById('junkyard-modal').style.display = 'none';
+                isJunkyardOpen = false;
+                lastJunkyardTile = null; // 🛑 EL FIX: Resetear la baldosa aquí también
+
+                let dt = { x: player.worldX, y: player.worldY, text: `+${data.earned} 🪙`, color: "#f1c40f", life: 100, maxLife: 100 };
+                damageTexts.push(dt);
+            } else if (data.type === 'inventory_update') {
+                // 🛑 EL FIX: Tu juego guarda en su memoria local lo que envíe el servidor
+                if (player) {
+                    player.inventory = data.inventory;
+                }
+            }// Recibir daño a la base en vivo
+            else if (data.type === 'base_update') {
+                centralBase = data.base;
             } else if (data.type === 'new_safezone') {
                 // 👇 NUEVO: AGREGAR ZONA NUEVA EN TIEMPO REAL 👇
                 safeZones.push(data.zone);
@@ -2801,6 +3479,8 @@
                     // --- THE FIX: CATCH THEIR WEAPON STATE ---
                     op.equippedWeapon = data.player.equippedWeapon;
                     op.isDead = data.player.isDead;
+                    // 🛑 EL FIX 4: Sincronizar la ropa de los enemigos/amigos
+                    op.equipped = data.player.equipped || { head: 'head_default', body: 'body_default', hands: 'none' };
 
                     // ...but set TARGETS for their movement so we can slide them smoothly
                     op.targetX = data.player.worldX;
@@ -2833,7 +3513,8 @@
                 // --- THE HOTBAR PERSISTENCE FIX ---
                 player.hotbar = data.player.hotbar || ["none", "none", "none"];
                 player.accountId = data.player.accountId;
-
+                // 🛑 EL FIX 3: Cargar tu ropa desde el servidor al entrar
+                player.equipped = data.player.equipped || { head: 'head_default', body: 'body_default', hands: 'none' };
                 // --- NUEVO: RECIBIR TU ROL ---
                 player.role = data.player.role;
 
@@ -3043,7 +3724,8 @@
                 vy: Math.sin(angle) * stats.speed,
                 life: stats.range, // Tiempo de vida de la bala basado en el arma
                 owner: ownerId,
-                weapon: weaponId   // Guardamos qué arma se usó
+                weapon: weaponId,  // Guardamos qué arma se usó
+                color: stats.color
             });
         }
 
@@ -3117,24 +3799,27 @@
             e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE JOYSTICK
             e.stopPropagation(); // PREVENTS ZOOM CONFLICT
             const vectors = processJoystick(e, joystickZone, joystickKnob, 35);
-            player.vx = vectors.x * player.speed;
-            player.vy = vectors.y * player.speed;
+            // 🛑 EL FIX: Guardamos la "intención" del joystick, no la velocidad final
+            player.joyX = vectors.x;
+            player.joyY = vectors.y;
         }, { passive: false });
 
         joystickZone.addEventListener('touchmove', (e) => {
             e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE JOYSTICK
             e.stopPropagation(); // PREVENTS ZOOM CONFLICT
             const vectors = processJoystick(e, joystickZone, joystickKnob, 35);
-            player.vx = vectors.x * player.speed;
-            player.vy = vectors.y * player.speed;
+            // 🛑 EL FIX: Guardamos la "intención" del joystick, no la velocidad final
+            player.joyX = vectors.x;
+            player.joyY = vectors.y;
         }, { passive: false });
 
         joystickZone.addEventListener('touchend', (e) => {
             e.preventDefault();  // <--- KILLS THE MAGNIFIER ON THE JOYSTICK
             e.stopPropagation();
             joystickKnob.style.transform = `translate(0px, 0px)`;
-            player.vx = 0;
-            player.vy = 0;
+            // 🛑 EL FIX: Resetear intención al soltar
+            player.joyX = 0;
+            player.joyY = 0;
         });
 
         // --- RIGHT JOYSTICK (AIMING) LISTENERS ---
@@ -3371,7 +4056,7 @@
             ctx.font = `bold ${fontSize}px Arial`;
             ctx.textAlign = "center";
 
-            const tagY = y + scaledHeight + (-12 * zoomLevel);
+            const tagY = y + scaledHeight + (-12 * zoomLevel); // Separación perfecta bajo los pies
             const centerX = x + (scaledWidth / 2);
 
             ctx.globalAlpha = 0.5;
@@ -3406,7 +4091,7 @@
             const startX = centerX - (totalWidth / 2);
 
             // Dibujamos justo debajo del nametag normal
-            const tagY = y + scaledHeight + (0 * zoomLevel);
+            const tagY = y + scaledHeight + (-2 * zoomLevel); // Espacio extra para que no pise al nombre
 
             ctx.textAlign = "left";
 
@@ -4881,6 +5566,9 @@
             tpDestX.style.display = (logicSelect.value === 'teleport') ? 'block' : 'none';
             tpDestY.style.display = (logicSelect.value === 'teleport') ? 'block' : 'none';
             shopItemIdInput.style.display = (logicSelect.value === 'shop') ? 'block' : 'none';
+
+            // 🛑 EL FIX: Mostrar las opciones de la Base cuando seleccionas 'base'
+            document.getElementById('base-settings').style.display = (logicSelect.value === 'base') ? 'flex' : 'none';
         };
 
         saveTpBtn.onclick = () => {
@@ -4891,6 +5579,10 @@
                 const dy = parseInt(tpDestY.value);
                 const itemId = shopItemIdInput.value.trim();
 
+                // 🛑 EL FIX: Atrapamos los nuevos datos del modal
+                const tName = document.getElementById('ins-turf-name').value || "Base Central";
+                const tHp = parseInt(document.getElementById('ins-turf-hp').value) || 5000;
+
                 worldMap[inspectingCoord].triggerType = tType;
                 worldMap[inspectingCoord].destX = isNaN(dx) ? null : dx;
                 worldMap[inspectingCoord].destY = isNaN(dy) ? null : dy;
@@ -4900,7 +5592,13 @@
                     type: 'update_tile_metadata',
                     x: gx, y: gy, layer: gl,
                     hasCollision: inspectCollision.checked,
-                    triggerType: tType, destX: isNaN(dx) ? null : dx, destY: isNaN(dy) ? null : dy, itemId: itemId
+                    triggerType: tType,
+                    destX: isNaN(dx) ? null : dx,
+                    destY: isNaN(dy) ? null : dy,
+                    itemId: itemId,
+                    // 🛑 EL FIX: Enviamos los datos al servidor
+                    turfName: tName,
+                    turfHp: tHp
                 }));
 
                 saveTpBtn.innerText = "Guardado!";
@@ -5251,10 +5949,9 @@
             profileModal.style.display = 'none';
         });
 
-        // --- NUEVO: LÓGICA DEL MODAL DE OPCIONES ---
         profileOptionsBtn.addEventListener('click', () => {
-            // Cuando abre las opciones, rellenamos el input con su nombre actual
             editNameInput.value = player.username;
+            openWardrobe(); // 🛑 EL FIX: Iniciar la lógica del Guardarropa
             optionsModal.style.display = 'flex';
         });
 
@@ -5262,35 +5959,96 @@
             optionsModal.style.display = 'none';
         });
 
-        // 3. The Isolated Walking Animation for the UI (PERFECTAMENTE CENTRADO)
+        // 3. The Isolated Walking Animation for the UI (CON ROPA Y SOMBRERO DINÁMICO)
         function drawProfileAnimation() {
             if (!isProfileOpen) return;
 
             prCtx.clearRect(0, 0, profileCanvas.width, profileCanvas.height);
             prCtx.imageSmoothingEnabled = false;
 
+            // 1. ¿A quién estamos inspeccionando? (Tú, un amigo o alguien desconectado)
+            let targetP;
+            if (profileTargetId === 'self') targetP = player;
+            else if (profileTargetId === 'offline') targetP = { equipped: { head: 'head_default', body: 'body_default', hat: 'none' } };
+            else targetP = otherPlayers[profileTargetId] || player;
+
+            // 2. Obtener la ropa que lleva puesta
+            const eq = targetP.equipped || { head: 'head_default', body: 'body_default', hat: 'none' };
+            const safeSprites = window.loadedItemSprites || {};
+            const dynBody = safeSprites[eq.body] || window.bodyImg || window.walkSprite;
+            const dynHead = safeSprites[eq.head] || window.headImg;
+            const dynHat = safeSprites[eq.hat]; // 🎩 Extraemos el sombrero
+
+            if (!dynBody || !dynBody.complete) {
+                requestAnimationFrame(drawProfileAnimation);
+                return;
+            }
+
             profileAnimFrame = (profileAnimFrame + 0.1) % 8;
             const fX = Math.floor(profileAnimFrame);
-            const fY = 0;
 
-            const pFrameW = walkSprite.width / 8;
-            const pFrameH = walkSprite.height / 6;
+            // Fila 8: Caminar desarmado (Hacia abajo = Dirección 0)
+            const bodyRow = SKELETON_DATA.states["walk_unarmed"] || 8;
+            const headRow = 0;
+
+            // Usar FRAME_WIDTH y FRAME_HEIGHT fijos para no deformar spritesheets grandes
+            const pFrameW = FRAME_WIDTH;
+            const pFrameH = FRAME_HEIGHT;
 
             const drawScale = 4.5;
             const drawW = pFrameW * drawScale;
             const drawH = pFrameH * drawScale;
 
-            // EL FIX: Ahora está centrado exactamente a la mitad sin desplazamientos extras
+            const drawX = (profileCanvas.width - drawW) / 2;
+            const drawY = (profileCanvas.height - drawH) / 2;
+
+            // 3. Dibujar CUERPO
             prCtx.drawImage(
-                walkSprite,
-                fX * pFrameW, fY * pFrameH, pFrameW, pFrameH,
-                (profileCanvas.width - drawW) / 2, (profileCanvas.height - drawH) / 2,
+                dynBody,
+                fX * pFrameW, bodyRow * pFrameH, pFrameW, pFrameH,
+                drawX, drawY,
                 drawW, drawH
             );
 
+            // Extraer el bamboleo de la cabeza para el cuadro exacto de la animación
+            const fKey = `walk_unarmed_0_${fX}`;
+            const rawAnchors = (SKELETON_DATA.anchors && SKELETON_DATA.anchors[fKey]) ? SKELETON_DATA.anchors[fKey] : {};
+            const headAnc = rawAnchors.head || [0, 0];
+
+            // ==========================================================
+            // 🧠 EL WOBBLE (BAMBOLEO) MATEMÁTICO PARA EL PERFIL
+            // ==========================================================
+            const WOBBLE_PATTERN = [0, 1, 0, -1, 0, 1, 0, -1];
+            const currentWalkFrame = fX % 8;
+            const wobbleY = WOBBLE_PATTERN[currentWalkFrame] || 0;
+
+            // Calculamos la coordenada FINAL para el perfil
+            const finalHeadX = drawX + (headAnc[0] * drawScale);
+            const finalHeadY = drawY + ((headAnc[1] + wobbleY) * drawScale);
+
+            // 4. Dibujar CABEZA
+            if (dynHead && dynHead.complete && dynHead.naturalWidth > 0) {
+                const headFrameH = dynHead.height / 4;
+                prCtx.drawImage(
+                    dynHead,
+                    0, headRow * headFrameH, pFrameW, headFrameH, // X es 0, igual que el sombrero
+                    finalHeadX, finalHeadY, drawW, headFrameH * drawScale
+                );
+            }
+
+            // 5. 🎩 Dibujar SOMBRERO
+            if (dynHat && dynHat.complete && dynHat.naturalWidth > 0) {
+                const hatFrameH = dynHat.height / 4;
+                prCtx.drawImage(
+                    dynHat,
+                    0, 0, pFrameW, hatFrameH,
+                    finalHeadX, finalHeadY, drawW, hatFrameH * drawScale
+                );
+            }
+            // ==========================================================
+
             requestAnimationFrame(drawProfileAnimation);
         }
-
         // --- LÓGICA DEL INBOX Y CHAT PRIVADO ---
         const inboxModal = document.getElementById('inbox-modal');
         const closeInboxModal = document.getElementById('close-inbox-modal');
@@ -5306,6 +6064,117 @@
 
         let currentChatTargetId = ""; // AHORA USAMOS EL ID
         let currentChatTargetName = "";
+        // =========================================================
+        // 👕 SISTEMA DE GUARDARROPA (CARRUSEL)
+        // =========================================================
+        let ownedHeads = [];
+        let ownedBodies = [];
+        let ownedHats = []; // 🎩 NUEVO
+        let currentHeadIdx = 0;
+        let currentBodyIdx = 0;
+        let currentHatIdx = 0;
+
+        function openWardrobe() {
+            ownedHeads = ['head_default'];
+            ownedBodies = ['body_default'];
+            ownedHats = ['none']; // 🎩 Por defecto puedes no llevar sombrero
+
+            const safeCatalog = window.MASTER_CATALOG || {};
+
+            if (player.inventory) {
+                player.inventory.forEach(item => {
+                    const itemId = typeof item === 'object' ? item.id : item;
+                    const catalogItem = safeCatalog[itemId];
+
+                    if (catalogItem) {
+                        if (catalogItem.category === 'head' && !ownedHeads.includes(itemId)) ownedHeads.push(itemId);
+                        if (catalogItem.category === 'body' && !ownedBodies.includes(itemId)) ownedBodies.push(itemId);
+                        if (catalogItem.category === 'hat' && !ownedHats.includes(itemId)) ownedHats.push(itemId); // 🎩
+                    }
+                });
+            }
+
+            if (!player.equipped) player.equipped = { head: 'head_default', body: 'body_default', hat: 'none' };
+            currentHeadIdx = Math.max(0, ownedHeads.indexOf(player.equipped.head));
+            currentBodyIdx = Math.max(0, ownedBodies.indexOf(player.equipped.body));
+            currentHatIdx = Math.max(0, ownedHats.indexOf(player.equipped.hat));
+
+            updateWardrobePreview();
+        }
+
+        function updateWardrobePreview() {
+            const headId = ownedHeads[currentHeadIdx];
+            const bodyId = ownedBodies[currentBodyIdx];
+            const hatId = ownedHats[currentHatIdx];
+
+            const safeCatalog = window.MASTER_CATALOG || {};
+            document.getElementById('head-name-display').innerText = safeCatalog[headId]?.name || "Cabeza";
+            document.getElementById('body-name-display').innerText = safeCatalog[bodyId]?.name || "Cuerpo";
+            document.getElementById('hat-name-display').innerText = safeCatalog[hatId]?.name || "Sin Sombrero";
+
+            const canvas = document.getElementById('wardrobe-preview-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.imageSmoothingEnabled = false;
+
+            const safeSprites = window.loadedItemSprites || {};
+            const bImg = safeSprites[bodyId] || window.bodyImg;
+            const hImg = safeSprites[headId] || window.headImg;
+            const hatImg = safeSprites[hatId]; // 🎩
+
+            const frameW = 48; const frameH = 64;
+            const zoom = 2;
+            const drawX = (canvas.width - (frameW * zoom)) / 2;
+            const drawY = (canvas.height - (frameH * zoom)) / 2 + 10;
+
+            if (bImg && bImg.complete && bImg.naturalWidth > 0) ctx.drawImage(bImg, 0, 0, frameW, frameH, drawX, drawY, frameW * zoom, frameH * zoom);
+            if (hImg && hImg.complete && hImg.naturalWidth > 0) ctx.drawImage(hImg, 0, 0, frameW, frameH, drawX, drawY, frameW * zoom, frameH * zoom);
+
+            // 🎩 Dibujar Sombrero en el Carrusel (Fila 0 = Hacia abajo)
+            if (hatImg && hatImg.complete && hatImg.naturalWidth > 0) {
+                const hHeight = hatImg.height / 4;
+                ctx.drawImage(hatImg, 0, 0, frameW, hHeight, drawX, drawY, frameW * zoom, hHeight * zoom);
+            }
+        }
+
+        document.getElementById('head-prev').onclick = () => { currentHeadIdx = (currentHeadIdx - 1 + ownedHeads.length) % ownedHeads.length; updateWardrobePreview(); };
+        document.getElementById('head-next').onclick = () => { currentHeadIdx = (currentHeadIdx + 1) % ownedHeads.length; updateWardrobePreview(); };
+        document.getElementById('body-prev').onclick = () => { currentBodyIdx = (currentBodyIdx - 1 + ownedBodies.length) % ownedBodies.length; updateWardrobePreview(); };
+        document.getElementById('body-next').onclick = () => { currentBodyIdx = (currentBodyIdx + 1) % ownedBodies.length; updateWardrobePreview(); };
+
+        // 🎩 Botones del sombrero
+        document.getElementById('hat-prev').onclick = () => { currentHatIdx = (currentHatIdx - 1 + ownedHats.length) % ownedHats.length; updateWardrobePreview(); };
+        document.getElementById('hat-next').onclick = () => { currentHatIdx = (currentHatIdx + 1) % ownedHats.length; updateWardrobePreview(); };
+
+        document.getElementById('save-wardrobe-btn').onclick = () => {
+            const headId = ownedHeads[currentHeadIdx];
+            const bodyId = ownedBodies[currentBodyIdx];
+            const hatId = ownedHats[currentHatIdx];
+
+            player.equipped.head = headId;
+            player.equipped.body = bodyId;
+            player.equipped.hat = hatId; // 🎩
+
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'update_wardrobe', head: headId, body: bodyId, hat: hatId }));
+            }
+
+            const btn = document.getElementById('save-wardrobe-btn');
+            btn.innerText = "¡Atuendo Equipado!";
+            btn.style.background = "#f1c40f";
+            btn.style.boxShadow = "0 4px 0 #d4ac0d";
+            setTimeout(() => {
+                btn.innerText = "💾 Equipar Atuendo";
+                btn.style.background = "#2ecc71";
+                btn.style.boxShadow = "0 4px 0 #27ae60";
+            }, 1500);
+        };
+        // Conectar botones del Carrusel
+        document.getElementById('head-prev').onclick = () => { currentHeadIdx = (currentHeadIdx - 1 + ownedHeads.length) % ownedHeads.length; updateWardrobePreview(); };
+        document.getElementById('head-next').onclick = () => { currentHeadIdx = (currentHeadIdx + 1) % ownedHeads.length; updateWardrobePreview(); };
+        document.getElementById('body-prev').onclick = () => { currentBodyIdx = (currentBodyIdx - 1 + ownedBodies.length) % ownedBodies.length; updateWardrobePreview(); };
+        document.getElementById('body-next').onclick = () => { currentBodyIdx = (currentBodyIdx + 1) % ownedBodies.length; updateWardrobePreview(); };
 
         // CERRAR INBOX
         closeInboxModal.addEventListener('click', () => {
@@ -5628,27 +6497,44 @@
 
         // --- CREADOR DE ÍCONOS DINÁMICO ---
         function getWeaponIcon(itemId) {
-            const stats = WEAPONS[itemId];
+            // Soportar ambas variables (tu código original o el nuevo)
+            const stats = weaponsDB[itemId] || WEAPONS[itemId];
             if (!stats) return null;
 
             const wSprite = loadedWeaponSprites[itemId];
 
-            // Si el arma tiene imagen en la BD y ya se descargó, dibujamos su sprite
             if (wSprite && wSprite.complete && wSprite.naturalWidth > 0) {
                 const tCanvas = document.createElement('canvas');
-                tCanvas.width = 48; tCanvas.height = 48;
+
+                const frameW = 48; // 384 / 8
+                const frameH = 64; // 384 / 6
+
+                // 🛑 IDÉNTICO AL MODAL: Lienzo del tamaño exacto del recorte
+                tCanvas.width = frameW;
+                tCanvas.height = frameH;
+
+                // 🛑 IDÉNTICO AL MODAL: CSS lo encaja sin destruirlo
+                tCanvas.style.width = "auto";
+                tCanvas.style.height = "80%";
+                tCanvas.style.objectFit = "contain";
+                tCanvas.style.imageRendering = "pixelated";
+
                 const tCtx = tCanvas.getContext('2d');
-                tCtx.imageSmoothingEnabled = false;
-                const frameW = wSprite.width / 8;
-                const frameH = wSprite.height / 6;
 
-                // 🛑 EL FIX: Si es Melee dibujamos la Fila 0 (Mirando Abajo). Si es Pistola, la Fila 1 (Lado).
-                const targetRow = (stats.type === 'melee') ? 0 : 1;
+                let srcY = 0; // Fila 1 (Melee)
+                if (stats.type === 'ranged') {
+                    srcY = frameH; // Fila 2 (Pistolas)
+                }
 
-                tCtx.drawImage(wSprite, 0, targetRow * frameH, frameW, frameH, 0, 0, 48, 48);
+                setTimeout(() => {
+                    tCtx.imageSmoothingEnabled = false;
+                    // Dibujamos de esquina a esquina (1:1)
+                    tCtx.drawImage(wSprite, 0, srcY, frameW, frameH, 0, 0, frameW, frameH);
+                }, 0);
+
                 return tCanvas;
             }
-            // Fallback: Si olvidaste ponerle imagen en MongoDB, usa las letras
+            // Fallback (Si no hay imagen cargada)
             else {
                 const div = document.createElement('div');
                 div.style.width = "100%"; div.style.height = "100%";
@@ -5659,7 +6545,6 @@
                 return div;
             }
         }
-
         function renderInventory() {
             inventoryGrid.innerHTML = "";
 
@@ -5678,42 +6563,233 @@
                 if (player.activeSlot === equippingSlotIndex) player.equippedWeapon = "none";
                 renderHudHotbar();
                 inventoryModal.style.display = 'none';
-                // --- NUEVO ---
                 if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'update_hotbar', slotIndex: equippingSlotIndex, weaponId: "none" }));
             };
             inventoryGrid.appendChild(noneSlot);
 
-            // Draw your actual items (looping 11 times to keep the 12-slot grid clean)
+            // --- DRAW YOUR ACTUAL ITEMS ---
+            const safeInventory = player.inventory || [];
+
             for (let i = 0; i < 11; i++) {
                 const slot = document.createElement('div');
                 slot.style.width = "100%"; slot.style.aspectRatio = "1/1";
                 slot.style.background = "rgba(0,0,0,0.4)"; slot.style.border = "1px solid rgba(255,255,255,0.1)";
                 slot.style.borderRadius = "8px"; slot.style.display = "flex";
                 slot.style.justifyContent = "center"; slot.style.alignItems = "center"; slot.style.cursor = "pointer";
+                slot.style.position = "relative";
 
-                // --- THE FIX: Safety fallback in case inventory is somehow missing ---
-                const safeInventory = player.inventory || [];
-                const itemId = safeInventory[i];
+                const rawItem = safeInventory[i];
 
-                // --- MOCHILA DINÁMICA ---
-                if (itemId && itemId !== "none") {
-                    const iconElement = getWeaponIcon(itemId);
-                    if (iconElement) {
-                        iconElement.style.width = "80%";
-                        slot.appendChild(iconElement);
+                if (rawItem) {
+                    const itemId = (typeof rawItem === 'object') ? rawItem.id : rawItem;
+                    const qty = (typeof rawItem === 'object') ? (rawItem.quantity || 1) : 1;
+
+                    if (itemId && itemId !== "none") {
+
+                        // 🛑 1. ¿ES UN ARMA? -> ALTA CALIDAD RESTAURADA
+                        if (weaponsDB[itemId] && loadedWeaponSprites[itemId]) {
+                            const w = weaponsDB[itemId];
+                            const ws = loadedWeaponSprites[itemId];
+
+                            // Lienzo perfecto de 64x64 (Igual al del Modal Detalle)
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 64;
+                            canvas.height = 64;
+                            canvas.style.width = "80%";
+                            canvas.style.imageRendering = "pixelated";
+                            const ctx = canvas.getContext('2d');
+
+                            const frameW = 48; // 384 / 8
+                            const frameH = 64; // 384 / 6
+
+                            let srcX = 0;
+                            let srcY = 0; // Fila 1 (Melee)
+
+                            if (w.type === 'ranged') {
+                                srcY = frameH; // Fila 2 (Pistolas)
+                            }
+
+                            // El truco mágico del setTimeout para que no se pierdan los píxeles
+                            setTimeout(() => {
+                                ctx.imageSmoothingEnabled = false;
+                                // Dibujamos el recorte de 48x64 centrado (dejando 8px de margen a los lados)
+                                ctx.drawImage(ws, srcX, srcY, frameW, frameH, 8, 0, 48, 64);
+                            }, 0);
+
+                            slot.appendChild(canvas);
+                        }
+                        // 🛑 2. SI NO ES ARMA, ¿ES BASURA? -> Lienzo exacto de 16x16
+                        else if (itemId.startsWith('trash_') && trashSpritesheet.complete) {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 16;
+                            canvas.height = 16;
+                            canvas.style.width = "auto";
+                            canvas.style.height = "80%";
+                            canvas.style.objectFit = "contain";
+                            canvas.style.imageRendering = "pixelated";
+                            const ctx = canvas.getContext('2d');
+
+                            const t = CLIENT_TRASH_CATALOG.find(x => x.id === itemId);
+                            if (t) {
+                                setTimeout(() => {
+                                    ctx.imageSmoothingEnabled = false;
+                                    ctx.drawImage(trashSpritesheet, t.sx, t.sy, 16, 16, 0, 0, 16, 16);
+                                }, 0);
+                            }
+                            slot.appendChild(canvas);
+                        }
+
+                        // 3. ETIQUETA DE CANTIDAD
+                        if (qty > 1) {
+                            const badge = document.createElement('div');
+                            badge.style.position = 'absolute'; badge.style.bottom = '2px'; badge.style.right = '2px';
+                            badge.style.background = 'rgba(0,0,0,0.8)'; badge.style.color = 'white';
+                            badge.style.fontSize = '10px'; badge.style.padding = '2px 4px';
+                            badge.style.borderRadius = '4px'; badge.style.fontWeight = 'bold';
+                            badge.innerText = `x${qty}`;
+                            slot.appendChild(badge);
+                        }
+
+                        // 4. ABRIR INSPECTOR
+                        slot.onclick = () => {
+                            openItemInspector(itemId, qty);
+                        };
                     }
-
-                    slot.onclick = () => {
-                        player.hotbar[equippingSlotIndex] = itemId;
-                        if (player.activeSlot === equippingSlotIndex) player.equippedWeapon = itemId;
-                        renderHudHotbar();
-                        inventoryModal.style.display = 'none';
-                        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'update_hotbar', slotIndex: equippingSlotIndex, weaponId: itemId }));
-                    };
                 }
                 inventoryGrid.appendChild(slot);
             }
         }
+        // =========================================================
+        // 🔍 SISTEMA DE INSPECCIÓN DE OBJETOS
+        // =========================================================
+
+        function openItemInspector(itemId, quantity) {
+            currentInspectingItemId = itemId;
+            const modal = document.getElementById('item-detail-modal');
+            const title = document.getElementById('item-detail-name');
+            const qtyTxt = document.getElementById('item-detail-qty');
+            const statsBox = document.getElementById('item-detail-stats');
+            const btnEquip = document.getElementById('btn-equip-item');
+            const canvas = document.getElementById('item-detail-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 🛑 EL FIX: LIMPIEZA INICIAL DE SEGURIDAD
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            title.innerText = "Cargando..."; // Reset de texto
+            statsBox.innerHTML = "";        // Reset de stats
+            btnEquip.style.display = 'none'; // Esconder botón por seguridad
+            btnEquip.disabled = false;
+            btnEquip.style.background = "#27ae60";
+
+            qtyTxt.innerText = `Cantidad: x${quantity}`;
+
+            // --- LÓGICA DE DETECCIÓN ---
+            console.log("Inspeccionando ID:", itemId);
+
+            // 🛑 EL FIX: Revisar PRIMERO si es un arma (así el "trash_picker" no se confunde con chatarra)
+            if (weaponsDB[itemId]) {
+                const w = weaponsDB[itemId];
+                title.innerText = w.name;
+                title.style.color = '#e74c3c';
+
+                let typeIcon = w.type === 'ranged' ? '🔫 Distancia' : '🗡️ Cuerpo a Cuerpo';
+                statsBox.innerHTML = `
+            <div style="margin-bottom:8px;"><b>Tipo:</b> ${typeIcon}</div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>Daño:</span> <span style="color:#e74c3c; font-weight:bold;">${w.damage || 0} HP</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>Velocidad:</span> <span style="color:#f39c12;">${w.speed || w.fireRate} ms</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Alcance:</span> <span style="color:#3498db;">${w.range || 0} px</span>
+            </div>
+        `;
+
+                btnEquip.style.display = 'block';
+                btnEquip.innerText = (player.equippedWeapon === itemId) ? "✅ Equipada" : "🗡️ Equipar";
+                if (player.equippedWeapon === itemId) btnEquip.disabled = true;
+
+                if (loadedWeaponSprites[itemId]) {
+                    const ws = loadedWeaponSprites[itemId];
+
+                    // Matemáticas exactas para la cuadrícula 8x6
+                    const frameW = ws.width / 8;  // 48
+                    const frameH = ws.height / 6; // 64
+
+                    let srcX = 0; // Primera columna
+                    let srcY = 0; // Primera fila (Melee)
+
+                    // Si es arma de fuego (Gun), agarramos la SEGUNDA fila
+                    if (w.type === 'ranged') {
+                        srcY = frameH;
+                    }
+
+                    // Ajustamos el tamaño del Canvas del modal
+                    canvas.width = frameW;
+                    canvas.height = frameH;
+                    canvas.style.width = "auto";
+                    canvas.style.height = "64px"; // Mantenemos el alto visual del modal
+                    canvas.style.objectFit = "contain";
+
+                    setTimeout(() => {
+                        ctx.imageSmoothingEnabled = false;
+                        // Dibujamos el recorte exacto a escala 1:1
+                        ctx.drawImage(ws, srcX, srcY, frameW, frameH, 0, 0, frameW, frameH);
+                    }, 0);
+                }
+            }
+            // 🛑 Si NO es un arma, y empieza con "trash_", entonces sí es chatarra real
+            else if (itemId.startsWith('trash_')) {
+                const t = CLIENT_TRASH_CATALOG.find(x => x.id === itemId);
+                if (t) {
+                    title.innerText = t.name;
+                    title.style.color = '#bdc3c7';
+                    statsBox.innerHTML = `
+                <div style="color:#95a5a6; margin-bottom:10px;"><i>"Material de desecho recolectado en el mapa."</i></div>
+                <div>♻️ <b>Valor en el Yonke:</b> <span style="color:#2ecc71;">${t.value} 🪙 c/u</span></div>
+            `;
+                    if (trashSpritesheet.complete) {
+                        ctx.imageSmoothingEnabled = false; // 🛑 FIX: Evitar blur
+                        ctx.drawImage(trashSpritesheet, t.sx, t.sy, 16, 16, 0, 0, 64, 64);
+                    }
+                }
+            } else {
+                // Si no es ninguna de las dos
+                title.innerText = "Objeto Desconocido";
+                statsBox.innerHTML = `<div style="color:orange;">ID: ${itemId}<br>No se encontró en la base de datos local.</div>`;
+            }
+
+            modal.style.display = 'block';
+        }
+        // Eventos de los Botones del Inspector
+        document.getElementById('btn-close-item-detail').onclick = () => {
+            document.getElementById('item-detail-modal').style.display = 'none';
+        };
+
+        // --- EL BOTÓN VERDE DEL INSPECTOR AHORA SE CONECTA A TU HOTBAR ---
+        document.getElementById('btn-equip-item').onclick = () => {
+            if (ws.readyState === WebSocket.OPEN && currentInspectingItemId) {
+
+                // 1. Asignar el arma a tu Hotbar activo
+                player.hotbar[equippingSlotIndex] = currentInspectingItemId;
+                if (player.activeSlot === equippingSlotIndex) player.equippedWeapon = currentInspectingItemId;
+
+                // 2. Actualizar la interfaz (El HUD de abajo)
+                renderHudHotbar();
+
+                // 3. Avisar al servidor del cambio
+                ws.send(JSON.stringify({
+                    type: 'update_hotbar',
+                    slotIndex: equippingSlotIndex,
+                    weaponId: currentInspectingItemId
+                }));
+
+                // 4. Cerrar ambos menús (El inspector flotante y la cuadrícula grande)
+                document.getElementById('item-detail-modal').style.display = 'none';
+                inventoryModal.style.display = 'none';
+            }
+        };
 
         function renderHudHotbar() {
             for (let i = 0; i < 3; i++) {
@@ -6564,7 +7640,8 @@
                     const wW = wSprite.width / 8; const wH = wSprite.height / 6;
 
                     skelCtx.save();
-                    skelCtx.translate(centerX + (anchors.handR[0] * zoom), centerY + (anchors.handR[1] * zoom));
+                    // 🛑 EL FIX: Usar exactamente la posición calculada del Gizmo Azul para anclar el arma
+                    skelCtx.translate(handGizmoX, handGizmoY);
                     skelCtx.globalAlpha = 0.7;
                     skelCtx.drawImage(wSprite, 0, 0, wW, wH, -pX - (wW * zoom / 2), -pY - (wH * zoom / 2), wW * zoom, wH * zoom);
                     skelCtx.restore();
@@ -6780,9 +7857,9 @@
                     // Buscar el punto rojo (Pivote)
                     const wId = player.equippedWeapon;
                     if (wId !== "none" && weaponsDB[wId]) {
-                        // El centro del canvas es 128,128
-                        const px = 128 + (weaponsDB[wId].pivotX * zoom);
-                        const py = 128 + (weaponsDB[wId].pivotY * zoom);
+                        // 🛑 EL FIX: Agregar '|| 0' para evitar errores si el arma es nueva
+                        const px = 128 + ((weaponsDB[wId].pivotX || 0) * zoom);
+                        const py = 128 + ((weaponsDB[wId].pivotY || 0) * zoom);
 
                         if (Math.hypot(mx - px, my - py) < 20) draggingAnchor = 'pivot';
                     }
@@ -6938,6 +8015,17 @@
         }
 
         function drawModularCharacter(ctx, p, drawX, drawY, zoom) {
+            // ==========================================================
+            // 🛑 NUEVO SISTEMA DE ROPA (GUARDARROPA DINÁMICO) 🛑
+            // ==========================================================
+            const equippedBody = (p.equipped && p.equipped.body) ? p.equipped.body : 'body_default';
+            const equippedHead = (p.equipped && p.equipped.head) ? p.equipped.head : 'head_default';
+
+            // Sacamos la imagen del catálogo. Si no existe o no ha cargado, usamos la global por defecto
+            const dynBodyImg = (window.loadedItemSprites && window.loadedItemSprites[equippedBody]) ? window.loadedItemSprites[equippedBody] : bodyImg;
+            const dynHeadImg = (window.loadedItemSprites && window.loadedItemSprites[equippedHead]) ? window.loadedItemSprites[equippedHead] : headImg;
+            // ==========================================================
+
             const dirIdx = p.frameY;
             let state = "idle";
             let maxFrames = 4;
@@ -6997,12 +8085,31 @@
             // 🔥 LA ANIMACIÓN DINÁMICA DEL JUEGO REAL 🔥
             let currentAnimRot = d.wRot || 0;
 
-            // 1. Animación de Espada (Swing)
+            // 🛑 NUEVAS VARIABLES PARA EL EMPUJE (STAB)
+            let stabOffsetX = 0;
+            let stabOffsetY = 0;
+
+            // 1. Animación de Ataque Melee (Swing o Stab)
             if (p.isSwinging && stats.type !== 'ranged') {
                 const elapsed = Date.now() - (p.swingStartTime || 0);
                 if (elapsed < (p.swingDuration || 200)) {
                     const progress = elapsed / (p.swingDuration || 200);
-                    currentAnimRot += (d.wSwg || 90) * progress;
+
+                    // 🛑 BIFURCACIÓN: ¿Es el recogedor de basura u otra arma?
+                    if (stats.id === 'trash_picker') {
+                        // Animación STAB: Efecto resorte (Math.sin) para ir hacia adelante y regresar
+                        const stabDistance = 14; // Píxeles que se estira el brazo
+                        const stabProgress = Math.sin(progress * Math.PI);
+
+                        // Empujamos en la dirección a la que mira
+                        if (dirIdx === 0) stabOffsetY = stabProgress * stabDistance;
+                        else if (dirIdx === 1) stabOffsetX = -stabProgress * stabDistance;
+                        else if (dirIdx === 2) stabOffsetX = stabProgress * stabDistance;
+                        else if (dirIdx === 3) stabOffsetY = -stabProgress * stabDistance;
+                    } else {
+                        // Animación SWING NORMAL (Giro de espada)
+                        currentAnimRot += (d.wSwg || 90) * progress;
+                    }
                 } else {
                     p.isSwinging = false;
                 }
@@ -7010,27 +8117,22 @@
             // 2. Animación de Pistola (Recoil / Tilt)
             else if (stats.type === 'ranged') {
                 const timeSinceShot = Date.now() - (p.lastShotTime || 0);
-                // El recoil dura una fracción del tiempo de recarga entre balas
                 const recoilDuration = Math.min(150, (stats.fireRate || 300) / 2);
                 if (timeSinceShot < recoilDuration) {
                     const progress = timeSinceShot / recoilDuration;
-                    // Math.sin crea un efecto resorte: sube rápido y baja suave
                     const tiltAmount = Math.sin(progress * Math.PI) * (d.wSwg || 0);
-
-                    // Multiplicamos por dirM para que la pistola siempre se levante hacia arriba, 
-                    // sin importar si miras a la izquierda o derecha.
                     currentAnimRot -= (tiltAmount * dirM);
                 }
             }
 
             const totalWeaponRot = baseAimAngle + (currentAnimRot * dirM * Math.PI / 180);
+
             // ==========================================================
             // 🔥 MINI-FUNCIONES DE DIBUJO MODULAR (SINCRONIZADAS AL 100%) 🔥
             // ==========================================================
             const drawAccessory = () => {
                 if (p.equippedWeapon && loadedWeaponSprites[p.equippedWeapon] && d.wTileX !== undefined && d.wTileX !== null) {
                     ctx.save();
-                    // FIX 1: Usar offsetX y offsetY para igualar el "Centro" del Editor
                     ctx.translate(offsetX + ((d.aX || 0) * zoom), offsetY + ((d.aY || 0) * zoom));
                     if (d.aRot) ctx.rotate(d.aRot * Math.PI / 180);
                     ctx.drawImage(loadedWeaponSprites[p.equippedWeapon], d.wTileX * 16, d.wTileY * 16, 16, 16, -(16 * zoom) / 2, -(16 * zoom) / 2, 16 * zoom, 16 * zoom);
@@ -7045,12 +8147,11 @@
                     const pivotY = (stats.pivotY || 0) * zoom;
 
                     ctx.save();
-                    ctx.translate(handX + ((d.wX || 0) * zoom), handY + ((d.wY || 0) * zoom));
+                    ctx.translate(handX + ((d.wX || 0) * zoom) + (stabOffsetX * zoom), handY + ((d.wY || 0) * zoom) + (stabOffsetY * zoom));
                     ctx.rotate(totalWeaponRot);
 
                     const wW = wSprite.width / 8; const wH = wSprite.height / 6;
 
-                    // 🔥 MAGIA DE PISTOLAS EN EL JUEGO REAL 🔥
                     let srcY = 0;
                     if (stats.type === 'ranged') {
                         let gunRow = dirIdx;
@@ -7065,15 +8166,15 @@
             };
 
             const drawHand = () => {
-                if (p.equippedWeapon && loadedWeaponSprites[p.equippedWeapon] && bodyImg && bodyImg.complete) {
+                // 🛑 EL FIX DE ROPA DINÁMICA: Usamos dynBodyImg para asegurar que recorta la piel correcta
+                if (p.equippedWeapon && loadedWeaponSprites[p.equippedWeapon] && dynBodyImg && dynBodyImg.complete) {
                     ctx.save();
-                    // FIX 2: Anclaje y herencia de rotación EXACTAMENTE igual que en el Editor
-                    ctx.translate(handX + ((d.wX || 0) * zoom), handY + ((d.wY || 0) * zoom));
-                    ctx.rotate(totalWeaponRot); // Herencia del espadazo
-                    ctx.translate(((d.hX || 0) * zoom), ((d.hY || 0) * zoom)); // Deslizamiento sobre la espada
-                    ctx.rotate((d.hRot || 0) * Math.PI / 180); // Rotación pura de la muñeca
+                    ctx.translate(handX + ((d.wX || 0) * zoom) + (stabOffsetX * zoom), handY + ((d.wY || 0) * zoom) + (stabOffsetY * zoom));
+                    ctx.rotate(totalWeaponRot);
+                    ctx.translate(((d.hX || 0) * zoom), ((d.hY || 0) * zoom));
+                    ctx.rotate((d.hRot || 0) * Math.PI / 180);
 
-                    ctx.drawImage(bodyImg, (d.tX || 13) * 16, (d.tY || 0) * 16, 16, 16, -(16 * zoom) / 2, -(16 * zoom) / 2, 16 * zoom, 16 * zoom);
+                    ctx.drawImage(dynBodyImg, (d.tX || 13) * 16, (d.tY || 0) * 16, 16, 16, -(16 * zoom) / 2, -(16 * zoom) / 2, 16 * zoom, 16 * zoom);
                     ctx.restore();
                 }
             };
@@ -7085,27 +8186,65 @@
             if (wZ === 0) drawWeapon();
             if (hZ === 0) drawHand();
 
-            if (bodyImg && bodyImg.complete) {
+            // 🛑 EL FIX DE ROPA DINÁMICA: Dibujamos el cuerpo con la textura del jugador actual
+            if (dynBodyImg && dynBodyImg.complete) {
                 ctx.drawImage(
-                    bodyImg,
+                    dynBodyImg,
                     safeFrameX * FRAME_WIDTH, (baseRow + dirIdx) * FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT,
                     offsetX, offsetY, FRAME_WIDTH * zoom, FRAME_HEIGHT * zoom
                 );
             }
 
-            if (headImg && headImg.complete) {
+            // 🛑 EL FIX DE ROPA DINÁMICA: Dibujamos la cabeza con la textura del jugador actual
+            if (dynHeadImg && dynHeadImg.complete) {
                 const headSafeFrame = displayFrameX % 4;
                 ctx.drawImage(
-                    headImg,
+                    dynHeadImg,
                     headSafeFrame * FRAME_WIDTH, dirIdx * FRAME_HEIGHT, FRAME_WIDTH, FRAME_HEIGHT,
                     offsetX + (headAnc[0] * zoom), offsetY + (headAnc[1] * zoom), FRAME_WIDTH * zoom, FRAME_HEIGHT * zoom
                 );
             }
 
+            // ==========================================================
+            // 🧠 EL WOBBLE (BAMBOLEO) MATEMÁTICO: Cabeza y Sombrero
+            // ==========================================================
+            // Secuencia: Centro(0), Abajo(1), Centro(0), Arriba(-1)
+            const WOBBLE_PATTERN = [0, 1, 0, -1, 0, 1, 0, -1];
+            const currentWalkFrame = displayFrameX % 8; // Sincronizado con las piernas
+            const wobbleY = WOBBLE_PATTERN[currentWalkFrame] || 0;
+
+            // Calculamos la coordenada FINAL una sola vez para ambos
+            const finalHeadX = offsetX + (headAnc[0] * zoom);
+            const finalHeadY = offsetY + ((headAnc[1] + wobbleY) * zoom);
+
+            // 1. Dibujar CABEZA (Ahora usa X=0 siempre, porque es de 1 columna)
+            if (dynHeadImg && dynHeadImg.complete && dynHeadImg.naturalWidth > 0) {
+                const headFrameH = dynHeadImg.height / 4;
+                ctx.drawImage(
+                    dynHeadImg,
+                    0, dirIdx * headFrameH, FRAME_WIDTH, headFrameH,
+                    finalHeadX, finalHeadY, FRAME_WIDTH * zoom, headFrameH * zoom
+                );
+            }
+
+            // 2. Dibujar SOMBRERO (Pegado a la cabeza matemáticamente)
+            const equippedHat = (p.equipped && p.equipped.hat) ? p.equipped.hat : 'none';
+            const dynHatImg = (window.loadedItemSprites && window.loadedItemSprites[equippedHat]);
+
+            if (dynHatImg && dynHatImg.complete && dynHatImg.naturalWidth > 0) {
+                const hatFrameH = dynHatImg.height / 4;
+                ctx.drawImage(
+                    dynHatImg,
+                    0, dirIdx * hatFrameH, FRAME_WIDTH, hatFrameH,
+                    finalHeadX, finalHeadY, FRAME_WIDTH * zoom, hatFrameH * zoom
+                );
+            }
+            // ===========================================================
+
             if (aZ === 1) drawAccessory();
             if (wZ === 1) drawWeapon();
             if (hZ === 1) drawHand();
-        }
+        } // <--- Fin de la función drawModularCharacter
 
         function update() {
             // Si por algún error el loading se queda pegado, lo forzamos a cerrar al movernos
@@ -7186,9 +8325,9 @@
                             player.vx = 0; player.vy = 0; player.isMoving = false;
                         }
                     } else {
-                        // Joystick
-                        player.vx *= speedMult;
-                        player.vy *= speedMult;
+                        // 🛑 EL FIX 2: Calcular la velocidad limpia CADA FRAME usando el joystick (como en PC)
+                        player.vx = (player.joyX || 0) * (player.speed * speedMult);
+                        player.vy = (player.joyY || 0) * (player.speed * speedMult);
                         player.isMoving = (player.vx !== 0 || player.vy !== 0);
                     }
                 } else {
@@ -7259,9 +8398,16 @@
                             openShopModal(logicTile.itemId);
                             lastShopTile = currentTileKey;
                         }
+                    } else if (logicTile.triggerType === 'junkyard') {
+                        if (!isJunkyardOpen && lastJunkyardTile !== currentTileKey) {
+                            openJunkyardModal();
+                            isJunkyardOpen = true;
+                            lastJunkyardTile = currentTileKey;
+                        }
                     }
                 } else {
                     if (lastShopTile !== currentTileKey && !isShopOpen) lastShopTile = null;
+                    if (lastJunkyardTile !== currentTileKey && !isJunkyardOpen) lastJunkyardTile = null;
                 }
             }
             // 👇 NUEVO: ESCÁNER MATEMÁTICO DE ZONAS SEGURAS (AABB) 👇
@@ -7373,6 +8519,63 @@
                             }
                         }
                         lastShotTime = Date.now();
+
+                        // 4. Escanear a la BASE CENTRAL (Ataque Melee)
+                        // Solo hace daño si la base existe y si tú tienes un Clan equipado
+                        if (centralBase && player.squad) {
+                            // Le sumamos TILE_SIZE al rango porque el edificio es gordito
+                            const distToBase = Math.hypot(centralBase.worldX - hitOriginX, centralBase.worldY - hitOriginY);
+
+                            if (distToBase <= (hitRange + TILE_SIZE)) {
+                                const angleToBase = Math.atan2(centralBase.worldY - hitOriginY, centralBase.worldX - hitOriginX);
+                                let angleDiffBase = angleToBase - trueHitAngle;
+
+                                // Normalizar el ángulo
+                                while (angleDiffBase <= -Math.PI) angleDiffBase += Math.PI * 2;
+                                while (angleDiffBase > Math.PI) angleDiffBase -= Math.PI * 2;
+
+                                // Si está dentro del "abanico" de tu espadazo
+                                if (Math.abs(angleDiffBase) <= halfWidRad) {
+                                    // ¡GOLPE CONFIRMADO A LA BASE!
+                                    if (ws.readyState === WebSocket.OPEN) {
+                                        ws.send(JSON.stringify({
+                                            type: 'damage_base',
+                                            weaponId: player.equippedWeapon
+                                        }));
+                                    }
+                                }
+                            }
+                        }
+
+                        // 🛑 LA PIEZA QUE FALTABA: ESCANEAR BASURA EN EL PISO
+                        if (player.equippedWeapon === 'trash_picker') {
+                            for (let itemId in groundItems) {
+                                let item = groundItems[itemId];
+                                // Distancia desde el jugador hasta la pieza de basura
+                                const distToTrash = Math.hypot(item.x - hitOriginX, item.y - hitOriginY);
+
+                                // Si está en el rango de alcance de tu recogedor...
+                                if (distToTrash <= hitRange) {
+                                    const angleToTrash = Math.atan2(item.y - hitOriginY, item.x - hitOriginX);
+                                    let angleDiffTrash = angleToTrash - trueHitAngle;
+
+                                    // Normalizar ángulo
+                                    while (angleDiffTrash <= -Math.PI) angleDiffTrash += Math.PI * 2;
+                                    while (angleDiffTrash > Math.PI) angleDiffTrash -= Math.PI * 2;
+
+                                    // Si está justo enfrente de ti (en el ángulo del pinchazo)
+                                    if (Math.abs(angleDiffTrash) <= halfWidRad) {
+                                        // ¡PINCHASTE LA BASURA! Mandamos cobrar al servidor
+                                        if (ws.readyState === WebSocket.OPEN) {
+                                            ws.send(JSON.stringify({ type: 'pickup_trash', itemId: itemId }));
+                                        }
+                                        // La borramos visualmente de inmediato para que no mandes spam de clics
+                                        delete groundItems[itemId];
+                                        break; // Salimos del loop para solo pinchar 1 a la vez
+                                    }
+                                }
+                            }
+                        }
                     }
                     // =========================================================
                     // 🔫 LÓGICA DE DISPARO RANGED (Pistolas)
@@ -7527,6 +8730,24 @@
                             break;
                         }
                     }
+
+                    // C. ¿La bala chocó contra la BASE CENTRAL?
+                    // El Hitbox de la base es más grande (TILE_SIZE * 1.5)
+                    if (!hitSomeone && centralBase) {
+                        if (Math.hypot(p.x - centralBase.worldX, p.y - centralBase.worldY) < (TILE_SIZE * 1.5)) {
+                            hitSomeone = true; // La bala explota visualmente
+
+                            // Solo el dueño de la bala avisa al servidor. Y SOLO si tiene clan.
+                            if (p.owner === myId && player.squad) {
+                                if (ws.readyState === WebSocket.OPEN) {
+                                    ws.send(JSON.stringify({
+                                        type: 'damage_base',
+                                        weaponId: p.weapon
+                                    }));
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Destruir la bala si toca una pared, se le acaba la vida, o tocó a alguien vivo
@@ -7632,6 +8853,23 @@
             // === 1. DRAW GROUND LAYERS (BELOW PLAYER: L0 - L7) ===
             drawWorldLayers(0, 7);
 
+            // === 🛑 DIBUJAR LA BASURA EN EL PISO ===
+            for (let itemId in groundItems) {
+                let item = groundItems[itemId];
+                const iDrawX = Math.round(screenCenterX + (item.x - player.worldX) * zoomLevel);
+                const iDrawY = Math.round(screenCenterY + (item.y - player.worldY) * zoomLevel);
+
+                if (trashSpritesheet.complete && trashSpritesheet.naturalWidth > 0) {
+                    const drawSize = 16 * zoomLevel;
+                    // Extrae exactamente el cuadrito usando item.sx y item.sy que mandó el servidor
+                    ctx.drawImage(
+                        trashSpritesheet,
+                        item.sx, item.sy, 16, 16,
+                        iDrawX - (drawSize / 2), iDrawY - (drawSize / 2), drawSize, drawSize
+                    );
+                }
+            }
+
             // === 2. DRAW PLAYER SPRITES ===
             updatePlayerDirection();
 
@@ -7729,17 +8967,17 @@
                 aCtx.globalAlpha = 1.0;
             }
 
-            // --- NEW: DRAW PROJECTILES (GHOSTLY GREEN ORBS) ---
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "#2ecc71"; // Glowing green
-            ctx.fillStyle = "#2ecc71";
-
+            // --- NEW: DRAW PROJECTILES DINÁMICOS ---
             for (let p of projectiles) {
                 const pDrawX = Math.round(screenCenterX + (p.x - player.worldX) * zoomLevel);
                 const pDrawY = Math.round(screenCenterY + (p.y - player.worldY) * zoomLevel);
 
+                // 🛑 EL FIX: Leemos el color único de cada bala en lugar del verde global
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color || "#2ecc71";
+                ctx.fillStyle = p.color || "#2ecc71";
+
                 ctx.beginPath();
-                // Draw a 3-pixel circle, scaled to zoom
                 ctx.arc(pDrawX, pDrawY, 3 * zoomLevel, 0, Math.PI * 2);
                 ctx.fill();
             }
@@ -7748,6 +8986,39 @@
 
             // === 3. DRAW OVERHEAD LAYERS (ABOVE PLAYER: L8 - L15) ===
             drawWorldLayers(8, 15);
+            // === DIBUJAR UI DE LA BASE CENTRAL ===
+            if (centralBase) {
+                const bDrawX = Math.round(screenCenterX + (centralBase.worldX - player.worldX) * zoomLevel);
+                const bDrawY = Math.round(screenCenterY + (centralBase.worldY - player.worldY) * zoomLevel);
+
+                // Fondo negro de la barra
+                const barW = 50 * zoomLevel;
+                const barH = 6 * zoomLevel;
+                const barX = bDrawX - (barW / 2);
+                const barY = bDrawY - (25 * zoomLevel); // Flotando arriba
+
+                ctx.fillStyle = "rgba(0,0,0,0.8)";
+                ctx.fillRect(barX, barY, barW, barH);
+
+                // Relleno Azul de HP
+                const hpPercent = Math.max(0, centralBase.hp / centralBase.maxHp);
+                ctx.fillStyle = "#3498db";
+                ctx.fillRect(barX, barY, barW * hpPercent, barH);
+
+                // Texto de Identificación
+                ctx.fillStyle = "white";
+                ctx.font = `bold ${8 * zoomLevel}px sans-serif`;
+                ctx.textAlign = "center";
+
+                let baseStatus = centralBase.name.toUpperCase();
+                if (centralBase.currentOwnerSquadId) {
+                    baseStatus = `🔥 ${centralBase.name}: ${centralBase.currentOwnerSquadId.toUpperCase()} 🔥`;
+                }
+
+                baseStatus += ` - ${Math.floor(centralBase.hp)}/${centralBase.maxHp}`;
+
+                ctx.fillText(baseStatus, bDrawX, barY - (4 * zoomLevel));
+            }
             // === 4. DRAW EDIT MODE UI (SELECTION BOXES) ===
             if (editMode) {
                 let box = mapSelectionBox;
@@ -7836,15 +9107,21 @@
             // === DIBUJAR EL FOGONAZO (MUZZLE FLASH) ===
             // Dura solo 50 milisegundos en pantalla tras cada disparo
             if (Date.now() - lastShotTime < 50 && player.equippedWeapon !== "none") {
-                const fX = Math.round(screenCenterX + (player.lastShotX - player.worldX) * zoomLevel);
-                const fY = Math.round(screenCenterY + (player.lastShotY - player.worldY) * zoomLevel);
+                const stats = WEAPONS[player.equippedWeapon];
 
-                ctx.fillStyle = WEAPONS[player.equippedWeapon].color;
-                ctx.shadowBlur = 15; ctx.shadowColor = WEAPONS[player.equippedWeapon].color;
-                ctx.beginPath();
-                ctx.arc(fX, fY, 8 * zoomLevel, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
+                // 🛑 EL FIX: Solo dibujar la luz brillante si el arma es "ranged"
+                if (stats && stats.type === 'ranged') {
+                    const fX = Math.round(screenCenterX + (player.lastShotX - player.worldX) * zoomLevel);
+                    const fY = Math.round(screenCenterY + (player.lastShotY - player.worldY) * zoomLevel);
+
+                    ctx.fillStyle = stats.color || "#ffcc00"; // Usar el color del arma
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = stats.color || "#ffcc00";
+                    ctx.beginPath();
+                    ctx.arc(fX, fY, 8 * zoomLevel, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
             }
 
             // --- HELPER: Dibujar Barra de Vida Dinámica ---
@@ -7868,7 +9145,7 @@
                 const barW = 24 * zoomLevel;
                 const barH = 4 * zoomLevel;
                 const barX = x + (scaledWidth / 2) - (barW / 2);
-                const barY = y - (2 * zoomLevel);
+                const barY = y - (5 * zoomLevel); // Flotando ligeramente sobre la cabeza
 
                 ctx.fillStyle = "rgba(0,0,0,0.6)";
                 ctx.fillRect(barX, barY, barW, barH);
@@ -7881,9 +9158,8 @@
             }
 
             // === 5. DRAW NAMETAGS, BUBBLES & HEALTH BARS ===
-            const scaledWidth = FRAME_SIZE * zoomLevel;
-            const scaledHeight = FRAME_SIZE * zoomLevel;
-
+            const scaledWidth = FRAME_WIDTH * zoomLevel;  // 48 px de ancho
+            const scaledHeight = FRAME_HEIGHT * zoomLevel; // 64 px de alto (EL FIX PRINCIPAL)
             for (let id in otherPlayers) {
                 const p = otherPlayers[id];
                 if (!p || p.worldX === undefined || !p.username) continue;

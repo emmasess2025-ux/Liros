@@ -2705,16 +2705,6 @@
         trashSpritesheet.src = "items/jobs/junkyard/trash.png"; // Tu PNG custom de 128x32
         // Este arreglo asume que la animación tiene 8 frames.
 
-        const walkSprite = new Image();
-        walkSprite.src = 'walk.png';
-
-        const idleSprite = new Image();
-        idleSprite.src = 'idle.png';
-
-        // --- NEW: WEAPON & AIMING SPRITES ---
-        const walkAimSprite = new Image();
-        walkAimSprite.src = 'Walk_while_aim.png';
-
         const bodyImg = new Image();
         bodyImg.src = 'items/players/body/B_D.png'; // Tu archivo de cuerpo
 
@@ -2726,9 +2716,6 @@
 
         // Add equipped weapon to local player state
         player.equippedWeapon = "none";
-
-        // Set default to idle
-        player.currentImage = idleSprite;
 
         // --- MULTIPLAYER LOGIC ---
         const otherPlayers = {};
@@ -3575,28 +3562,12 @@
                 // Despertar la isla para que el jugador note que algo llegó en pantalla
                 wakeUpIsland(5000);
 
-                // Paint their upper-body onto the button!
-                if (nCtx) {
+                if (nCtx && headImg && headImg.complete) {
                     nCtx.clearRect(0, 0, notifCanvas.width, notifCanvas.height);
-                    const pFrameW = idleSprite.width / 8;
-                    const pFrameH = idleSprite.height / 6;
-
-                    // Crop to their upper half
-                    const cropW = pFrameW;
-                    const cropH = pFrameH / 2;
-                    const cropX = data.senderFrameX * pFrameW;
-                    const cropY = data.senderFrameY * pFrameH;
-
-                    // Scale it up nicely to fit the 45x45 circle
+                    const headFrameH = headImg.height / 4;
                     const drawW = 32;
-                    const drawH = 32 * (cropH / cropW);
-
-                    nCtx.drawImage(
-                        idleSprite,
-                        cropX, cropY, cropW, cropH,
-                        (notifCanvas.width - drawW) / 2, (notifCanvas.height - drawH) / 2 + 3,
-                        drawW, drawH
-                    );
+                    const drawH = 32 * (headFrameH / FRAME_WIDTH);
+                    nCtx.drawImage(headImg, 0, 0, FRAME_WIDTH, headFrameH, (notifCanvas.width - drawW) / 2, (notifCanvas.height - drawH) / 2, drawW, drawH);
                 }
             }// --- RECIBIR INVITACIÓN A UN CLAN ---
             else if (data.type === 'squad_invite') {
@@ -3607,12 +3578,12 @@
                 document.getElementById('friend-notif-badge').innerText = pendingRequests.length;
                 wakeUpIsland(5000);
 
-                if (nCtx) {
+                if (nCtx && headImg && headImg.complete) {
                     nCtx.clearRect(0, 0, notifCanvas.width, notifCanvas.height);
-                    const pFrameW = idleSprite.width / 8;
-                    const pFrameH = idleSprite.height / 6;
-                    const drawW = 32; const drawH = 32 * ((pFrameH / 2) / pFrameW);
-                    nCtx.drawImage(idleSprite, data.senderFrameX * pFrameW, data.senderFrameY * pFrameH, pFrameW, pFrameH / 2, (notifCanvas.width - drawW) / 2, (notifCanvas.height - drawH) / 2 + 3, drawW, drawH);
+                    const headFrameH = headImg.height / 4;
+                    const drawW = 32;
+                    const drawH = 32 * (headFrameH / FRAME_WIDTH);
+                    nCtx.drawImage(headImg, 0, 0, FRAME_WIDTH, headFrameH, (notifCanvas.width - drawW) / 2, (notifCanvas.height - drawH) / 2, drawW, drawH);
                 }
             }
             // --- RECIBIR ACTUALIZACIÓN DEL GANI EDITOR ---
@@ -4469,11 +4440,12 @@
                 }
 
                 // ... (El código de dibujar el avatar déjalo igual) ...
-                if (modalCtx) {
+                if (modalCtx && headImg && headImg.complete) {
                     modalCtx.clearRect(0, 0, modalAvatarCanvas.width, modalAvatarCanvas.height);
-                    const pFrameW = idleSprite.width / 8; const pFrameH = idleSprite.height / 6;
-                    const drawW = 40; const drawH = 40 * ((pFrameH / 2) / pFrameW);
-                    modalCtx.drawImage(idleSprite, 0, 0, pFrameW, pFrameH / 2, (modalAvatarCanvas.width - drawW) / 2, modalAvatarCanvas.height - drawH, drawW, drawH);
+                    const headFrameH = headImg.height / 4;
+                    const drawW = 40;
+                    const drawH = 40 * (headFrameH / FRAME_WIDTH);
+                    modalCtx.drawImage(headImg, 0, 0, FRAME_WIDTH, headFrameH, (modalAvatarCanvas.width - drawW) / 2, modalAvatarCanvas.height - drawH, drawW, drawH);
                 }
                 notifModal.style.display = 'flex';
             }
@@ -5679,52 +5651,50 @@
                 }
             }
 
-            // 2. ADD 'targetName' TO THE END OF THE PARAMETERS (SIN TOCAR)
-            function drawMinimapPlayer(pX, pY, pFrameX, pFrameY, pImage, color, targetAccountId) {
+            // 2. DIBUJAR JUGADORES EN MINIMAPA (AHORA CON CABEZAS)
+            function drawMinimapPlayer(pX, pY, pFrameY, headId, color, targetAccountId) {
                 const mX = (pX - cameraX) * scale + (minimapCanvas.width / 2);
                 const mY = (pY - cameraY) * scale + (minimapCanvas.height / 2);
 
-                const pFrameW = pImage.width / 8;
-                const pFrameH = pImage.height / 6;
-
-                const cropW = pFrameW;
-                const cropH = pFrameH / 2;
-                const cropX = pFrameX * pFrameW;
-                const cropY = pFrameY * pFrameH;
-
-                const drawSizeW = 48;
-                const drawSizeH = 48 * (cropH / cropW);
-
-                const glowRadius = drawSizeW * 0.03;
-                const glowOffsetY = drawSizeH * 0.60;
+                const safeSprites = window.loadedItemSprites || {};
+                const dHead = safeSprites[headId] || headImg;
+                const drawSizeW = 20;
 
                 const isFriend = (player.friends && player.friends.includes(targetAccountId));
 
+                // Círculo de color detrás de la cabeza (Amigos o Tú)
                 if (isFriend || color === "#f1c40f") {
                     mCtx.fillStyle = color;
                     mCtx.beginPath();
-                    mCtx.arc(mX, mY + glowOffsetY, glowRadius, 0, Math.PI * 2);
+                    mCtx.arc(mX, mY, 14, 0, Math.PI * 2);
                     mCtx.fill();
                 }
 
-                mCtx.drawImage(
-                    pImage,
-                    cropX, cropY, cropW, cropH,
-                    mX - (drawSizeW / 2), mY - (drawSizeH / 2),
-                    drawSizeW, drawSizeH
-                );
+                // Dibujar la cabeza dinámica
+                if (dHead && dHead.complete && dHead.naturalWidth > 0) {
+                    const headFrameH = dHead.height / 4;
+                    const drawSizeH = drawSizeW * (headFrameH / FRAME_WIDTH);
+
+                    mCtx.drawImage(
+                        dHead,
+                        0, pFrameY * headFrameH, FRAME_WIDTH, headFrameH,
+                        mX - (drawSizeW / 2), mY - (drawSizeH / 2) - 4,
+                        drawSizeW, drawSizeH
+                    );
+                }
             }
 
-            // 3. DRAW OTHER PLAYERS (SIN TOCAR)
+            // 3. DRAW OTHER PLAYERS
             for (let id in otherPlayers) {
                 const p = otherPlayers[id];
-                if (!p || p.worldX === undefined) continue;
-                const pImage = p.isMoving ? walkSprite : idleSprite;
-                drawMinimapPlayer(p.worldX, p.worldY, p.frameX, p.frameY, pImage, getColorForString(p.username), p.accountId);
+                if (!p || p.worldX === undefined || !p.username) continue;
+                const hId = p.equipped ? p.equipped.head : 'head_default';
+                drawMinimapPlayer(p.worldX, p.worldY, p.frameY, hId, getColorForString(p.username), p.accountId);
             }
 
-            // 4. DRAW LOCAL PLAYER (SIN TOCAR)
-            drawMinimapPlayer(player.worldX, player.worldY, player.frameX, player.frameY, player.currentImage, "#f1c40f", player.accountId);
+            // 4. DRAW LOCAL PLAYER
+            const myHId = player.equipped ? player.equipped.head : 'head_default';
+            drawMinimapPlayer(player.worldX, player.worldY, player.frameY, myHId, "#f1c40f", player.accountId);
         }
 
         // --- PROFILE MODAL LOGIC ---
@@ -6226,7 +6196,7 @@
 
             const pmHeaderAvatar = document.getElementById('pm-header-avatar');
             pmHeaderAvatar.innerHTML = "";
-            pmHeaderAvatar.appendChild(createAvatarCanvas(36));
+            pmHeaderAvatar.appendChild(createAvatarCanvas(36, targetAccountId));
 
             pmModal.style.display = 'flex';
             pmHistoryContainer.innerHTML = '<div style="text-align:center; color:#777; font-size: 12px; margin-top:20px;">Cargando mensajes...</div>';
@@ -6272,7 +6242,7 @@
                 avatarDiv.style.borderRadius = "10px"; avatarDiv.style.overflow = "hidden";
                 avatarDiv.style.background = "rgba(0,0,0,0.3)";
                 avatarDiv.style.flexShrink = "0";
-                avatarDiv.appendChild(createAvatarCanvas(40)); // Crear el canvas del avatar
+                avatarDiv.appendChild(createAvatarCanvas(40, chat.targetAccountId));
 
                 // 2. Textos (Nombre, Hora y Último Mensaje)
                 const textDiv = document.createElement('div');
@@ -6304,39 +6274,45 @@
             });
         }
 
-        // --- HELPERS PARA AVATARES Y HORAS (CON CONTROLES MANUALES) ---
-        function createAvatarCanvas(size = 36) {
+        // --- HELPERS PARA AVATARES (AHORA USA CABEZAS DINÁMICAS) ---
+        function createAvatarCanvas(size = 36, targetAccountId = null) {
             const tCanvas = document.createElement('canvas');
             tCanvas.width = size;
             tCanvas.height = size;
             const tCtx = tCanvas.getContext('2d');
             tCtx.imageSmoothingEnabled = false;
 
-            if (idleSprite.complete && idleSprite.naturalWidth > 0) {
-                const pFrameW = idleSprite.width / 8;
-                const pFrameH = idleSprite.height / 6;
-                const cropW = pFrameW;
-                const cropH = pFrameH / 2;
+            // 1. Buscar qué cabeza tiene equipada el jugador
+            let headId = 'head_default';
+            if (targetAccountId === player.accountId) {
+                headId = player.equipped?.head || 'head_default';
+            } else if (targetAccountId) {
+                for (let id in otherPlayers) {
+                    if (otherPlayers[id].accountId === targetAccountId) {
+                        headId = otherPlayers[id].equipped?.head || 'head_default';
+                        break;
+                    }
+                }
+            }
 
-                // --- 🎛️ TUS CONTROLES DE CÁMARA ---
-                // 1. ZOOM: Lo subimos de 1.6 a 2.2 para un primer plano masivo
-                const zoom = 2.2;
+            // 2. Cargar la imagen del catálogo
+            const safeSprites = window.loadedItemSprites || {};
+            const dHead = safeSprites[headId] || headImg;
 
-                // 2. CENTRADO (EMPUJE): 
-                // Multiplicamos por 'size' para que el ajuste sea proporcional si la burbuja es de 28px o 36px.
-                // Si la cabeza sigue muy arriba, sube el 0.15 a 0.20 o 0.25.
-                const pushY = size * -0.40;
-                const pushX = 0; // (Por si tu sprite está descentrado horizontalmente)
+            // 3. Dibujar la cabeza centrada
+            if (dHead && dHead.complete && dHead.naturalWidth > 0) {
+                const frameW = FRAME_WIDTH;
+                const headFrameH = dHead.height / 4;
+                const zoom = size / 30; // Escala dinámica según el tamaño de la burbuja
 
-                const drawW = size * zoom;
-                const drawH = drawW * (cropH / cropW);
+                const drawW = frameW * zoom;
+                const drawH = headFrameH * zoom;
 
-                // Dibujamos aplicando tus ajustes
                 tCtx.drawImage(
-                    idleSprite,
-                    0, 0, cropW, cropH,
-                    ((size - drawW) / 2) + pushX,
-                    ((size - drawH) / 2) + pushY,
+                    dHead,
+                    0, 0, frameW, headFrameH, // Fila 0 (Mirando al frente)
+                    (size - drawW) / 2,
+                    (size - drawH) / 2 + (4 * zoom), // Bajarla un poquito para centrar la cara
                     drawW, drawH
                 );
             }
@@ -6371,7 +6347,7 @@
                 row.style.marginBottom = "8px";
 
                 // --- 1. MINI AVATAR ---
-                const avatar = createAvatarCanvas(28); // 28x28 píxeles
+                const avatar = createAvatarCanvas(28, msg.senderId);
                 avatar.style.borderRadius = "50%"; // Avatar circular para los chats
                 avatar.style.background = "rgba(0,0,0,0.3)";
                 avatar.style.flexShrink = "0";
@@ -6871,70 +6847,185 @@
         let shopPreviewRotationInterval = null; // Guardará el timer del giro
         let shopPreviewFacingRow = 0; // Guardará hacia dónde mira (0=Down, 1=Left, 2=Right, 3=Up)
 
-        // --- NUEVO: FUNCIÓN QUE DIBUJA EL PERSONAJE GIRANDO ---
+        // =========================================================================
+        // --- NUEVO: VISTA PREVIA DE TIENDA (100% FIEL AL MOTOR DEL JUEGO) ---
+        // =========================================================================
+
+        let shopShotTimer = null;
+        let lastShopShotTime = 0;
+
         function drawShopPlayerPreview() {
-            if (!isShopOpen) return; // Si la tienda se cerró, dejamos de dibujar
+            if (!isShopOpen) {
+                shopShotTimer = null;
+                return;
+            }
 
             const pCanvas = document.getElementById('shop-player-preview');
             if (!pCanvas) return;
             const pCtx = pCanvas.getContext('2d');
             pCtx.imageSmoothingEnabled = false;
-            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height); // Limpiar
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
 
             const centerX = pCanvas.width / 2;
-            const centerY = pCanvas.height / 2 + 30;
+            const centerY = pCanvas.height / 2 + 30; // Ajuste visual para el modal
             const previewZoom = 3;
 
-            // LA MAGIA: Usamos 'shopPreviewFacingRow' para decidir la fila del sprite sheet
-            // 0=Hacia Abajo, 1=Hacia la Izquierda, 2=Hacia la Derecha, 3=Hacia Arriba
             let frameY = shopPreviewFacingRow;
-            const baseSprite = walkAimSprite;
 
-            // Usamos frameX = 0 para la pose estática de 'apuntar'
-            const frameX = 0;
+            // --- DISPARO AUTOMÁTICO (Cada 1.5 segundos) ---
+            const now = Date.now();
+            if (now - lastShopShotTime > 1500) {
+                lastShopShotTime = now;
+                shopShotTimer = { x: 0, y: 0, alpha: 1.0 };
+            }
 
-            // Calculamos tamaños base
-            const bW = baseSprite.naturalWidth > 0 ? baseSprite.width / 8 : 16;
-            const bH = baseSprite.naturalHeight > 0 ? baseSprite.height / 6 : 24;
+            const eq = player.equipped || { head: 'head_default', body: 'body_default', hat: 'none' };
+            const safeSprites = window.loadedItemSprites || {};
+            const dynBody = safeSprites[eq.body] || window.bodyImg;
+            const dynHead = safeSprites[eq.head] || window.headImg;
+            const dynHat = safeSprites[eq.hat];
 
-            // DIBUJAR CUERPO (Base)
-            if (baseSprite.complete) {
+            const bW = FRAME_WIDTH;
+            const bH = FRAME_HEIGHT;
+
+            // 🛑 LÓGICA 100% FIEL: Separamos el centro (manos) del offset (esquinas)
+            const offsetX = centerX - ((bW / 2) * previewZoom);
+            const offsetY = centerY - ((bH / 2) * previewZoom);
+
+            const bodyStateKey = "walk_armed";
+            const bodyRow = SKELETON_DATA.states[bodyStateKey] || 4;
+            const sourceY = (bodyRow + frameY) * bH;
+
+            const fKey = `${bodyStateKey}_${frameY}_0`;
+            const rawAnchors = SKELETON_DATA.anchors[fKey] || {};
+
+            const headAnc = rawAnchors.head || [0, 0];
+            const handAnc = rawAnchors.handR || [12, 12];
+
+            // Coordenadas idénticas a drawModularCharacter
+            const handX = centerX + (handAnc[0] * previewZoom);
+            const handY = centerY + (handAnc[1] * previewZoom);
+            const headX = offsetX + (headAnc[0] * previewZoom);
+            const headY = offsetY + (headAnc[1] * previewZoom);
+
+            // 1. DIBUJAR CABEZA Y SOMBRERO
+            if (dynHead && dynHead.complete && dynHead.naturalWidth > 0) {
+                const headFrameH = dynHead.height / 4;
                 pCtx.drawImage(
-                    baseSprite,
-                    frameX * bW, frameY * bH, bW, bH, // Recorte original
-                    centerX - (bW * previewZoom / 2), centerY - (bH * previewZoom / 2), // Posición centrada
-                    bW * previewZoom, bH * previewZoom // Tamaño final escalado
+                    dynHead, 0, frameY * headFrameH, bW, headFrameH,
+                    headX, headY, bW * previewZoom, headFrameH * previewZoom
                 );
             }
 
-            // DIBUJAR ARMA (Usamos tus offsets ajustados pX=0, pY=1)
+            if (dynHat && dynHat.complete && dynHat.naturalWidth > 0) {
+                const hatFrameH = dynHat.height / 4;
+                pCtx.drawImage(
+                    dynHat, 0, frameY * hatFrameH, bW, hatFrameH,
+                    headX, headY, bW * previewZoom, hatFrameH * previewZoom
+                );
+            }
+
+            // 2. DIBUJAR CUERPO
+            if (dynBody && dynBody.complete && dynBody.naturalWidth > 0) {
+                pCtx.drawImage(
+                    dynBody, 0, sourceY, bW, bH,
+                    offsetX, offsetY, bW * previewZoom, bH * previewZoom
+                );
+            }
+
+            // 3. OBTENER DATOS DEL ARMA
+            const currentWeaponData = weaponsDB[currentShopItemId] || WEAPONS[currentShopItemId] || {};
             const wSprite = loadedWeaponSprites[currentShopItemId];
             const gunReady = wSprite && wSprite.complete && wSprite.naturalWidth > 0;
+            const shouldHideGun = frameY === 3;
 
-            if (gunReady) {
+            if (gunReady && !shouldHideGun) {
                 const gW = wSprite.width / 8;
                 const gH = wSprite.height / 6;
 
-                // --- TUS OFFSETS PERFECTOS ---
-                let pX = 0; // Ajuste horizontal
-                let pY = 1; // Ajuste vertical
+                const d = currentWeaponData.dirStats ? (currentWeaponData.dirStats[frameY] || currentWeaponData.dirStats[0] || {}) : {};
 
-                // --- AJUSTE LÓGICO PARA GIRO (Nuevo) ---
-                // Si el personaje mira Hacia Arriba (Fila 3), el arma debe dibujarse DETRÁS
-                // de su cuerpo, o simplemente no dibujarse, para que no parezca que la tiene
-                // pegada en la nuca. Lo más fácil y visual es ocultarla en la Fila 3.
-                if (frameY === 3) return; // Ocultar arma si mira hacia atrás
+                // 🛑 LÓGICA 100% FIEL: Rotaciones y Pivotes
+                let aimAngle = 0; let dirM = 1;
+                if (currentWeaponData.type !== 'ranged') {
+                    if (frameY === 0) aimAngle = Math.PI / 2;
+                    else if (frameY === 1) { aimAngle = Math.PI; dirM = -1; }
+                    else if (frameY === 2) { aimAngle = 0; }
+                    else if (frameY === 3) { aimAngle = -Math.PI / 2; dirM = -1; }
+                }
+
+                const totalWeaponRot = aimAngle + ((d.wRot || 0) * dirM * Math.PI / 180);
+                const pivotX = (currentWeaponData.pivotX || 0) * previewZoom;
+                const pivotY = (currentWeaponData.pivotY || 0) * previewZoom;
+
+                let srcY = 0;
+                if (currentWeaponData.type === 'ranged') {
+                    let gunRow = frameY;
+                    if (frameY === 1) gunRow = 2;
+                    if (frameY === 2) gunRow = 1;
+                    srcY = gunRow * gH;
+                }
+
+                // 4. DIBUJAR ARMA (CON TRANSLATE Y ROTATE EXACTOS)
+                pCtx.save();
+                pCtx.translate(handX + ((d.wX || 0) * previewZoom), handY + ((d.wY || 0) * previewZoom));
+                pCtx.rotate(totalWeaponRot);
 
                 pCtx.drawImage(
-                    wSprite,
-                    frameX * gW, frameY * gH, gW, gH, // Recorte original del arma
-
-                    // Nueva fórmula de alineación: Centramos el arma y aplicamos los nuevos offsets
-                    centerX - (gW * previewZoom / 2) + (pX * previewZoom),
-                    centerY - (gH * previewZoom / 2) + (pY * previewZoom),
-
-                    gW * previewZoom, gH * previewZoom // Tamaño final escalado
+                    wSprite, 0, srcY, gW, gH,
+                    -pivotX - ((gW * previewZoom) / 2), -pivotY - ((gH * previewZoom) / 2),
+                    gW * previewZoom, gH * previewZoom
                 );
+                pCtx.restore();
+
+                // 5. DIBUJAR LA MANO SOBRE EL ARMA (CON ROTACIÓN INDEPENDIENTE)
+                if (dynBody && dynBody.complete) {
+                    pCtx.save();
+                    pCtx.translate(handX + ((d.wX || 0) * previewZoom), handY + ((d.wY || 0) * previewZoom));
+                    pCtx.rotate(totalWeaponRot);
+                    pCtx.translate(((d.hX || 0) * previewZoom), ((d.hY || 0) * previewZoom));
+                    pCtx.rotate((d.hRot || 0) * Math.PI / 180);
+
+                    pCtx.drawImage(
+                        dynBody,
+                        (d.tX !== undefined ? d.tX : 13) * 16, (d.tY || 0) * 16, 16, 16,
+                        -(16 * previewZoom) / 2, -(16 * previewZoom) / 2,
+                        16 * previewZoom, 16 * previewZoom
+                    );
+                    pCtx.restore();
+                }
+
+                // 6. DIBUJAR LA BALA VISUAL
+                if (shopShotTimer && currentWeaponData.type === 'ranged') {
+                    const mX = d.hitX || 0;
+                    const mY = d.hitY || 0;
+
+                    // Posición base de disparo sumando la ubicación de la mano + offsets
+                    const bulletOriginX = centerX + (mX * previewZoom);
+                    const bulletOriginY = centerY + (mY * previewZoom) - (5 * previewZoom);
+
+                    pCtx.fillStyle = currentWeaponData.color || `rgba(241, 196, 15, ${shopShotTimer.alpha})`;
+                    pCtx.shadowBlur = 10;
+                    pCtx.shadowColor = currentWeaponData.color || "#f1c40f";
+
+                    const bVel = 12;
+                    const bSize = 6;
+
+                    if (frameY === 0) {
+                        shopShotTimer.y += bVel;
+                        pCtx.fillRect(bulletOriginX - bSize / 2, bulletOriginY + shopShotTimer.y, bSize, bSize * 2);
+                    } else if (frameY === 1) {
+                        shopShotTimer.x -= bVel;
+                        pCtx.fillRect(bulletOriginX + shopShotTimer.x - bSize * 2, bulletOriginY - bSize / 2, bSize * 2, bSize);
+                    } else if (frameY === 2) {
+                        shopShotTimer.x += bVel;
+                        pCtx.fillRect(bulletOriginX + shopShotTimer.x, bulletOriginY - bSize / 2, bSize * 2, bSize);
+                    }
+
+                    pCtx.shadowBlur = 0;
+                    shopShotTimer.alpha -= 0.03;
+                    if (shopShotTimer.alpha <= 0) shopShotTimer = null;
+                }
             }
         }
 
@@ -7085,7 +7176,7 @@
                 avatarDiv.style.borderRadius = "10px"; avatarDiv.style.overflow = "hidden";
                 avatarDiv.style.background = "rgba(0,0,0,0.3)";
                 avatarDiv.style.flexShrink = "0";
-                avatarDiv.appendChild(createAvatarCanvas(40));
+                avatarDiv.appendChild(createAvatarCanvas(40, friend.accountId));
 
                 const textDiv = document.createElement('div');
                 textDiv.style.flex = "1"; textDiv.style.display = "flex"; textDiv.style.flexDirection = "column";
@@ -8872,10 +8963,6 @@
 
             // === 2. DRAW PLAYER SPRITES ===
             updatePlayerDirection();
-
-            // THE FIX: ALL SPRITES HAVE 6 ROWS OF GRID SPACE! 
-            const frameWidth = player.currentImage.width / 8;
-            const frameHeight = player.currentImage.height / 6;
 
             // SAFETY CATCH: If you equip the gun while facing a row that is blank (like row 5), snap to 0!
             if (player.equippedWeapon !== "none" && player.frameY > 3) {

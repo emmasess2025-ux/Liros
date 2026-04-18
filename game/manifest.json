@@ -1,0 +1,8 @@
+{
+    "name": "MMOARGON",
+    "short_name": "MMOARGON",
+    "display": "fullscreen",
+    "orientation": "landscape",
+    "background_color": "#222222",
+    "theme_color": "#000000"
+}

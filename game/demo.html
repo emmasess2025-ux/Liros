@@ -3851,37 +3851,37 @@
         };
 
         // ==========================================
-        // 🔊 SOUND ENGINE (AUDIO POOL)
+        // 🔊 SOUND ENGINE (AUDIO POOL ULTRA-OPTIMIZADO)
         // ==========================================
-        const audioPool = [];
-        const POOL_SIZE = 15; // Max simultaneous sounds
-
-        // Pre-create the audio objects
-        for (let i = 0; i < POOL_SIZE; i++) {
-            const a = new Audio();
-            a.volume = 0.5; // Default volume
-            audioPool.push(a);
-        }
-
-        let audioPoolIndex = 0;
+        const audioCaches = {}; // Guardaremos cajas de grabadoras por cada sonido
 
         function playSound(soundUrl, volume = 0.5, panX = null) {
             if (!soundUrl || soundUrl === "") return;
 
-            const a = audioPool[audioPoolIndex];
-            a.src = soundUrl;
-            a.volume = volume;
-
-            // Si el navegador soporta Stereo Panning (Sonido 3D)
-            if (panX !== null && typeof a.setSinkId !== 'undefined') {
-                // ... (Puedes agregar PannerNodes complejos aquí después si quieres)
+            // 1. Si es la primera vez que se pide este sonido, creamos 5 grabadoras con el cassette ya adentro
+            if (!audioCaches[soundUrl]) {
+                audioCaches[soundUrl] = [];
+                for (let i = 0; i < 5; i++) {
+                    const a = new Audio(soundUrl); // ¡Asignamos el SRC una sola vez en la vida!
+                    audioCaches[soundUrl].push(a);
+                }
             }
 
-            // Kills the previous sound on this channel and plays the new one immediately
-            a.currentTime = 0;
-            a.play().catch(e => console.warn("Audio blocked by browser:", e));
+            // 2. Buscamos una grabadora que no esté sonando en este momento
+            const pool = audioCaches[soundUrl];
+            for (let i = 0; i < pool.length; i++) {
+                if (pool[i].paused || pool[i].ended || pool[i].currentTime === 0) {
+                    pool[i].volume = volume;
+                    pool[i].currentTime = 0; // Rebobinamos
+                    pool[i].play().catch(e => { }); // Play instantáneo, cero lag
+                    return;
+                }
+            }
 
-            audioPoolIndex = (audioPoolIndex + 1) % POOL_SIZE;
+            // 3. Si las 5 están ocupadas (metralleta muy rápida), forzamos la primera
+            pool[0].currentTime = 0;
+            pool[0].volume = volume;
+            pool[0].play().catch(e => { });
         }
 
         // Helper to grab sounds directly from the Catalog
@@ -12994,16 +12994,15 @@
 
                 if (floorDirty) updateFloorBuffer();
 
-                // 🚀 EL FIX DEL JITTER (Sub-Pixel Rendering Libre):
-                // Dejamos que el Canvas renderice los decimales flotantes nativamente.
-                // Esto elimina la vibración entre el fondo estático y los personajes dinámicos.
+                // 🚀 FIX RENDIMIENTO MÓVIL: Píxeles Enteros (Anclaje al monitor)
                 const bufferWorldX = floorBufferBox.minX * TILE_SIZE;
                 const bufferWorldY = floorBufferBox.minY * TILE_SIZE;
 
-                const dX = screenCenterX + (bufferWorldX - player.worldX) * zoomLevel;
-                const dY = screenCenterY + (bufferWorldY - player.worldY) * zoomLevel;
-                const dW = floorCanvas.width * zoomLevel;
-                const dH = floorCanvas.height * zoomLevel;
+                // MATH.FLOOR MATA EL JITTER INSTANTÁNEAMENTE
+                const dX = Math.floor(screenCenterX + (bufferWorldX - player.worldX) * zoomLevel);
+                const dY = Math.floor(screenCenterY + (bufferWorldY - player.worldY) * zoomLevel);
+                const dW = Math.floor(floorCanvas.width * zoomLevel);
+                const dH = Math.floor(floorCanvas.height * zoomLevel);
 
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(floorCanvas, dX, dY, dW, dH);
@@ -13743,7 +13742,7 @@
                                 equippedWeapon: player.equippedWeapon
                             }
                         }));
-                        lastNetworkString = currentString;
+                        lastNetworkStrindddddg = currentString;
                         window.lastForceSendTime = timeNow;
                     }
                 }

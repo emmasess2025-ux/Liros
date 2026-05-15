@@ -3616,7 +3616,7 @@
         const floorCtx = floorCanvas.getContext('2d');
         let floorDirty = true; // Nos dice si necesitamos tomar una nueva "foto"
         let floorBufferBox = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        const BUFFER_MARGIN = 15; // Dibuja 15 bloques extra fuera de la cámara para que no veas bordes negros al caminar
+        const BUFFER_MARGIN = isTouchDevice ? 4 : 12;
 
         function updateFloorBuffer() {
             const screenWidthWorld = cachedScreenWidth / zoomLevel;
@@ -12982,27 +12982,29 @@
                 const halfCols = Math.ceil((cachedScreenWidth / zoomLevel) / TILE_SIZE / 2);
                 const halfRows = Math.ceil((cachedScreenHeight / zoomLevel) / TILE_SIZE / 2);
 
-                // 🚀 EL FIX VISUAL: El disparador "anticipado". 
-                // Le avisamos a la cámara que tome la foto cuando la pantalla esté a 5 bloques de ver el vacío.
-                if (centerCol - halfCols < floorBufferBox.minX + 5 ||
-                    centerCol + halfCols > floorBufferBox.maxX - 5 ||
-                    centerRow - halfRows < floorBufferBox.minY + 5 ||
-                    centerRow + halfRows > floorBufferBox.maxY - 5) {
+                // 🚀 EL FIX DEL SENSOR DINÁMICO: 
+                // Dispara la foto cuando estamos a la mitad del margen, sin importar si es PC o Móvil
+                const triggerDist = Math.floor(BUFFER_MARGIN / 2);
+
+                if (centerCol - halfCols < floorBufferBox.minX + triggerDist ||
+                    centerCol + halfCols > floorBufferBox.maxX - triggerDist ||
+                    centerRow - halfRows < floorBufferBox.minY + triggerDist ||
+                    centerRow + halfRows > floorBufferBox.maxY - triggerDist) {
                     floorDirty = true;
                 }
 
                 if (floorDirty) updateFloorBuffer();
 
+                // 🚀 EL FIX DEL JITTER (Sub-Pixel Rendering Libre):
+                // Dejamos que el Canvas renderice los decimales flotantes nativamente.
+                // Esto elimina la vibración entre el fondo estático y los personajes dinámicos.
                 const bufferWorldX = floorBufferBox.minX * TILE_SIZE;
                 const bufferWorldY = floorBufferBox.minY * TILE_SIZE;
 
-                // 🚀 EL FIX FÍSICO (Sub-Pixel Rendering): 
-                // Usamos Math.round para mantener el arte pixelado (sharp), pero atado a las 
-                // físicas decimales reales del Delta Time para que el mapa no "tiemble" detrás del personaje.
-                const dX = Math.round(screenCenterX + (bufferWorldX - player.worldX) * zoomLevel);
-                const dY = Math.round(screenCenterY + (bufferWorldY - player.worldY) * zoomLevel);
-                const dW = Math.round(floorCanvas.width * zoomLevel);
-                const dH = Math.round(floorCanvas.height * zoomLevel);
+                const dX = screenCenterX + (bufferWorldX - player.worldX) * zoomLevel;
+                const dY = screenCenterY + (bufferWorldY - player.worldY) * zoomLevel;
+                const dW = floorCanvas.width * zoomLevel;
+                const dH = floorCanvas.height * zoomLevel;
 
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(floorCanvas, dX, dY, dW, dH);

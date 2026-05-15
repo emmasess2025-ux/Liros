@@ -3017,7 +3017,11 @@
         function getFrameKey(state, dir, frameX) {
             return `${state}_${dir}_${frameX}`;
         }
-
+        // 🚀 EL FIX DE RENDIMIENTO: Lluvia reciclable (Object Pool)
+        const MAX_RAIN = 150;
+        window.rainParticles = Array.from({ length: MAX_RAIN }, () => ({
+            active: false, x: 0, y: 0, targetY: 0, len: 0, vx: 0, vy: 0, isSplashing: false, splashLife: 0
+        }));
         // =========================================================
         //  SISTEMA DE LA JOYERÍA (MERCADO DE METALES)
         // =========================================================
@@ -3615,6 +3619,8 @@
         // 🚀 EL FIX DE RENDIMIENTO MÁXIMO: OFFSCREEN CANVAS (CACHE DEL SUELO)
         const floorCanvas = document.createElement('canvas');
         const floorCtx = floorCanvas.getContext('2d');
+        const overheadCanvas = document.createElement('canvas'); // 🌟 NUEVO
+        const overheadCtx = overheadCanvas.getContext('2d');     // 🌟 NUEVO
         let floorDirty = true; // Nos dice si necesitamos tomar una nueva "foto"
         let floorBufferBox = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
         const BUFFER_MARGIN = isTouchDevice ? 4 : 12;
@@ -3622,28 +3628,35 @@
         function updateFloorBuffer() {
             const screenWidthWorld = cachedScreenWidth / zoomLevel;
             const screenHeightWorld = cachedScreenHeight / zoomLevel;
-
             const centerCol = Math.floor(player.worldX / TILE_SIZE);
             const centerRow = Math.floor(player.worldY / TILE_SIZE);
-
-            // 🚀 EL FIX: Calculamos desde el centro hacia afuera (Mitad de pantalla)
             const halfCols = Math.ceil(screenWidthWorld / TILE_SIZE / 2);
             const halfRows = Math.ceil(screenHeightWorld / TILE_SIZE / 2);
 
-            // Redujimos la imagen un 60%, eliminando la sobrecarga del CPU
             floorBufferBox.minX = centerCol - halfCols - BUFFER_MARGIN;
             floorBufferBox.maxX = centerCol + halfCols + BUFFER_MARGIN;
             floorBufferBox.minY = centerRow - halfRows - BUFFER_MARGIN;
             floorBufferBox.maxY = centerRow + halfRows + BUFFER_MARGIN;
 
-            floorCanvas.width = (floorBufferBox.maxX - floorBufferBox.minX) * TILE_SIZE;
-            floorCanvas.height = (floorBufferBox.maxY - floorBufferBox.minY) * TILE_SIZE;
+            const newW = (floorBufferBox.maxX - floorBufferBox.minX) * TILE_SIZE;
+            const newH = (floorBufferBox.maxY - floorBufferBox.minY) * TILE_SIZE;
+
+            if (floorCanvas.width !== newW) {
+                floorCanvas.width = newW; floorCanvas.height = newH;
+                overheadCanvas.width = newW; overheadCanvas.height = newH; // 🌟 Emparejamos tamaños
+            }
 
             floorCtx.clearRect(0, 0, floorCanvas.width, floorCanvas.height);
+            overheadCtx.clearRect(0, 0, overheadCanvas.width, overheadCanvas.height); // 🌟 Limpiamos techos
             floorCtx.imageSmoothingEnabled = false;
+            overheadCtx.imageSmoothingEnabled = false;
 
-            // Bucle optimizado
-            for (let l = 0; l <= 7; l++) {
+            /// 🚀 EL FIX: Detenerse en la Capa 14. 
+            // La Capa 15 (Lógica) NO se dibuja en la foto para los jugadores normales.
+            for (let l = 0; l <= 14; l++) {
+                // Seleccionamos en qué lienzo dibujar
+                const targetCtx = (l <= 7) ? floorCtx : overheadCtx;
+
                 for (let r = floorBufferBox.minY; r <= floorBufferBox.maxY; r++) {
                     for (let c = floorBufferBox.minX; c <= floorBufferBox.maxX; c++) {
                         const tileData = worldMap.get(getMapKey(c, r, l));
@@ -3655,19 +3668,18 @@
                         const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
                         const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                         const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
-
                         const drawX = (c - floorBufferBox.minX) * TILE_SIZE;
                         const drawY = (r - floorBufferBox.minY) * TILE_SIZE;
                         const tileRot = tileData.rotation || 0;
 
                         if (tileRot !== 0) {
-                            floorCtx.save();
-                            floorCtx.translate(drawX + TILE_SIZE / 2, drawY + TILE_SIZE / 2);
-                            floorCtx.rotate(tileRot * Math.PI / 180);
-                            floorCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, -TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
-                            floorCtx.restore();
+                            targetCtx.save();
+                            targetCtx.translate(drawX + TILE_SIZE / 2, drawY + TILE_SIZE / 2);
+                            targetCtx.rotate(tileRot * Math.PI / 180);
+                            targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, -TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
+                            targetCtx.restore();
                         } else {
-                            floorCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, TILE_SIZE, TILE_SIZE);
+                            targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, TILE_SIZE, TILE_SIZE);
                         }
                     }
                 }
@@ -3946,8 +3958,27 @@
             active: false, // ¡La bandera mágica!
             x: 0, y: 0, vx: 0, vy: 0, life: 0, owner: null, weapon: null, color: "#f1c40f"
         }));
-        let damageTexts = []; // <--- ¡NUEVO: Arreglo para los números de daño flotantes!
-        let hitSparks = []; // <--- 🌟 NUEVO: MOTOR DE CHISPAS Y EXPLOSIONES VISUALES
+        // 🚀 EL FIX DE RENDIMIENTO (OBJECT POOLS): Textos y Chispas reciclables
+        const MAX_FX = 30;
+        const damageTexts = Array.from({ length: MAX_FX }, () => ({
+            active: false, x: 0, y: 0, text: "", color: "", life: 0, maxLife: 0
+        }));
+        const hitSparks = Array.from({ length: MAX_FX }, () => ({
+            active: false, x: 0, y: 0, life: 0, maxLife: 0, color: ""
+        }));
+
+        // 💥 NUEVA FUNCIÓN PARA RECICLAR CHISPAS
+        function spawnSpark(x, y, life, color) {
+            for (let i = 0; i < MAX_FX; i++) {
+                if (!hitSparks[i].active) {
+                    hitSparks[i].active = true;
+                    hitSparks[i].x = x; hitSparks[i].y = y;
+                    hitSparks[i].life = life; hitSparks[i].maxLife = life;
+                    hitSparks[i].color = color;
+                    return;
+                }
+            }
+        }
         let isShooting = false;
         let shootAngle = 0;
         let lastShotTime = 0;
@@ -5619,14 +5650,19 @@
             // Elegimos el color: Verde si es "isHeal" (recompensas/curación), Amarillo para daño
             let textColor = isHeal ? '#2ecc71' : '#f1c40f';
 
-            damageTexts.push({
-                x: x + (Math.random() * 20 - 10), // Ligera aleatoriedad para que no se encimen
-                y: y - 20,
-                text: textToShow,
-                color: textColor,
-                life: 50,      // Duración del texto en pantalla
-                maxLife: 50
-            });
+            // 🛑 EL FIX: En lugar de .push(), reciclamos un texto inactivo
+            for (let i = 0; i < MAX_FX; i++) {
+                if (!damageTexts[i].active) {
+                    damageTexts[i].active = true;
+                    damageTexts[i].x = x + (Math.random() * 20 - 10);
+                    damageTexts[i].y = y - 20;
+                    damageTexts[i].text = textToShow;
+                    damageTexts[i].color = textColor;
+                    damageTexts[i].life = 50;
+                    damageTexts[i].maxLife = 50;
+                    return; // Listo, salimos
+                }
+            }
         }
 
         // 🛡️ ESCUDO ANTI-XSS: Convierte código malicioso en texto inofensivo
@@ -5978,67 +6014,96 @@
             return `hsl(${hue}, 80%, 65%)`; // Returns a nice, bright, readable color!
         }
 
+        // 🚀 EL FIX DE RENDIMIENTO: Caché de Nombres
+        const nametagCache = {};
+
+        function getCachedNametagText(name, squadText, textColor, nameOpacity) {
+            const key = `${name}_${squadText}_${textColor}_${nameOpacity}_${zoomLevel}`;
+
+            if (nametagCache[key]) return nametagCache[key];
+
+            const tCanvas = document.createElement('canvas');
+            const tCtx = tCanvas.getContext('2d');
+            const fontSize = 7 * zoomLevel;
+            tCtx.font = `bold ${fontSize}px Arial`;
+
+            // Medir
+            const nameW = tCtx.measureText(name).width;
+            const squadW = squadText ? tCtx.measureText(squadText).width : 0;
+            const totalW = nameW + squadW + (10 * zoomLevel); // 10px padding extra
+            const totalH = fontSize + (10 * zoomLevel);
+
+            tCanvas.width = totalW;
+            tCanvas.height = totalH;
+
+            // Volver a aplicar la fuente porque cambiar el width resetea el ctx
+            tCtx.font = `bold ${fontSize}px Arial`;
+            tCtx.textBaseline = "middle";
+            tCtx.lineJoin = "round";
+            tCtx.lineWidth = 2.5 * zoomLevel;
+
+            let currentX = 5 * zoomLevel; // Padding izquierdo
+            const textY = totalH / 2;
+
+            // Dibujar Nombre
+            tCtx.globalAlpha = Math.max(0.1, nameOpacity - 0.4);
+            tCtx.strokeStyle = "black";
+            tCtx.strokeText(name, currentX, textY);
+
+            tCtx.globalAlpha = nameOpacity;
+            tCtx.fillStyle = textColor;
+            tCtx.fillText(name, currentX, textY);
+            currentX += nameW;
+
+            // Dibujar Squad
+            if (squadText) {
+                tCtx.globalAlpha = Math.max(0.1, nameOpacity - 0.4);
+                tCtx.strokeStyle = "black";
+                tCtx.strokeText(squadText, currentX, textY);
+
+                tCtx.globalAlpha = Math.max(0.1, nameOpacity - 0.15);
+                tCtx.fillStyle = "white";
+                tCtx.fillText(squadText, currentX, textY);
+                currentX += squadW;
+            }
+
+            // Guardar info útil en el objeto canvas
+            tCanvas.actualWidth = currentX;
+            nametagCache[key] = tCanvas;
+            return tCanvas;
+        }
+
         // --- SQUAD LOGOS CACHE ---
         const squadLogosCache = {}; // Guarda imágenes para no laguear
 
-        // --- UPDATED: Nametag & Squad Drawer (UNIFIED ROW & TRANSPARENT) ---
         function drawNametag(playerObj, x, y, scaledWidth, scaledHeight, textColor) {
-            if (!playerObj.username) return;
-            // 🛑 RESPECT SETTINGS: Abort if toggled off
-            if (!gameSettings.showNametags) return;
-
-            const fontSize = 7 * zoomLevel;
-            ctx.font = `bold ${fontSize}px Arial`;
+            if (!playerObj.username || !gameSettings.showNametags) return;
 
             const name = playerObj.username;
-            const tagY = y + scaledHeight + (-12 * zoomLevel);
-            const centerX = x + (scaledWidth / 2);
-
-            // 1. Calcular los anchos de cada elemento
-            const nameWidth = ctx.measureText(name).width;
-
             const hasSquad = !!playerObj.squadName;
             const squadText = hasSquad ? ` [${playerObj.squadName}]` : "";
-            const squadTextWidth = hasSquad ? ctx.measureText(squadText).width : 0;
 
+            // 1. Obtener la imagen ya fabricada
+            const nameCanvas = getCachedNametagText(name, squadText, textColor, gameSettings.nameOpacity);
+
+            // 2. Calcular logo
             const logoSize = 10 * zoomLevel;
             const logoGap = 4 * zoomLevel;
             const hasLogo = hasSquad && !!playerObj.squadLogo;
             const logoTotalWidth = hasLogo ? (logoGap + logoSize) : 0;
 
-            // 2. Calcular el ancho total para centrar todo el bloque perfectamente
-            const totalWidth = nameWidth + squadTextWidth + logoTotalWidth;
-            let currentX = centerX - (totalWidth / 2);
+            const totalCombinedWidth = nameCanvas.actualWidth + logoTotalWidth;
+            const centerX = x + (scaledWidth / 2);
+            let currentX = centerX - (totalCombinedWidth / 2);
 
-            ctx.textAlign = "left"; // Dibujamos de izquierda a derecha
-            ctx.lineJoin = "round";
-            ctx.lineWidth = 2.5 * zoomLevel;
+            // La Y original menos la mitad de la altura de nuestro canvas cacheado para alinearlo perfecto
+            const tagY = y + scaledHeight + (-12 * zoomLevel) - (nameCanvas.height / 2);
 
-            // 3. Dibujar el Nombre del Jugador
-            ctx.globalAlpha = Math.max(0.1, gameSettings.nameOpacity - 0.4); // Borde más suave
-            ctx.strokeStyle = "black";
-            ctx.strokeText(name, currentX, tagY);
+            // 3. Pintar el nombre de 1 solo golpe
+            ctx.drawImage(nameCanvas, currentX, tagY);
+            currentX += nameCanvas.actualWidth;
 
-            ctx.globalAlpha = gameSettings.nameOpacity; // 🛑 APPLY USER TRANSPARENCY
-            ctx.fillStyle = textColor;
-            ctx.fillText(name, currentX, tagY);
-
-            currentX += nameWidth;
-
-            // 4. Dibujar Nombre del Squad
-            if (hasSquad) {
-                ctx.globalAlpha = Math.max(0.1, gameSettings.nameOpacity - 0.4);
-                ctx.strokeStyle = "black";
-                ctx.strokeText(squadText, currentX, tagY);
-
-                ctx.globalAlpha = Math.max(0.1, gameSettings.nameOpacity - 0.15); // Slightly lighter than main name
-                ctx.fillStyle = "white";
-                ctx.fillText(squadText, currentX, tagY);
-
-                currentX += squadTextWidth;
-            }
-
-            // 5. Dibujar Logo del Squad
+            // 4. Dibujar Logo del Squad
             if (hasLogo) {
                 currentX += logoGap;
                 if (!squadLogosCache[playerObj.squadLogo]) {
@@ -6049,12 +6114,11 @@
                 const img = squadLogosCache[playerObj.squadLogo];
                 if (img.complete && img.naturalWidth > 0) {
                     ctx.globalAlpha = Math.max(0.1, gameSettings.nameOpacity - 0.1);
-                    ctx.drawImage(img, currentX, tagY - (logoSize * 0.85), logoSize, logoSize);
+                    // Alineamos el logo con el texto matemáticamente
+                    ctx.drawImage(img, currentX, tagY + (nameCanvas.height / 2) - (logoSize * 0.85), logoSize, logoSize);
+                    ctx.globalAlpha = 1.0;
                 }
             }
-
-            ctx.globalAlpha = 1.0; // Restore global alpha
-            ctx.textAlign = "center";
         }
         // --- 1. UI ELEMENT GRABBERS ---
         const appEditMode = document.getElementById('app-edit-mode');
@@ -12122,7 +12186,10 @@
             if (rawDelta < 15) return;
 
             let dtMs = rawDelta;
-            if (dtMs > 100) dtMs = FRAME_MIN_TIME; // Escudo Anti-Tab-Sleep
+            // 🚀 EL FIX DEL JITTER 3: Anti-Rubberband. Si el celular se traba un instante, 
+            // no permitimos que el jugador "salte" grandes distancias de golpe. 
+            // Así el servidor no se asusta y no te regresa el milisegundo anterior.
+            if (dtMs > 35) dtMs = 35;
 
             lastFrameTime = currentTime;
             let dtScale = dtMs / FRAME_MIN_TIME;
@@ -12174,10 +12241,9 @@
                 if (uiLoadingScreen) uiLoadingScreen.style.display = 'none';
             }
             // ... resto del código ...
-            // 🚀 EL FIX RENDIMIENTO: Usar la caché de la pantalla
-            const screenCenterX = cachedScreenWidth / 2;
-            const screenCenterY = cachedScreenHeight / 2;
-
+            // 🚀 EL FIX DEL JITTER 1: Evitar centros con decimales (Ej. iPhone tiene anchos impares como 375px)
+            const screenCenterX = Math.floor(cachedScreenWidth / 2);
+            const screenCenterY = Math.floor(cachedScreenHeight / 2);
             // --- NEW: SLIDING COLLISION CHECK ---
             const checkWall = (x, y) => {
                 // 👇 NUEVO: COLISIÓN LOCAL DE LA BASE (Mismo código que en el servidor) 👇
@@ -12498,14 +12564,13 @@
                                 if (Math.abs(angleDiffBase) <= halfWidRad) {
                                     // ¡GOLPE CONFIRMADO A LA BASE!
 
-                                    // 💥 NUEVO: CREAR CHISPA DE IMPACTO MELEE EN EL BORDE EXACTO 💥
-                                    hitSparks.push({
-                                        x: closestX + (Math.random() * 12 - 6), // Las chispas saltan en la línea roja
-                                        y: closestY + (Math.random() * 12 - 6),
-                                        life: 10,
-                                        maxLife: 10,
-                                        color: currentWeaponStats.color || '#e67e22'
-                                    });
+                                    // 💥 NUEVO: CREAR CHISPA DE IMPACTO MELEE (OPTIMIZADO CON POOLING) 💥
+                                    spawnSpark(
+                                        closestX + (Math.random() * 12 - 6),
+                                        closestY + (Math.random() * 12 - 6),
+                                        10,
+                                        currentWeaponStats.color || '#e67e22'
+                                    );
 
                                     // Enviamos el daño al servidor
                                     if (ws.readyState === WebSocket.OPEN) {
@@ -12780,9 +12845,8 @@
 
                     if (p.x >= baseHitX - hw && p.x <= baseHitX + hw && p.y >= baseHitY - hh && p.y <= baseHitY + hh) {
                         hitSomeone = true;
-                        hitSparks.push({
-                            x: p.x, y: p.y, life: 12, maxLife: 12, color: p.color
-                        });
+                        // 💥 CHISPA DE BALA (OPTIMIZADO CON POOLING) 💥
+                        spawnSpark(p.x, p.y, 12, p.color || "#f1c40f");
 
                         if (p.owner === myId && player.squad) {
                             if (ws.readyState === WebSocket.OPEN) {
@@ -12971,6 +13035,9 @@
                 ctx.globalAlpha = 1.0;
             }
             // === 1. DRAW GROUND LAYERS (BELOW PLAYER: L0 - L7) ===
+            // 🚀 EL FIX: Declaramos las variables de cámara AFUERA para que el techo también pueda usarlas
+            let dX = 0, dY = 0, dW = 0, dH = 0;
+
             if (editMode) {
                 // En Modo Editor necesitamos ver las transparencias capa por capa
                 drawWorldLayers(0, 7);
@@ -12981,8 +13048,6 @@
                 const halfCols = Math.ceil((cachedScreenWidth / zoomLevel) / TILE_SIZE / 2);
                 const halfRows = Math.ceil((cachedScreenHeight / zoomLevel) / TILE_SIZE / 2);
 
-                // 🚀 EL FIX DEL SENSOR DINÁMICO: 
-                // Dispara la foto cuando estamos a la mitad del margen, sin importar si es PC o Móvil
                 const triggerDist = Math.floor(BUFFER_MARGIN / 2);
 
                 if (centerCol - halfCols < floorBufferBox.minX + triggerDist ||
@@ -12994,15 +13059,14 @@
 
                 if (floorDirty) updateFloorBuffer();
 
-                // 🚀 FIX RENDIMIENTO MÓVIL: Píxeles Enteros (Anclaje al monitor)
                 const bufferWorldX = floorBufferBox.minX * TILE_SIZE;
                 const bufferWorldY = floorBufferBox.minY * TILE_SIZE;
 
-                // MATH.FLOOR MATA EL JITTER INSTANTÁNEAMENTE
-                const dX = Math.floor(screenCenterX + (bufferWorldX - player.worldX) * zoomLevel);
-                const dY = Math.floor(screenCenterY + (bufferWorldY - player.worldY) * zoomLevel);
-                const dW = Math.floor(floorCanvas.width * zoomLevel);
-                const dH = Math.floor(floorCanvas.height * zoomLevel);
+                // 🛑 EL FIX: Ya no usamos 'const', simplemente llenamos las variables globales
+                dX = Math.floor(screenCenterX + (bufferWorldX - player.worldX) * zoomLevel);
+                dY = Math.floor(screenCenterY + (bufferWorldY - player.worldY) * zoomLevel);
+                dW = Math.floor(floorCanvas.width * zoomLevel);
+                dH = Math.floor(floorCanvas.height * zoomLevel);
 
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(floorCanvas, dX, dY, dW, dH);
@@ -13108,9 +13172,9 @@
                 }
 
                 if (p.frameY > 3) p.frameY = 0; // Escudo anti-crash
-                const pDrawX = Math.round(screenCenterX + ((p.worldX - player.worldX) * zoomLevel));
-                const pDrawY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel));
-
+                // 🚀 EL FIX DEL JITTER 2: Usar Math.floor igual que el piso, NUNCA Math.round
+                const pDrawX = Math.floor(screenCenterX + ((p.worldX - player.worldX) * zoomLevel));
+                const pDrawY = Math.floor(screenCenterY + ((p.worldY - player.worldY) * zoomLevel));
                 const timeSinceHit = Date.now() - (p.lastHitTime || 0);
                 const isHit = (timeSinceHit < 150);
 
@@ -13194,7 +13258,16 @@
             ctx.shadowBlur = 0;
 
             // === 3. DRAW OVERHEAD LAYERS (ABOVE PLAYER: L8 - L15) ===
-            drawWorldLayers(8, 15);
+            if (editMode) {
+                drawWorldLayers(8, 15); // En modo editor seguimos dibujando manual para ver las transparencias
+            } else {
+                // 🌟 MAGIA PURA: 1 sola instrucción en vez de miles de iteraciones
+                if (isUnderRoof) ctx.globalAlpha = 0.3; // Hacer techos transparentes si estás en casa
+
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(overheadCanvas, dX, dY, dW, dH); // dX, dY, dW y dH ya los calculaste para el floorCanvas
+                ctx.globalAlpha = 1.0;
+            }
             // === DIBUJAR UI Y SPRITE DE LA BASE CENTRAL ===
             if (centralBase) {
                 const bDrawX = Math.round(screenCenterX + (centralBase.worldX - player.worldX) * zoomLevel);
@@ -13503,59 +13576,54 @@
 
             if (player.messageTimer > 0) player.messageTimer--;
 
-            // === DIBUJAR NÚMEROS DE DAÑO (ESTILO FORTNITE) ===
-            for (let i = damageTexts.length - 1; i >= 0; i--) {
+            // === DIBUJAR NÚMEROS DE DAÑO (CON POOLING) ===
+            for (let i = 0; i < MAX_FX; i++) {
                 let dt = damageTexts[i];
+                if (!dt.active) continue; // Ignorar los apagados
+
                 dt.life--;
                 dt.y -= 0.6; // El texto flota hacia arriba
 
-                const dtDrawX = Math.round(screenCenterX + (dt.x - player.worldX) * zoomLevel);
-                const dtDrawY = Math.round(screenCenterY + (dt.y - player.worldY) * zoomLevel);
+                const dtDrawX = Math.floor(screenCenterX + (dt.x - player.worldX) * zoomLevel);
+                const dtDrawY = Math.floor(screenCenterY + (dt.y - player.worldY) * zoomLevel);
 
-                // Se desvanece a la mitad de su vida
                 ctx.globalAlpha = Math.max(0, dt.life / (dt.maxLife / 2));
-
                 const fontSize = 10 * zoomLevel;
-                ctx.font = `900 ${fontSize}px sans-serif`; // Fuente gruesa (Bold)
+                ctx.font = `900 ${fontSize}px sans-serif`;
                 ctx.textAlign = "center";
-                ctx.lineWidth = 3 * zoomLevel; // Borde negro grueso
+                ctx.lineWidth = 3 * zoomLevel;
                 ctx.strokeStyle = "black";
                 ctx.lineJoin = "round";
 
                 ctx.strokeText(dt.text, dtDrawX, dtDrawY);
-                ctx.fillStyle = dt.color; // Usa verde o amarillo dependiendo del golpe
+                ctx.fillStyle = dt.color;
                 ctx.fillText(dt.text, dtDrawX, dtDrawY);
 
-                if (dt.life <= 0) damageTexts.splice(i, 1);
+                if (dt.life <= 0) dt.active = false; // 🛑 LA MAGIA: Apagar en vez de splice()
             }
             ctx.globalAlpha = 1.0;
 
-            // === 💥 DIBUJAR EFECTOS DE IMPACTO (CHISPAS/ONDAS) 💥 ===
-            for (let i = hitSparks.length - 1; i >= 0; i--) {
+            // === 💥 DIBUJAR EFECTOS DE IMPACTO (CON POOLING) 💥 ===
+            for (let i = 0; i < MAX_FX; i++) {
                 let spark = hitSparks[i];
+                if (!spark.active) continue; // Ignorar apagados
+
                 spark.life--;
+                const sDrawX = Math.floor(screenCenterX + (spark.x - player.worldX) * zoomLevel);
+                const sDrawY = Math.floor(screenCenterY + (spark.y - player.worldY) * zoomLevel);
 
-                const sDrawX = Math.round(screenCenterX + (spark.x - player.worldX) * zoomLevel);
-                const sDrawY = Math.round(screenCenterY + (spark.y - player.worldY) * zoomLevel);
-
-                // Efecto 1: Círculo expansivo (Onda expansiva blanca/del color de la bala)
                 const radius = (1 - (spark.life / spark.maxLife)) * 12 * zoomLevel;
-                const alpha = spark.life / spark.maxLife;
 
-                ctx.globalAlpha = alpha;
-                ctx.beginPath();
-                ctx.arc(sDrawX, sDrawY, radius, 0, Math.PI * 2);
-                ctx.strokeStyle = "white"; // Borde blanco brillante
-                ctx.lineWidth = 2 * zoomLevel;
-                ctx.stroke();
+                // Efecto 1: Onda expansiva
+                ctx.globalAlpha = spark.life / spark.maxLife;
+                ctx.beginPath(); ctx.arc(sDrawX, sDrawY, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = "white"; ctx.lineWidth = 2 * zoomLevel; ctx.stroke();
 
                 // Efecto 2: Núcleo brillante
-                ctx.beginPath();
-                ctx.arc(sDrawX, sDrawY, radius * 0.5, 0, Math.PI * 2);
-                ctx.fillStyle = spark.color;
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(sDrawX, sDrawY, radius * 0.5, 0, Math.PI * 2);
+                ctx.fillStyle = spark.color; ctx.fill();
 
-                if (spark.life <= 0) hitSparks.splice(i, 1);
+                if (spark.life <= 0) spark.active = false; // 🛑 APAGAR
             }
             ctx.globalAlpha = 1.0;
 
@@ -13593,91 +13661,64 @@
             // ==========================================================
             // ⛅ AMBIENT WEATHER & DAY/NIGHT ENGINE ⛅
             // ==========================================================
-
-            // ... (AQUÍ ESTÁ TU CÓDIGO DE LA NOCHE, ESE DÉJALO INTACTO) ...
-
-            // 2. RAIN PARTICLE SYSTEM (Screen-space) WITH SPLASHES
-            // 🛑 EL FIX 1: Apagar la lluvia si estás bajo un techo (!isUnderRoof)
+            // 2. RAIN PARTICLE SYSTEM (Screen-space) WITH SPLASHES (OBJECT POOLING)
             if (gameSettings.rainEnabled && !isUnderRoof) {
-                if (!window.rainParticles) window.rainParticles = [];
 
-                const MAX_RAIN = 100; // Un poco menos para compensar las animaciones de las gotas
-
-                if (window.rainParticles.length < MAX_RAIN) {
-                    for (let i = 0; i < 3; i++) { // 3 gotas nuevas por frame
-                        window.rainParticles.push({
-                            x: (Math.random() * window.innerWidth * 1.5) - (window.innerWidth * 0.25),
-                            y: Math.random() * -100 - 10,
-                            // 🛑 EL FIX 2: Asignarle un "suelo" aleatorio en la pantalla donde va a chocar
-                            targetY: (Math.random() * window.innerHeight * 0.8) + (window.innerHeight * 0.2),
-                            len: Math.random() * 20 + 15,
-                            vx: -2.5,
-                            vy: Math.random() * 10 + 20,
-                            isSplashing: false,
-                            splashLife: 6 // Cuánto dura la ondita del agua
-                        });
+                // 1. Activar 3 gotas nuevas por frame (buscar las que estén apagadas)
+                let spawned = 0;
+                for (let i = 0; i < MAX_RAIN && spawned < 3; i++) {
+                    if (!window.rainParticles[i].active) {
+                        let r = window.rainParticles[i];
+                        r.active = true;
+                        r.x = (Math.random() * window.innerWidth * 1.5) - (window.innerWidth * 0.25);
+                        r.y = Math.random() * -100 - 10;
+                        r.targetY = (Math.random() * window.innerHeight * 0.8) + (window.innerHeight * 0.2);
+                        r.len = Math.random() * 20 + 15;
+                        r.vx = -2.5;
+                        r.vy = Math.random() * 10 + 20;
+                        r.isSplashing = false;
+                        r.splashLife = 6;
+                        spawned++;
                     }
                 }
 
                 ctx.lineWidth = 1 * zoomLevel;
 
-                // Bucle de físicas de la lluvia
-                for (let i = window.rainParticles.length - 1; i >= 0; i--) {
+                // 2. Mover y dibujar
+                for (let i = 0; i < MAX_RAIN; i++) {
                     let r = window.rainParticles[i];
+                    if (!r.active) continue; // Ignorar gotas apagadas
 
                     if (!r.isSplashing) {
-                        // 🚀 EL FIX DEL REALISMO (PARALLAX): 
-                        // Le restamos la velocidad del jugador. El "1.3" hace que las gotas se sientan 
-                        // más cerca de la cámara (en 3D) que el suelo.
                         r.x += (r.vx - (player.vx * 1.3)) * zoomLevel;
                         r.y += (r.vy - (player.vy * 1.3)) * zoomLevel;
 
-                        // Dibujar la caída de la gota
                         ctx.strokeStyle = "rgba(174, 214, 241, 0.5)";
                         ctx.beginPath();
                         ctx.moveTo(r.x, r.y);
-
-                        // Inclinamos el dibujo de la gota para que el viento concuerde con tu corrida
                         const visualWindX = r.vx - (player.vx * 1.6);
-                        const visualWindY = r.vy - (player.vy * 1.6);
                         ctx.lineTo(r.x + (visualWindX * (r.len / r.vy)), r.y + r.len);
                         ctx.stroke();
 
-                        // Si la gota llegó a su "suelo", se transforma
-                        if (r.y > r.targetY) {
-                            r.isSplashing = true;
-                        }
+                        if (r.y > r.targetY) r.isSplashing = true;
                     } else {
-                        // 💥 DIBUJAR LA ONDA EXPANSIVA (SPLASH) 💥
-                        // 🚀 EL FIX DEL SUELO: Las ondas se restan exactamente 1.0 (la velocidad real del suelo)
-                        // Esto hace que las ondas se queden "clavadas" en el pavimento mientras tú corres
                         r.x -= player.vx * zoomLevel;
                         r.y -= player.vy * zoomLevel;
-
                         r.splashLife--;
-                        const splashRadius = (6 - r.splashLife) * 0.8 * zoomLevel;
 
-                        // Hacemos que se desvanezca suavemente
+                        const splashRadius = (6 - r.splashLife) * 0.8 * zoomLevel;
                         ctx.strokeStyle = `rgba(174, 214, 241, ${r.splashLife / 6})`;
                         ctx.beginPath();
-
-                        // Dibujamos un óvalo aplastado para mantener la perspectiva 3D del juego (RPG)
                         ctx.ellipse(r.x, r.y, splashRadius * 2, splashRadius, 0, 0, Math.PI * 2);
                         ctx.stroke();
 
-                        // Destruir la gota cuando la animación termina
-                        if (r.splashLife <= 0) {
-                            window.rainParticles.splice(i, 1);
-                        }
+                        if (r.splashLife <= 0) r.active = false; // 🛑 APAGAR EN VEZ DE BORRAR
                     }
                 }
-            } else if (isUnderRoof && window.rainParticles) {
-                // 🛑 EL FIX 3: Si entras a un edificio, limpia el array para detener la lluvia al instante
-                window.rainParticles = [];
+            } else if (isUnderRoof) {
+                // Apagar toda la lluvia instantáneamente si entras a una casa
+                for (let i = 0; i < MAX_RAIN; i++) window.rainParticles[i].active = false;
             }
-            // ==========================================================
-            // ==========================================================
-
             // --- NEW: UPDATE THE MINIMAP IF OPEN ---
             // Afuera de tu función update()
             let lastMinimapUpdate = 0;
@@ -13708,33 +13749,36 @@
             }
 
             // ==========================================================
-            // 🌐 7. MOTOR DE RED SINCRONIZADO (CERO JITTER)
+            // 🌐 7. MOTOR DE RED SINCRONIZADO (CERO JSON.STRINGIFY LAG)
             // ==========================================================
-            networkTimer += dtMs; // Sumamos los milisegundos exactos que tardó este frame
+            networkTimer += dtMs;
 
             if (networkTimer >= NETWORK_TICK_RATE) {
-                networkTimer = 0; // Reiniciamos el cronómetro de red
+                networkTimer = 0;
 
                 if (ws.readyState === WebSocket.OPEN && player.username) {
-                    // Armar la caja de estado
-                    const currentState = {
-                        x: Math.round(player.worldX), y: Math.round(player.worldY),
-                        dir: player.frameY, moving: player.isMoving,
-                        typing: player.isTyping, msg: player.message,
-                        isChatting: player.messageTimer > 0, frame: player.frameX,
-                        weapon: player.equippedWeapon
-                    };
-
-                    const currentString = JSON.stringify(currentState);
                     const timeNow = Date.now();
+                    const rx = Math.round(player.worldX);
+                    const ry = Math.round(player.worldY);
 
-                    // Enviar solo si nos movimos o si pasaron 2 segundos de inactividad
-                    if (currentString !== lastNetworkString || timeNow - (window.lastForceSendTime || 0) > 2000) {
+                    // 🛑 EL FIX: Condicional matemático puro (Costo CPU = 0%)
+                    const isDirty = (
+                        rx !== window.lastNetX ||
+                        ry !== window.lastNetY ||
+                        player.frameY !== window.lastNetDir ||
+                        player.isMoving !== window.lastNetMoving ||
+                        player.equippedWeapon !== window.lastNetWep ||
+                        player.message !== window.lastNetMsg ||
+                        player.isTyping !== window.lastNetTyping
+                    );
+
+                    // Solo enviamos si algo cambió, o si pasaron 2 segundos por seguridad
+                    if (isDirty || timeNow - (window.lastForceSendTime || 0) > 2000) {
                         ws.send(MessagePack.encode({
                             type: 'update',
                             player: {
                                 username: player.username,
-                                worldX: player.worldX, worldY: player.worldY,
+                                worldX: rx, worldY: ry, // Enviamos números enteros, ahorra datos
                                 frameX: player.frameX, frameY: player.frameY,
                                 isMoving: player.isMoving,
                                 message: player.message, messageTimer: player.messageTimer,
@@ -13742,7 +13786,12 @@
                                 equippedWeapon: player.equippedWeapon
                             }
                         }));
-                        lastNetworkStrindddddg = currentString;
+
+                        // Actualizar la memoria rápida
+                        window.lastNetX = rx; window.lastNetY = ry;
+                        window.lastNetDir = player.frameY; window.lastNetMoving = player.isMoving;
+                        window.lastNetWep = player.equippedWeapon; window.lastNetMsg = player.message;
+                        window.lastNetTyping = player.isTyping;
                         window.lastForceSendTime = timeNow;
                     }
                 }

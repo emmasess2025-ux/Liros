@@ -20,8 +20,10 @@
             background-color: #222;
             touch-action: none;
             font-family: sans-serif;
+            /* 🚀 FIX IOS: Previene bugs de redimensionamiento */
+            height: 100dvh;
+            width: 100vw;
 
-            /* Stops Safari/Chrome from highlighting elements */
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -295,6 +297,7 @@
             /* Scroll horizontal if you have many apps */
 
             opacity: 0;
+            visibility: hidden;
             pointer-events: none;
 
             /* 🛑 CENTERED ANIMATION 🛑 */
@@ -316,6 +319,7 @@
 
         #app-tray.open {
             opacity: 1;
+            visibility: visible;
             pointer-events: auto;
             /* Snaps to full size, 0 offset, perfectly centered */
             transform: translateX(-50%) scale(0.9) translateY(0);
@@ -1099,12 +1103,18 @@
         }
 
         /* ========================================================= */
-        /* 🚀 RENDIMIENTO MÓVIL: APAGAR EFECTO CRISTAL (ANTI-LAG)    */
+        /* 🚀 RENDIMIENTO MÓVIL: APAGAR EFECTO CRISTAL Y SOMBRAS     */
         /* ========================================================= */
         @media (max-width: 768px),
         (hover: none) and (pointer: coarse) {
 
-            /* Atrapamos todos los modales pesados */
+            /* Atrapamos todos los modales pesados de un golpe */
+            * {
+                /* Destruir el glassmorphism y glow en móviles */
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+
             #junkyard-modal,
             #jeweler-modal,
             #shop-modal>div,
@@ -1123,16 +1133,24 @@
             #squad-member-modal>div,
             #app-tray,
             #chat-container {
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                background: rgba(30, 30, 30, 0.98) !important;
+                background: rgba(25, 25, 25, 0.98) !important;
                 /* Color sólido elegante */
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.9) !important;
+                /* Sombra barata y optimizada */
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
             }
 
-            /* Apagamos el gradiente animado de neón del mapa si existe */
-            #fx-gloom {
+            /* Apagamos el gradiente animado de neón del mapa */
+            #fx-gloom,
+            #fx-vignette {
                 display: none !important;
+            }
+
+            /* Evita tirones al recalcular layouts en botones vivos */
+            .app-icon .app-bg {
+                box-shadow: none !important;
+                transition: transform 0.1s !important;
+                /* Matar transición de filtro */
             }
         }
     </style>
@@ -8020,19 +8038,31 @@
             drawMinimapPlayer(player.worldX, player.worldY, player.frameY, myHId, "#f1c40f", player.accountId);
         }
 
+        // 🚀 EL FIX DEL SANTO GRIAL: RESOLUCIÓN DINÁMICA
+        let dynamicRenderScale = 1.0;
+        let fpsHistory = [];
+        let lastResolutionCheck = performance.now();
+
         function resize() {
             const dpr = isTouchDevice ? Math.min(window.devicePixelRatio || 1, 2) : (window.devicePixelRatio || 1);
 
             cachedScreenWidth = window.innerWidth;
             cachedScreenHeight = window.innerHeight;
 
+            // 1. El canvas CSS ocupa siempre el 100% de la pantalla física real
             canvas.style.width = cachedScreenWidth + 'px';
             canvas.style.height = cachedScreenHeight + 'px';
-            canvas.width = cachedScreenWidth * dpr;
-            canvas.height = cachedScreenHeight * dpr;
-            ctx.scale(dpr, dpr);
 
-            // 📸 EL FIX: Si giran el celular, la foto vieja no sirve, ¡toma una nueva!
+            // 2. 🧠 LA MAGIA: El canvas de dibujo interno se achica si el celular no da la talla
+            const finalScale = dpr * dynamicRenderScale;
+            canvas.width = Math.floor(cachedScreenWidth * finalScale);
+            canvas.height = Math.floor(cachedScreenHeight * finalScale);
+
+            // 3. Reiniciar y aplicar la nueva escala de renderizado
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(finalScale, finalScale);
+
+            // Avisamos a las cámaras que tomen foto nueva
             if (typeof floorDirty !== 'undefined') floorDirty = true;
             if (typeof minimapDirty !== 'undefined') minimapDirty = true;
         }
@@ -11964,7 +11994,9 @@
                 }
             }
             else if (logicTile.triggerType === 'arena') {
-                window.currentViewingArenaId = `arena_${tileKey.replace(',', '_')}`;
+                // 🚀 EL FIX: Convertimos el número a texto de forma segura y nos olvidamos de las comas
+                window.currentViewingArenaId = `arena_${tileKey}`;
+
                 ws.send(MessagePack.encode({ type: 'get_arena_info', arenaId: window.currentViewingArenaId }));
                 document.getElementById('arena-modal').style.display = 'flex';
             }
@@ -12208,30 +12240,52 @@
             lastFrameTime = currentTime;
             let dtScale = dtMs / FRAME_MIN_TIME;
 
-            // 📊 NUEVO SISTEMA DE PERFORMANCE MONITOR (Promediado para ser preciso)
-            if (gameSettings.showPerformance) { // Solo corre si el usuario lo activó en el menú
-                fpsFrameCount++;
-                frameTimesTotal += rawDelta; // Sumamos el MS real de la computadora
+            // 📊 CALCULADORA MAESTRA DE RENDIMIENTO (Siempre activa para proteger el celular)
+            fpsFrameCount++;
+            frameTimesTotal += rawDelta; // Sumamos el MS real de la computadora
 
-                if (currentTime - fpsLastUpdate >= 1000) {
-                    if (uiPerfMonitor) {
-                        const currentFps = fpsFrameCount;
-                        const avgFrameTime = (frameTimesTotal / fpsFrameCount).toFixed(1); // MS real promediado
+            if (currentTime - fpsLastUpdate >= 1000) {
+                const currentFps = fpsFrameCount;
+                const avgFrameTime = (frameTimesTotal / fpsFrameCount).toFixed(1);
 
-                        const hexColor = currentFps >= 55 ? '#2ecc71' : (currentFps >= 30 ? '#f1c40f' : '#e74c3c');
-                        uiPerfMonitor.style.color = hexColor;
-                        uiPerfMonitor.style.borderColor = hexColor;
+                // =========================================================
+                // 🚀 LA MAGIA DE LA RESOLUCIÓN DINÁMICA AUTÓNOMA
+                // =========================================================
+                fpsHistory.push(currentFps);
+                if (fpsHistory.length > 3) fpsHistory.shift(); // Memoria de 3 segundos
 
-                        // 🛑 EL FIX: Todo en una sola línea elegante y hacker
-                        uiPerfMonitor.innerHTML = ` ${currentFps} FPS | ${avgFrameTime} ms`;
-                        uiPerfMonitor.style.display = 'block';
+                // Analizar si el dispositivo se está ahogando
+                if (currentTime - lastResolutionCheck > 3000 && fpsHistory.length === 3) {
+                    const avgFps = (fpsHistory[0] + fpsHistory[1] + fpsHistory[2]) / 3;
+
+                    // Si el promedio cae por debajo de 40 FPS, encogemos los gráficos internos
+                    if (avgFps < 40 && dynamicRenderScale > 0.5) {
+                        dynamicRenderScale -= 0.25; // Baja al 75%, luego al 50% si es necesario
+                        resize(); // Detonar el recálculo al instante
+
+                        spawnDamageText(player.worldX, player.worldY, "📉 Optimizando", true);
+
+                        fpsHistory = []; // Reset para darle tiempo al celular de respirar
+                        lastResolutionCheck = currentTime + 2000; // Extra cooldown de gracia
                     }
-                    fpsFrameCount = 0;
-                    frameTimesTotal = 0;
-                    fpsLastUpdate = currentTime;
+                    lastResolutionCheck = currentTime;
                 }
-            } else {
-                if (uiPerfMonitor) uiPerfMonitor.style.display = 'none';
+                // =========================================================
+
+                // Dibujado del Monitor en Pantalla (Si el usuario lo prendió en Opciones)
+                if (gameSettings.showPerformance && uiPerfMonitor) {
+                    const hexColor = currentFps >= 55 ? '#2ecc71' : (currentFps >= 30 ? '#f1c40f' : '#e74c3c');
+                    uiPerfMonitor.style.color = hexColor;
+                    uiPerfMonitor.style.borderColor = hexColor;
+                    uiPerfMonitor.innerHTML = ` ${currentFps} FPS | ${avgFrameTime} ms`;
+                    uiPerfMonitor.style.display = 'block';
+                } else if (uiPerfMonitor) {
+                    uiPerfMonitor.style.display = 'none';
+                }
+
+                fpsFrameCount = 0;
+                frameTimesTotal = 0;
+                fpsLastUpdate = currentTime;
             }
 
             const now = Date.now();
@@ -12751,47 +12805,65 @@
                 }
             }
 
-            // --- ACTUALIZAR UI DE MUNICIÓN EN TIEMPO REAL (OPTIMIZADO) ---
+            // --- ACTUALIZAR UI DE MUNICIÓN EN TIEMPO REAL (OPTIMIZADO DE VERDAD) ---
             if (player.equippedWeapon !== "none" && WEAPONS[player.equippedWeapon]) {
 
                 if (WEAPONS[player.equippedWeapon].type === 'melee') {
-                    uiAmmoDisplay.style.display = 'none';
+                    if (window.lastAmmoState !== 'hidden') {
+                        uiAmmoDisplay.style.display = 'none';
+                        window.lastAmmoState = 'hidden';
+                    }
                 } else {
-                    uiAmmoDisplay.style.display = 'flex';
+                    if (window.lastAmmoState !== 'visible') {
+                        uiAmmoDisplay.style.display = 'flex';
+                        window.lastAmmoState = 'visible';
+                    }
 
-                    // Este lo dejamos adentro porque el player.activeSlot cambia dinámicamente
-                    const activeSlotElem = document.getElementById('hud-slot-' + player.activeSlot);
-                    if (activeSlotElem) {
-                        const rect = activeSlotElem.getBoundingClientRect();
-                        uiAmmoDisplay.style.top = (rect.top + rect.height / 2) + 'px';
-                        uiAmmoDisplay.style.transform = 'translateY(-50%)';
+                    // 🚀 EL FIX MÁXIMO: Mover la caja SOLO si cambiaste de slot (Adiós getBoundingClientRect por frame)
+                    if (window.lastRenderedSlot !== player.activeSlot) {
+                        const activeSlotElem = document.getElementById('hud-slot-' + player.activeSlot);
+                        if (activeSlotElem) {
+                            const rect = activeSlotElem.getBoundingClientRect();
+                            uiAmmoDisplay.style.top = (rect.top + rect.height / 2) + 'px';
+                            uiAmmoDisplay.style.transform = 'translateY(-50%)';
+                        }
+                        window.lastRenderedSlot = player.activeSlot;
                     }
 
                     const maxAmmo = WEAPONS[player.equippedWeapon].magSize;
 
-                    if (player.isReloading) {
-                        uiAmmoCurrent.style.color = "#e74c3c";
-                        uiAmmoCurrent.innerText = "↻";
-                        uiAmmoMax.innerText = "RELOAD";
-                        uiAmmoDisplay.style.borderColor = "#e74c3c";
-                    } else {
-                        uiAmmoCurrent.style.color = player.ammo > (maxAmmo * 0.3) ? "#2ecc71" : "#e74c3c";
-                        uiAmmoCurrent.innerText = player.ammo;
-                        uiAmmoMax.innerText = maxAmmo;
-                        uiAmmoDisplay.style.borderColor = "#f1c40f";
+                    // 🚀 EL FIX: Solo actualizar el DOM (texto HTML) si las balas o el estado de recarga realmente cambiaron
+                    if (window.lastRenderedAmmo !== player.ammo || window.lastRenderedReloading !== player.isReloading) {
+                        if (player.isReloading) {
+                            uiAmmoCurrent.style.color = "#e74c3c";
+                            uiAmmoCurrent.innerText = "↻";
+                            uiAmmoMax.innerText = "RELOAD";
+                            uiAmmoDisplay.style.borderColor = "#e74c3c";
+                        } else {
+                            uiAmmoCurrent.style.color = player.ammo > (maxAmmo * 0.3) ? "#2ecc71" : "#e74c3c";
+                            uiAmmoCurrent.innerText = player.ammo;
+                            uiAmmoMax.innerText = maxAmmo;
+                            uiAmmoDisplay.style.borderColor = "#f1c40f";
+                        }
+                        window.lastRenderedAmmo = player.ammo;
+                        window.lastRenderedReloading = player.isReloading;
                     }
 
+                    // Opacidad inteligente (Fade out si no disparas, actualizado solo al cambiar de estado)
                     const timeSinceShot = Date.now() - (player.lastShotTime || 0);
-                    if (timeSinceShot < 3000 || player.isReloading) {
-                        uiAmmoDisplay.style.opacity = '1';
-                        uiAmmoDisplay.style.pointerEvents = 'auto';
-                    } else {
-                        uiAmmoDisplay.style.opacity = '0';
-                        uiAmmoDisplay.style.pointerEvents = 'none';
+                    const shouldBeOpaque = (timeSinceShot < 3000 || player.isReloading);
+
+                    if (shouldBeOpaque !== window.lastAmmoOpacity) {
+                        uiAmmoDisplay.style.opacity = shouldBeOpaque ? '1' : '0';
+                        uiAmmoDisplay.style.pointerEvents = shouldBeOpaque ? 'auto' : 'none';
+                        window.lastAmmoOpacity = shouldBeOpaque;
                     }
                 }
             } else {
-                uiAmmoDisplay.style.display = 'none';
+                if (window.lastAmmoState !== 'hidden') {
+                    uiAmmoDisplay.style.display = 'none';
+                    window.lastAmmoState = 'hidden';
+                }
             }
 
             // --- 4. BULLET MOVEMENT & PLAYER DAMAGE (CON OBJECT POOLING) ---

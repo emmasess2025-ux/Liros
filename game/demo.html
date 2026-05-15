@@ -3623,7 +3623,7 @@
         const overheadCtx = overheadCanvas.getContext('2d');     // 🌟 NUEVO
         let floorDirty = true; // Nos dice si necesitamos tomar una nueva "foto"
         let floorBufferBox = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        const BUFFER_MARGIN = isTouchDevice ? 4 : 12;
+        const BUFFER_MARGIN = isTouchDevice ? 1 : 12;
 
         function updateFloorBuffer() {
             const screenWidthWorld = cachedScreenWidth / zoomLevel;
@@ -3863,37 +3863,47 @@
         };
 
         // ==========================================
-        // 🔊 SOUND ENGINE (AUDIO POOL ULTRA-OPTIMIZADO)
+        // 🔊 SOUND ENGINE (WEB AUDIO API - ZERO LAG)
         // ==========================================
-        const audioCaches = {}; // Guardaremos cajas de grabadoras por cada sonido
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        const audioBuffers = {}; // Aquí guardamos los MP3 ya decodificados en RAM pura
 
-        function playSound(soundUrl, volume = 0.5, panX = null) {
+        // Función para descargar el sonido y convertirlo en datos crudos
+        async function preloadSound(url) {
+            if (!url || audioBuffers[url]) return;
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                audioBuffers[url] = audioBuffer;
+            } catch (e) { console.error("Error pre-cargando audio:", e); }
+        }
+
+        function playSound(soundUrl, volume = 0.5) {
             if (!soundUrl || soundUrl === "") return;
 
-            // 1. Si es la primera vez que se pide este sonido, creamos 5 grabadoras con el cassette ya adentro
-            if (!audioCaches[soundUrl]) {
-                audioCaches[soundUrl] = [];
-                for (let i = 0; i < 5; i++) {
-                    const a = new Audio(soundUrl); // ¡Asignamos el SRC una sola vez en la vida!
-                    audioCaches[soundUrl].push(a);
-                }
+            // Los navegadores duermen el audio hasta que el jugador hace el primer clic
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const buffer = audioBuffers[soundUrl];
+            if (!buffer) {
+                // Si disparas y aún no bajaba de internet, lo baja y luego suena
+                preloadSound(soundUrl).then(() => {
+                    if (audioBuffers[soundUrl]) playSound(soundUrl, volume);
+                });
+                return;
             }
 
-            // 2. Buscamos una grabadora que no esté sonando en este momento
-            const pool = audioCaches[soundUrl];
-            for (let i = 0; i < pool.length; i++) {
-                if (pool[i].paused || pool[i].ended || pool[i].currentTime === 0) {
-                    pool[i].volume = volume;
-                    pool[i].currentTime = 0; // Rebobinamos
-                    pool[i].play().catch(e => { }); // Play instantáneo, cero lag
-                    return;
-                }
-            }
+            // Reproducción ultrarrápida nivel C++
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = volume;
 
-            // 3. Si las 5 están ocupadas (metralleta muy rápida), forzamos la primera
-            pool[0].currentTime = 0;
-            pool[0].volume = volume;
-            pool[0].play().catch(e => { });
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            source.start(0);
         }
 
         // Helper to grab sounds directly from the Catalog
@@ -4953,18 +4963,22 @@
                 }
                 updateLoadingBar("Descargando mapas y armas...");
 
-                // GUARDAR DB DE ARMAS
+                // GUARDAR DB DE ARMAS Y PRECARGAR SUS SONIDOS A LA RAM
                 WEAPONS = data.weaponsDB;
                 for (let wId in WEAPONS) {
+                    // Cargar imagen
                     if (WEAPONS[wId].src) {
                         const img = new Image();
                         img.onload = () => {
-                            assetsLoaded++;
-                            updateLoadingBar();
-                            renderHudHotbar();
+                            assetsLoaded++; updateLoadingBar(); renderHudHotbar();
                         };
                         img.src = WEAPONS[wId].src;
                         loadedWeaponSprites[wId] = img;
+                    }
+                    // 🔊 EL FIX: Pre-cargar los sonidos de disparo a la RAM del celular
+                    if (WEAPONS[wId].audio) {
+                        if (WEAPONS[wId].audio.use) preloadSound(WEAPONS[wId].audio.use);
+                        if (WEAPONS[wId].audio.reload) preloadSound(WEAPONS[wId].audio.reload);
                     }
                 }
 
@@ -13062,11 +13076,22 @@
                 const bufferWorldX = floorBufferBox.minX * TILE_SIZE;
                 const bufferWorldY = floorBufferBox.minY * TILE_SIZE;
 
-                // 🛑 EL FIX: Ya no usamos 'const', simplemente llenamos las variables globales
-                dX = Math.floor(screenCenterX + (bufferWorldX - player.worldX) * zoomLevel);
-                dY = Math.floor(screenCenterY + (bufferWorldY - player.worldY) * zoomLevel);
-                dW = Math.floor(floorCanvas.width * zoomLevel);
-                dH = Math.floor(floorCanvas.height * zoomLevel);
+                // 🚀 EL FIX DEL JITTER MATEMÁTICO:
+                // 1. Calculamos la coordenada con todos los decimales
+                const rawDx = screenCenterX + (bufferWorldX - player.worldX) * zoomLevel;
+                const rawDy = screenCenterY + (bufferWorldY - player.worldY) * zoomLevel;
+
+                // 2. Obligamos al fondo a usar píxeles enteros para que la gráfica no explote
+                dX = Math.round(rawDx);
+                dY = Math.round(rawDy);
+
+                // 3. 🧠 LA MAGIA: Guardamos cuánto "error" le aplicamos al fondo
+                // para aplicárselo también a nuestro monito más adelante.
+                window.camErrorX = dX - rawDx;
+                window.camErrorY = dY - rawDy;
+
+                dW = Math.round(floorCanvas.width * zoomLevel);
+                dH = Math.round(floorCanvas.height * zoomLevel);
 
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(floorCanvas, dX, dY, dW, dH);
@@ -13199,13 +13224,12 @@
             const localTimeSinceHit = Date.now() - (player.lastHitTime || 0);
             const localIsHit = (localTimeSinceHit < 150);
 
-            // 🛑 EL FIX: FORZAR ANIMACIÓN DE PIERNAS AL ESTAR ARMADO Y TROPEZAR 🛑
             const isStaggering = (Date.now() - (player.staggerTimer || 0) < 300) || Math.abs(player.kbX) > 0.2 || Math.abs(player.kbY) > 0.2;
             if (isStaggering && player.equippedWeapon !== "none") {
                 player.staggerTick = (player.staggerTick || 0) + 1;
-                if (player.staggerTick > 4) { // Velocidad a la que mueve las piernas al tropezar
+                if (player.staggerTick > 4) {
                     player.staggerTick = 0;
-                    player.frameX = (player.frameX + 1) % 6; // Obliga a reproducir los 6 frames de caminar con arma
+                    player.frameX = (player.frameX + 1) % 6;
                 }
             }
 
@@ -13214,12 +13238,17 @@
                 if (!isTouchDevice) { ctx.shadowBlur = 20 * zoomLevel; ctx.shadowColor = "red"; }
                 ctx.globalAlpha = 0.6;
             }
+
+            // 🚀 EL FIX DEL JITTER: Pegar el personaje a la cuadrícula del mapa!
+            const myDrawX = screenCenterX + (window.camErrorX || 0);
+            const myDrawY = screenCenterY + (window.camErrorY || 0);
+
             // 👇 DIBUJO LIMPIO DEL ENSAMBLADOR PARA TI 👇
-            drawModularCharacter(ctx, player, screenCenterX, screenCenterY, zoomLevel);
+            drawModularCharacter(ctx, player, myDrawX, myDrawY, zoomLevel);
 
             if (localIsHit && !player.isDead) {
                 ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-                ctx.beginPath(); ctx.arc(screenCenterX, screenCenterY, 12 * zoomLevel, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(myDrawX, myDrawY, 12 * zoomLevel, 0, Math.PI * 2); ctx.fill();
             }
             ctx.shadowBlur = 0; ctx.globalAlpha = 1.0;
 
@@ -13567,12 +13596,12 @@
             }
 
             // Dibujar TU barra de vida, nombre y clan
-            const myTopLeftX = screenCenterX - (scaledWidth / 2);
-            const myTopLeftY = screenCenterY - (scaledHeight / 2);
+            const myTopLeftX = myDrawX - (scaledWidth / 2);
+            const myTopLeftY = myDrawY - (scaledHeight / 2);
 
             drawHealthBar(myTopLeftX, myTopLeftY, player.hp, player.maxHp || 100, scaledWidth, player.lastHpUpdateTime);
             drawDynamicBubble(player.message, player.messageTimer, player.isTyping, myTopLeftX, myTopLeftY, scaledWidth);
-            drawNametag(player, myTopLeftX, myTopLeftY, scaledWidth, scaledHeight, "#f1c40f"); // <--- CORREGIDO
+            drawNametag(player, myTopLeftX, myTopLeftY, scaledWidth, scaledHeight, "#f1c40f");
 
             if (player.messageTimer > 0) player.messageTimer--;
 

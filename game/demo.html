@@ -3610,7 +3610,8 @@
             return (x + 10000) * 1000000 + (y + 10000) * 100 + l;
         }
         let safeZones = [];   // <--- NUEVO: MEMORIA DE ZONAS SEGURAS
-
+        // 1. PRIMERO declaramos la variable para saber si es celular
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         // 🚀 EL FIX DE RENDIMIENTO MÁXIMO: OFFSCREEN CANVAS (CACHE DEL SUELO)
         const floorCanvas = document.createElement('canvas');
         const floorCtx = floorCanvas.getContext('2d');
@@ -3726,8 +3727,6 @@
                 initialPinchDistance = null;
             }
         });
-        // 1. PRIMERO declaramos la variable para saber si es celular
-        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
         // 🚀 EL FIX: Cachear la pantalla en RAM
         let cachedScreenWidth = window.innerWidth;

@@ -8047,18 +8047,24 @@
         let lastResolutionCheck = performance.now();
 
         function resize() {
-            const dpr = isTouchDevice ? Math.min(window.devicePixelRatio || 1, 2) : (window.devicePixelRatio || 1);
+            // 📱 FIX BLUR iPHONE 15 PRO:
+            // Antes limitábamos el DPR a 2 en móvil para ahorrar GPU, pero en pantallas
+            // de 3x (iPhone 15 Pro, Pixel 8 Pro...) el browser upscaleaba 2x→3x
+            // y eso desenfocaba los píxeles del juego. Usamos el DPR real completo.
+            // El dynamicRenderScale (0.5–1.0) ya se encarga de bajar resolución si
+            // el celular se calienta o no llega a 60fps.
+            const dpr = window.devicePixelRatio || 1;
 
             cachedScreenWidth = window.innerWidth;
             cachedScreenHeight = window.innerHeight;
 
             // 1. El canvas CSS ocupa siempre el 100% de la pantalla física real
-            canvas.style.width = cachedScreenWidth + 'px';
+            canvas.style.width  = cachedScreenWidth  + 'px';
             canvas.style.height = cachedScreenHeight + 'px';
 
-            // 2. 🧠 LA MAGIA: El canvas de dibujo interno se achica si el celular no da la talla
+            // 2. El canvas interno en píxeles físicos reales del dispositivo
             const finalScale = dpr * dynamicRenderScale;
-            canvas.width = Math.floor(cachedScreenWidth * finalScale);
+            canvas.width  = Math.floor(cachedScreenWidth  * finalScale);
             canvas.height = Math.floor(cachedScreenHeight * finalScale);
 
             // 3. Reiniciar y aplicar la nueva escala de renderizado
@@ -12315,8 +12321,15 @@
                 if (uiLoadingScreen) uiLoadingScreen.style.display = 'none';
             }
             // ... resto del código ...
-            // 🚀 EL FIX DEL JITTER 1: Evitar centros con decimales (Ej. iPhone tiene anchos impares como 375px)
-            const screenCenterX = Math.floor(cachedScreenWidth / 2);
+            // 🚀 FIX JITTER CÁMARA: Anclar el origen de la cámara a la cuadrícula de píxeles.
+            // Snap la posición del jugador al múltiplo de 1/zoomLevel más cercano
+            // para que (player.worldX * zoomLevel) siempre sea un entero exacto.
+            // Esto elimina el sub-pixel drift frame a frame sin mover al jugador físicamente.
+            const renderWorldX = Math.round(player.worldX * zoomLevel) / zoomLevel;
+            const renderWorldY = Math.round(player.worldY * zoomLevel) / zoomLevel;
+
+            // Centro de pantalla en píxeles CSS enteros
+            const screenCenterX = Math.floor(cachedScreenWidth  / 2);
             const screenCenterY = Math.floor(cachedScreenHeight / 2);
             // --- NEW: SLIDING COLLISION CHECK ---
             const checkWall = (x, y) => {
@@ -13154,19 +13167,17 @@
                 const bufferWorldX = floorBufferBox.minX * TILE_SIZE;
                 const bufferWorldY = floorBufferBox.minY * TILE_SIZE;
 
-                // 🚀 EL FIX DEL JITTER MATEMÁTICO:
-                // 1. Calculamos la coordenada con todos los decimales
-                const rawDx = screenCenterX + (bufferWorldX - player.worldX) * zoomLevel;
-                const rawDy = screenCenterY + (bufferWorldY - player.worldY) * zoomLevel;
+                // 🚀 FIX JITTER CÁMARA: usamos renderWorldX/Y (posición snapped al pixel)
+                // en lugar del float crudo del jugador. Así (bufferWorldX - renderWorldX)*zoom
+                // siempre produce un entero exacto → cero sub-pixel drift.
+                const rawDx = screenCenterX + (bufferWorldX - renderWorldX) * zoomLevel;
+                const rawDy = screenCenterY + (bufferWorldY - renderWorldY) * zoomLevel;
 
-                // 2. 🚀 FIX JITTER CAMARA: Usar Math.floor en lugar de Math.round.
-                // Math.round tiene un "salto" de ±0.5px cuando el decimal cruza 0.5,
-                // causando un micro-jitter de 1px. Math.floor es consistente y suave.
                 dX = Math.floor(rawDx);
                 dY = Math.floor(rawDy);
 
-                // 3. 🧠 LA MAGIA: Guardamos cuánto "error" le aplicamos al fondo
-                // para aplicárselo también a nuestro monito más adelante.
+                // camError = 0 siempre (porque rawDx ya es entero), pero lo mantenemos
+                // para compatibilidad con el resto del código.
                 window.camErrorX = dX - rawDx;
                 window.camErrorY = dY - rawDy;
 
@@ -13185,14 +13196,14 @@
             if (!editMode) {
                 const l15screenW = cachedScreenWidth / zoomLevel;
                 const l15screenH = cachedScreenHeight / zoomLevel;
-                const l15startCol = Math.floor((player.worldX - (l15screenW / 2)) / TILE_SIZE) - 1;
-                const l15endCol   = Math.floor((player.worldX + (l15screenW / 2)) / TILE_SIZE) + 1;
-                const l15startRow = Math.floor((player.worldY - (l15screenH / 2)) / TILE_SIZE) - 1;
-                const l15endRow   = Math.floor((player.worldY + (l15screenH / 2)) / TILE_SIZE) + 1;
+                const l15startCol = Math.floor((renderWorldX - (l15screenW / 2)) / TILE_SIZE) - 1;
+                const l15endCol   = Math.floor((renderWorldX + (l15screenW / 2)) / TILE_SIZE) + 1;
+                const l15startRow = Math.floor((renderWorldY - (l15screenH / 2)) / TILE_SIZE) - 1;
+                const l15endRow   = Math.floor((renderWorldY + (l15screenH / 2)) / TILE_SIZE) + 1;
 
                 const l15scaledSize   = TILE_SIZE * zoomLevel;
-                const l15cameraOffX   = screenCenterX - (player.worldX * zoomLevel);
-                const l15cameraOffY   = screenCenterY - (player.worldY * zoomLevel);
+                const l15cameraOffX   = screenCenterX - (renderWorldX * zoomLevel);
+                const l15cameraOffY   = screenCenterY - (renderWorldY * zoomLevel);
 
                 ctx.imageSmoothingEnabled = false;
 
@@ -13262,8 +13273,8 @@
             // === 🛑 DIBUJAR LA BASURA EN EL PISO ===
             for (let itemId in groundItems) {
                 let item = groundItems[itemId];
-                const iDrawX = Math.round(screenCenterX + (item.x - player.worldX) * zoomLevel);
-                const iDrawY = Math.round(screenCenterY + (item.y - player.worldY) * zoomLevel);
+                const iDrawX = Math.floor(screenCenterX + (item.x - renderWorldX) * zoomLevel);
+                const iDrawY = Math.floor(screenCenterY + (item.y - renderWorldY) * zoomLevel);
 
                 if (trashSpritesheet.complete && trashSpritesheet.naturalWidth > 0) {
                     const drawSize = 16 * zoomLevel;
@@ -13281,8 +13292,8 @@
                 let hole = digHoles[i];
                 hole.life--;
 
-                const hDrawX = Math.round(screenCenterX + (hole.x - player.worldX) * zoomLevel);
-                const hDrawY = Math.round(screenCenterY + (hole.y - player.worldY) * zoomLevel);
+                const hDrawX = Math.floor(screenCenterX + (hole.x - renderWorldX) * zoomLevel);
+                const hDrawY = Math.floor(screenCenterY + (hole.y - renderWorldY) * zoomLevel);
 
                 // El hoyo se desvanece suavemente antes de desaparecer
                 ctx.globalAlpha = Math.min(1, hole.life / 50);
@@ -13364,8 +13375,8 @@
 
                 if (p.frameY > 3) p.frameY = 0; // Escudo anti-crash
                 // 🚀 EL FIX DEL JITTER 2: Usar Math.floor igual que el piso, NUNCA Math.round
-                const pDrawX = Math.floor(screenCenterX + ((p.worldX - player.worldX) * zoomLevel));
-                const pDrawY = Math.floor(screenCenterY + ((p.worldY - player.worldY) * zoomLevel));
+                const pDrawX = Math.floor(screenCenterX + ((p.worldX - renderWorldX) * zoomLevel));
+                const pDrawY = Math.floor(screenCenterY + ((p.worldY - renderWorldY) * zoomLevel));
                 const timeSinceHit = Date.now() - (p.lastHitTime || 0);
                 const isHit = (timeSinceHit < 150);
 
@@ -13432,8 +13443,8 @@
             // --- NEW: DRAW PROJECTILES DINÁMICOS ---
             for (let p of projectiles) {
                 if (!p.active) continue; // 🛑 IGNORAR BALAS APAGADAS
-                const pDrawX = Math.round(screenCenterX + (p.x - player.worldX) * zoomLevel);
-                const pDrawY = Math.round(screenCenterY + (p.y - player.worldY) * zoomLevel);
+                const pDrawX = Math.floor(screenCenterX + (p.x - renderWorldX) * zoomLevel);
+                const pDrawY = Math.floor(screenCenterY + (p.y - renderWorldY) * zoomLevel);
 
                 // 🛑 EL FIX DEL COLOR: Escudo de seguridad por si p.color es null o undefined
                 const safeColor = p.color ? p.color : "#f1c40f"; // Amarillo brillante por defecto
@@ -13465,8 +13476,8 @@
             }
             // === DIBUJAR UI Y SPRITE DE LA BASE CENTRAL ===
             if (centralBase) {
-                const bDrawX = Math.round(screenCenterX + (centralBase.worldX - player.worldX) * zoomLevel);
-                const bDrawY = Math.round(screenCenterY + (centralBase.worldY - player.worldY) * zoomLevel);
+                const bDrawX = Math.floor(screenCenterX + (centralBase.worldX - renderWorldX) * zoomLevel);
+                const bDrawY = Math.floor(screenCenterY + (centralBase.worldY - renderWorldY) * zoomLevel);
 
                 // Extraemos los offsets manuales del editor
                 const offsetX = (centralBase.spriteOffsetX || 0) * zoomLevel;
@@ -13689,8 +13700,8 @@
 
                 // 🛑 EL FIX: Solo dibujar la luz brillante si el arma es "ranged"
                 if (stats && stats.type === 'ranged') {
-                    const fX = Math.round(screenCenterX + (player.lastShotX - player.worldX) * zoomLevel);
-                    const fY = Math.round(screenCenterY + (player.lastShotY - player.worldY) * zoomLevel);
+                    const fX = Math.floor(screenCenterX + (player.lastShotX - renderWorldX) * zoomLevel);
+                    const fY = Math.floor(screenCenterY + (player.lastShotY - renderWorldY) * zoomLevel);
 
                     ctx.fillStyle = stats.color || "#ffcc00"; // Usar el color del arma
 
@@ -13748,8 +13759,8 @@
                 if (!p || p.worldX === undefined || !p.username) continue;
 
                 // Centro exacto del otro jugador
-                const pCenterX = Math.round(screenCenterX + ((p.worldX - player.worldX) * zoomLevel));
-                const pCenterY = Math.round(screenCenterY + ((p.worldY - player.worldY) * zoomLevel));
+                const pCenterX = Math.floor(screenCenterX + ((p.worldX - renderWorldX) * zoomLevel));
+                const pCenterY = Math.floor(screenCenterY + ((p.worldY - renderWorldY) * zoomLevel));
 
                 // Esquina superior izquierda (para que la barra y el nombre floten arriba de la cabeza)
                 const pTopLeftX = pCenterX - (scaledWidth / 2);
@@ -13779,8 +13790,8 @@
                 dt.life--;
                 dt.y -= 0.6; // El texto flota hacia arriba
 
-                const dtDrawX = Math.floor(screenCenterX + (dt.x - player.worldX) * zoomLevel);
-                const dtDrawY = Math.floor(screenCenterY + (dt.y - player.worldY) * zoomLevel);
+                const dtDrawX = Math.floor(screenCenterX + (dt.x - renderWorldX) * zoomLevel);
+                const dtDrawY = Math.floor(screenCenterY + (dt.y - renderWorldY) * zoomLevel);
 
                 ctx.globalAlpha = Math.max(0, dt.life / (dt.maxLife / 2));
                 const fontSize = 10 * zoomLevel;
@@ -13804,8 +13815,8 @@
                 if (!spark.active) continue; // Ignorar apagados
 
                 spark.life--;
-                const sDrawX = Math.floor(screenCenterX + (spark.x - player.worldX) * zoomLevel);
-                const sDrawY = Math.floor(screenCenterY + (spark.y - player.worldY) * zoomLevel);
+                const sDrawX = Math.floor(screenCenterX + (spark.x - renderWorldX) * zoomLevel);
+                const sDrawY = Math.floor(screenCenterY + (spark.y - renderWorldY) * zoomLevel);
 
                 const radius = (1 - (spark.life / spark.maxLife)) * 12 * zoomLevel;
 

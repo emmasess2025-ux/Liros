@@ -13177,6 +13177,88 @@
                 ctx.drawImage(floorCanvas, dX, dY, dW, dH);
             }
 
+            // =========================================================
+            // 🌟 CAPA 15: EFECTOS VISUALES DE TILES DE LÓGICA
+            // El tile de color en sí está oculto, pero dibujamos encima
+            // todo lo que la lógica debe mostrar (armas de tienda, precios, etc.)
+            // =========================================================
+            if (!editMode) {
+                const l15screenW = cachedScreenWidth / zoomLevel;
+                const l15screenH = cachedScreenHeight / zoomLevel;
+                const l15startCol = Math.floor((player.worldX - (l15screenW / 2)) / TILE_SIZE) - 1;
+                const l15endCol   = Math.floor((player.worldX + (l15screenW / 2)) / TILE_SIZE) + 1;
+                const l15startRow = Math.floor((player.worldY - (l15screenH / 2)) / TILE_SIZE) - 1;
+                const l15endRow   = Math.floor((player.worldY + (l15screenH / 2)) / TILE_SIZE) + 1;
+
+                const l15scaledSize   = TILE_SIZE * zoomLevel;
+                const l15cameraOffX   = screenCenterX - (player.worldX * zoomLevel);
+                const l15cameraOffY   = screenCenterY - (player.worldY * zoomLevel);
+
+                ctx.imageSmoothingEnabled = false;
+
+                for (let gy = l15startRow; gy <= l15endRow; gy++) {
+                    for (let gx = l15startCol; gx <= l15endCol; gx++) {
+                        const l15key  = getMapKey(gx, gy, 15);
+                        const l15tile = worldMap.get(l15key);
+                        if (!l15tile) continue;
+
+                        // Posición en pantalla de este tile (igual que drawWorldLayers)
+                        const l15drawX = Math.floor(l15cameraOffX + (gx * l15scaledSize));
+                        const l15drawY = Math.floor(l15cameraOffY + (gy * l15scaledSize));
+
+                        // 🏪 TIENDA: dibujar el arma expuesta y su precio
+                        if (l15tile.triggerType === 'shop' && l15tile.itemId) {
+                            const wSprite = window.loadedItemSprites && window.loadedItemSprites[l15tile.itemId];
+                            if (wSprite && wSprite.complete) {
+                                const itemStats = (window.weaponsDB && window.weaponsDB[l15tile.itemId])
+                                               || (window.MASTER_CATALOG && window.MASTER_CATALOG[l15tile.itemId])
+                                               || {};
+                                const tweakX     = (l15tile.shelfX || 0) * zoomLevel;
+                                const tweakY     = (l15tile.shelfY || 0) * zoomLevel;
+                                const itemRow    = l15tile.itemRow || 0;
+                                const sW = 48, sH = 64;
+                                const renderScale = 0.9;
+                                const scaledTile  = TILE_SIZE * zoomLevel;
+                                const scaledItemW = sW * renderScale * zoomLevel;
+                                const scaledItemH = sH * renderScale * zoomLevel;
+
+                                ctx.save();
+                                ctx.drawImage(
+                                    wSprite,
+                                    0, itemRow * sH, sW, sH,
+                                    l15drawX + (scaledTile / 2) - (scaledItemW / 2) + tweakX,
+                                    l15drawY + scaledTile - scaledItemH - (4 * zoomLevel) + tweakY,
+                                    scaledItemW, scaledItemH
+                                );
+                                ctx.restore();
+
+                                // Precio debajo del tile
+                                if (itemStats.price !== undefined) {
+                                    ctx.save();
+                                    const priceText = `$${itemStats.price}`;
+                                    const fontSize  = 6 * zoomLevel;
+                                    ctx.font        = `900 ${fontSize}px sans-serif`;
+                                    ctx.textAlign   = 'center';
+                                    const textX = l15drawX + (scaledTile / 2);
+                                    const textY = l15drawY + scaledTile + (5 * zoomLevel);
+                                    ctx.lineWidth   = 2 * zoomLevel;
+                                    ctx.strokeStyle = 'black';
+                                    ctx.lineJoin    = 'round';
+                                    ctx.strokeText(priceText, textX, textY);
+                                    ctx.fillStyle   = '#f1c40f';
+                                    ctx.fillText(priceText, textX, textY);
+                                    ctx.restore();
+                                }
+                            }
+                        }
+
+                        // 🔧 Aquí puedes añadir más casos de lógica visual en el futuro
+                        // (NPCs, portales, puertas, etc.) siguiendo el mismo patrón
+                    }
+                }
+            }
+            // =========================================================
+
             // === 🛑 DIBUJAR LA BASURA EN EL PISO ===
             for (let itemId in groundItems) {
                 let item = groundItems[itemId];

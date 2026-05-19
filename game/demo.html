@@ -3641,7 +3641,10 @@
         const overheadCtx = overheadCanvas.getContext('2d');     // 🌟 NUEVO
         let floorDirty = true; // Nos dice si necesitamos tomar una nueva "foto"
         let floorBufferBox = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        const BUFFER_MARGIN = isTouchDevice ? 1 : 12;
+        // 🚀 FIX JITTER MÓVIL: BUFFER_MARGIN más grande en móvil evita re-snapshots frecuentes
+        // Con margen=1, el snapshot se reconstruye casi cada tile → spike de CPU → jitter
+        // Con margen=4 tenemos ~3-4 tiles de cushion antes de necesitar reconstruir
+        const BUFFER_MARGIN = isTouchDevice ? 4 : 12;
 
         function updateFloorBuffer() {
             const screenWidthWorld = cachedScreenWidth / zoomLevel;
@@ -12229,7 +12232,10 @@
             let rawDelta = currentTime - lastFrameTime; // Tiempo crudo real
 
             // 🛑 EL FIX DEL MICRO-STUTTER: (60 FPS Cap)
-            if (rawDelta < 15) return;
+            // iPhone 12 corre a 60fps exactos → frames de ~16.6ms
+            // Un umbral de 15ms descarta frames válidos de 15.x ms → stutter
+            // Bajamos a 10ms para solo bloquear frames demasiado rápidos (>100fps)
+            if (rawDelta < 10) return;
 
             let dtMs = rawDelta;
             // 🚀 EL FIX DEL JITTER 3: Anti-Rubberband. Si el celular se traba un instante, 
@@ -13153,9 +13159,11 @@
                 const rawDx = screenCenterX + (bufferWorldX - player.worldX) * zoomLevel;
                 const rawDy = screenCenterY + (bufferWorldY - player.worldY) * zoomLevel;
 
-                // 2. Obligamos al fondo a usar píxeles enteros para que la gráfica no explote
-                dX = Math.round(rawDx);
-                dY = Math.round(rawDy);
+                // 2. 🚀 FIX JITTER CAMARA: Usar Math.floor en lugar de Math.round.
+                // Math.round tiene un "salto" de ±0.5px cuando el decimal cruza 0.5,
+                // causando un micro-jitter de 1px. Math.floor es consistente y suave.
+                dX = Math.floor(rawDx);
+                dY = Math.floor(rawDy);
 
                 // 3. 🧠 LA MAGIA: Guardamos cuánto "error" le aplicamos al fondo
                 // para aplicárselo también a nuestro monito más adelante.
@@ -13225,14 +13233,18 @@
                 const p = otherPlayers[id];
                 if (!p || p.worldX === undefined || !p.username) continue;
 
-                // 🛑 THE PERFECT MOVEMENT FIX v2 (NO DASH, NO ICE SKATES) 🛑
+                // 🛑 THE PERFECT MOVEMENT FIX v3 (DELTA-TIME LERP) 🛑
                 let dx = p.targetX - p.worldX;
                 let dy = p.targetY - p.worldY;
                 let dist = Math.hypot(dx, dy);
 
-                // 1. Siempre deslizar (Lerp) para evitar el teleport/dash violento
-                p.worldX += dx * 0.3;
-                p.worldY += dy * 0.3;
+                // 1. 🚀 FIX JITTER OTROS JUGADORES: Lerp atado a dtScale.
+                // Con factor fijo 0.3, en frames irregulares el jugador avanza
+                // distinto cada frame → tirones. Con dtScale el movimiento es
+                // proporcional al tiempo real transcurrido → suave en cualquier fps.
+                const lerpFactor = Math.min(1.0, 0.3 * dtScale);
+                p.worldX += dx * lerpFactor;
+                p.worldY += dy * lerpFactor;
 
                 // 2. Truco visual: Forzar que las piernas se muevan mientras haya deslizamiento
                 if (!p.isMoving) {

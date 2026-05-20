@@ -2830,6 +2830,17 @@
             <select id="zone-type-select"
                 style="background: #111; color: white; border: 1px solid #555; border-radius: 4px; padding: 5px; margin-right: 5px; cursor: pointer; font-family: sans-serif; display: none;"></select>
 
+            <!-- 🏴 TURF: campos de spawn (solo visibles cuando zoneType=turf) -->
+            <span id="turf-spawn-fields" style="display:none; align-items:center; gap:4px;">
+                <span style="color:#f1c40f; font-size:11px; font-weight:bold;">📍Spawn:</span>
+                <input id="turf-spawn-x" type="number" placeholder="Tile X" step="1"
+                    style="width:68px; background:#111; color:#f1c40f; border:1px solid #f1c40f; border-radius:4px; padding:4px 6px; font-size:12px; font-family:monospace;">
+                <input id="turf-spawn-y" type="number" placeholder="Tile Y" step="1"
+                    style="width:68px; background:#111; color:#f1c40f; border:1px solid #f1c40f; border-radius:4px; padding:4px 6px; font-size:12px; font-family:monospace;">
+                <button id="turf-use-pos-btn" title="Usar mi posición actual"
+                    style="background:#e67e22; color:white; border:none; border-radius:4px; padding:4px 7px; font-size:11px; cursor:pointer;">📌 Mi pos</button>
+            </span>
+
             <button id="btn-make-safezone" class="tool-btn"
                 style="background: #2ecc71; color: black; font-weight: bold; display: none;">Crear Zona</button>
 
@@ -2919,6 +2930,7 @@
         <label
             style="color: white; font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 10px;">
             <input type="checkbox" id="inspect-collision"> Solid
+            <input type="checkbox" id="inspect-issit" style="margin-left:8px;"> Sentarse
         </label>
 
         <div id="teleport-settings"
@@ -5218,7 +5230,7 @@
                     data.worldMap.forEach(t => {
                         const l = t.l || 0;
                         worldMap.set(getMapKey(t.x, t.y, l), {
-                            tileId: t.tileId, l: l, hasCollision: t.hasCollision || false,
+                            tileId: t.tileId, l: l, hasCollision: t.hasCollision || false, isSit: t.isSit || false,
                             triggerType: t.triggerType, destX: t.destX, destY: t.destY,
                             itemId: t.itemId,
                             rotation: t.rotation || 0,
@@ -5328,9 +5340,6 @@
                         joinBtn.style.background = "#e74c3c";
                         joinBtn.style.boxShadow = "0 4px 0 #c0392b";
                         joinBtn.onclick = () => {
-                            if (player.equippedWeapon === "none") {
-                                alert("¡Equipa un arma primero!"); return;
-                            }
                             ws.send(MessagePack.encode({ type: 'join_arena_queue', arenaId: data.arenaId }));
                         };
                     }
@@ -5368,6 +5377,10 @@
             // 👇 AÑADE ESTE BLOQUE COMPLETO 👇
             else if (data.type === 'match_finished') {
                 if (data.newElo !== undefined) player.elo = data.newElo;
+
+                // 🔧 FIX: Limpiar el arenaId para que el modal pueda reabrir después del match
+                window.currentViewingArenaId = null;
+
                 // Al terminar la pelea, volver a donde estabas
                 player.isTeleporting = true;
                 const fade = document.getElementById('fade-overlay');
@@ -5392,9 +5405,9 @@
                 if (data.tileId === -1) {
                     worldMap.delete(key);
                 } else {
-                    const existing = worldMap.get(key) || { hasCollision: false };
+                    const existing = worldMap.get(key) || { hasCollision: false, isSit: false };
                     worldMap.set(key, {
-                        tileId: data.tileId, l: data.l, hasCollision: existing.hasCollision
+                        tileId: data.tileId, l: data.l, hasCollision: existing.hasCollision, isSit: existing.isSit
                     });
                 }
                 if (data.l <= 7) floorDirty = true;
@@ -5406,9 +5419,9 @@
                     if (t.tileId === -1) {
                         worldMap.delete(key);
                     } else {
-                        const existing = worldMap.get(key) || { hasCollision: false };
+                        const existing = worldMap.get(key) || { hasCollision: false, isSit: false };
                         worldMap.set(key, {
-                            tileId: t.tileId, l: t.l, hasCollision: existing.hasCollision,
+                            tileId: t.tileId, l: t.l, hasCollision: existing.hasCollision, isSit: existing.isSit,
                             rotation: t.rotation || 0,
                             shelfX: t.shelfX || 0, shelfY: t.shelfY || 0
                         });
@@ -5422,6 +5435,7 @@
                 if (worldMap[key]) {
                     worldMap[key].layer = data.layer;
                     worldMap[key].hasCollision = data.hasCollision;
+                    worldMap[key].isSit = data.isSit;
                     if (data.triggerType) {
                         worldMap[key].triggerType = data.triggerType;
                         worldMap[key].destX = data.destX;
@@ -5546,6 +5560,38 @@
                         spawnDamageText(player.worldX, player.worldY, "+1 Loss", false); // Flota texto rojo en ti
                     } else if (otherPlayers[data.targetId]) {
                         otherPlayers[data.targetId].losses = data.targetLosses;
+                    }
+                }
+
+                // 🏴 TURF RESPAWN: teletransportar al spawn con fade
+                // isTeleporting=true INMEDIATO para congelar movimiento desde el primer frame
+                if (!data.isDead && data.targetId === myId && data.respawnX != null && data.respawnY != null) {
+                    player.isTeleporting = true; // ← congela input de movimiento al instante
+
+                    const fade = document.getElementById('fade-overlay');
+                    if (fade) {
+                        fade.style.background = 'black';
+                        fade.style.opacity = '0.9';
+                        setTimeout(() => {
+                            // Mover al spawn exactamente cuando la pantalla está negra
+                            player.worldX = data.respawnX;
+                            player.worldY = data.respawnY;
+                            player.vx = 0; player.vy = 0;
+                            lastNetworkString = '';
+                            spawnDamageText(player.worldX, player.worldY, '🏴 Respawn', true);
+                            // Desvanecer Y soltar el congelamiento solo al terminar el fade
+                            setTimeout(() => {
+                                fade.style.opacity = '0';
+                                player.isTeleporting = false; // ← movimiento habilitado de nuevo
+                            }, 220);
+                        }, 320);
+                    } else {
+                        // Fallback sin fade: mover y liberar inmediatamente
+                        player.worldX = data.respawnX;
+                        player.worldY = data.respawnY;
+                        player.vx = 0; player.vy = 0;
+                        lastNetworkString = '';
+                        player.isTeleporting = false;
                     }
                 }
             }
@@ -5952,7 +5998,7 @@
             const vectors = processJoystick(e, aimZone, aimKnob, 35);
 
             // Only shoot if they push the stick far enough (creates a deadzone)
-            if (Math.hypot(vectors.x, vectors.y) > 0.3 && player.equippedWeapon !== "none") {
+            if (Math.hypot(vectors.x, vectors.y) > 0.3) {
                 isShooting = true;
                 shootAngle = Math.atan2(vectors.y, vectors.x);
             }
@@ -5962,7 +6008,7 @@
             e.preventDefault(); e.stopPropagation();
             const vectors = processJoystick(e, aimZone, aimKnob, 35);
 
-            if (Math.hypot(vectors.x, vectors.y) > 0.3 && player.equippedWeapon !== "none") {
+            if (Math.hypot(vectors.x, vectors.y) > 0.3) {
                 isShooting = true;
                 shootAngle = Math.atan2(vectors.y, vectors.x);
             } else {
@@ -6106,7 +6152,7 @@
 
             // --- 1. MIRADA (NUEVO ORDEN: 0=Abajo, 1=Derecha, 2=Izquierda, 3=Arriba) ---
             let faceAngle;
-            if (isShooting && player.equippedWeapon !== "none") {
+            if (isShooting) {
                 faceAngle = shootAngle;
             } else if (player.isMoving) {
                 faceAngle = Math.atan2(player.vy, player.vx);
@@ -6310,6 +6356,7 @@
         const tileInspector = document.getElementById('tile-inspector');
         const inspectDelete = document.getElementById('inspect-delete');
         const inspectCollision = document.getElementById('inspect-collision');
+        const inspectIsSit = document.getElementById('inspect-issit');
         const eraserBtn = document.getElementById('eraser-btn');
         const paletteResizer = document.getElementById('palette-resizer');
         const coordHelper = document.getElementById('coord-helper');
@@ -6552,7 +6599,7 @@
                         ws.send(MessagePack.encode({
                             type: 'update_tile_metadata',
                             x: gridPos.x, y: gridPos.y, layer: l,
-                            hasCollision: newCollisionState
+                            hasCollision: newCollisionState, isSit: worldMap[key].isSit
                         }));
 
                         spawnDamageText(gridPos.x * TILE_SIZE, gridPos.y * TILE_SIZE, newCollisionState ? "LOCKED" : "OPEN", newCollisionState);
@@ -6825,7 +6872,7 @@
                         if (tile && tile.tileId !== -1) {
                             captured.push({
                                 x: c, y: r, l: l, tileId: tile.tileId,
-                                hasCollision: tile.hasCollision, triggerType: tile.triggerType,
+                                hasCollision: tile.hasCollision, isSit: tile.isSit, triggerType: tile.triggerType,
                                 destX: tile.destX, destY: tile.destY, itemId: tile.itemId,
                                 rotation: tile.rotation || 0
                             });
@@ -6855,7 +6902,7 @@
                 const prevId = prevTile ? prevTile.tileId : -1;
 
                 worldMap.set(key, {
-                    tileId: t.tileId, l: t.l, hasCollision: t.hasCollision,
+                    tileId: t.tileId, l: t.l, hasCollision: t.hasCollision, isSit: t.isSit,
                     triggerType: t.triggerType, destX: t.destX, destY: t.destY, itemId: t.itemId,
                     rotation: t.rotation || 0
                 });
@@ -6866,7 +6913,7 @@
                 if (t.hasCollision || t.triggerType) {
                     ws.send(MessagePack.encode({
                         type: 'update_tile_metadata', x: nx, y: ny, layer: t.l,
-                        hasCollision: t.hasCollision, triggerType: t.triggerType,
+                        hasCollision: t.hasCollision, isSit: t.isSit, triggerType: t.triggerType,
                         destX: t.destX, destY: t.destY, itemId: t.itemId
                     }));
                 }
@@ -7036,6 +7083,31 @@
             };
         }
 
+        // 🏴 TURF SPAWN FIELDS: show/hide depending on zone type
+        const turfSpawnFields = document.getElementById('turf-spawn-fields');
+        const turfSpawnX     = document.getElementById('turf-spawn-x');
+        const turfSpawnY     = document.getElementById('turf-spawn-y');
+        const turfUsePosBtn  = document.getElementById('turf-use-pos-btn');
+
+        function updateTurfFieldsVisibility() {
+            const val = document.getElementById('zone-type-select').value;
+            if (turfSpawnFields) {
+                turfSpawnFields.style.display = (val === 'turf') ? 'flex' : 'none';
+            }
+        }
+
+        // Trigger visibility update when zone type changes
+        document.getElementById('zone-type-select').addEventListener('change', updateTurfFieldsVisibility);
+
+        // "📌 Mi pos" — fill with current player TILE coords (same as radar display)
+        if (turfUsePosBtn) {
+            turfUsePosBtn.addEventListener('click', () => {
+                // Radar shows: Math.floor(worldX / TILE_SIZE) — match exactly
+                turfSpawnX.value = Math.floor(player.worldX / TILE_SIZE);
+                turfSpawnY.value = Math.floor(player.worldY / TILE_SIZE);
+            });
+        }
+
         btnMakeSafeZone.addEventListener('click', () => {
             if (!mapSelectionBox) {
                 alert("⚠️ Primero usa la herramienta 'Select' para arrastrar y marcar un área en el mapa.");
@@ -7043,7 +7115,23 @@
             }
 
             const zType = document.getElementById('zone-type-select').value;
-            const zoneName = prompt("Nombra esta Zona (ej. 'Spawn', 'Basurero Norte'):");
+
+            // 🏴 VALIDACIÓN TURF: requiere coords de spawn (en tiles, como el radar)
+            let spawnX = null;
+            let spawnY = null;
+            if (zType === 'turf') {
+                const tileX = parseFloat(turfSpawnX.value);
+                const tileY = parseFloat(turfSpawnY.value);
+                if (isNaN(tileX) || isNaN(tileY)) {
+                    alert("⚠️ Zona Turf requiere un punto de Spawn.\nIngresa las coordenadas de Tile (X, Y), o usa '📌 Mi pos' para usar tu posición actual.");
+                    return;
+                }
+                // Convertir tile → píxeles de mundo (centrado en el tile)
+                spawnX = (tileX * TILE_SIZE) + (TILE_SIZE / 2);
+                spawnY = (tileY * TILE_SIZE) + (TILE_SIZE / 2);
+            }
+
+            const zoneName = prompt("Nombra esta Zona (ej. 'Turf Norte', 'Zona A'):");
             if (!zoneName) return;
 
             const xMin = mapSelectionBox.minX * TILE_SIZE;
@@ -7051,18 +7139,29 @@
             const xMax = (mapSelectionBox.maxX + 1) * TILE_SIZE;
             const yMax = (mapSelectionBox.maxY + 1) * TILE_SIZE;
 
-            ws.send(MessagePack.encode({
+            const payload = {
                 type: 'create_safezone',
                 name: zoneName,
-                zoneType: zType, // <--- ENVIAMOS EL TIPO DE ZONA
-                xMin: xMin, xMax: xMax, yMin: yMin, yMax: yMax
-            }));
+                zoneType: zType,
+                xMin, xMax, yMin, yMax
+            };
+            // Solo añadir spawn si es turf
+            if (zType === 'turf') {
+                payload.spawnX = spawnX;
+                payload.spawnY = spawnY;
+            }
 
-            alert(`✅ Zona '${zoneName}' creada con éxito.`);
+            ws.send(MessagePack.encode(payload));
+
+            alert(`✅ Zona '${zoneName}' (${zType}) creada con éxito.${zType === 'turf' ? `\n📍 Spawn: X=${spawnX}, Y=${spawnY}` : ''}`);
             mapSelectionBox = null;
+            // Limpiar campos turf para la próxima zona
+            if (turfSpawnX) turfSpawnX.value = '';
+            if (turfSpawnY) turfSpawnY.value = '';
             worldPaintBtn.click();
         });
         // 👆 FIN DE LA LÓGICA DE ZONA SEGURA 👆
+
 
         // --- NEW: UNDO & REDO HISTORY STACKS ---
         const undoStack = [];
@@ -7095,7 +7194,8 @@
                 } else {
                     const existing = worldMap.get(key);
                     const hasCol = existing ? existing.hasCollision : false;
-                    worldMap.set(key, { tileId: change.prevId, l: change.l, hasCollision: hasCol });
+                    const isSitVal = existing ? existing.isSit : false;
+                    worldMap.set(key, { tileId: change.prevId, l: change.l, hasCollision: hasCol, isSit: isSitVal });
                 }
                 bulkNetworkData.push({ x: change.x, y: change.y, l: change.l, tileId: change.prevId });
             });
@@ -7119,7 +7219,8 @@
                 } else {
                     const existing = worldMap.get(key);
                     const hasCol = existing ? existing.hasCollision : false;
-                    worldMap.set(key, { tileId: change.newId, l: change.l, hasCollision: hasCol });
+                    const isSitVal = existing ? existing.isSit : false;
+                    worldMap.set(key, { tileId: change.newId, l: change.l, hasCollision: hasCol, isSit: isSitVal });
                 }
                 bulkNetworkData.push({ x: change.x, y: change.y, l: change.l, tileId: change.newId });
             });
@@ -7502,7 +7603,8 @@
                 document.getElementById('teleport-settings').style.display = (activeLayer === 15) ? 'flex' : 'none';
 
                 tileInspector.style.display = 'flex';
-                inspectCollision.checked = inspectedTile.hasCollision;
+                inspectCollision.checked = inspectedTile.hasCollision || false;
+                inspectIsSit.checked = inspectedTile.isSit || false;
 
                 isPainting = false;
                 return;
@@ -7635,6 +7737,7 @@
                 tileInspector.style.display = 'flex'; // Enciende la barra horizontal
 
                 let areaHasCollision = false;
+                let areaIsSit = false;
                 for (let r = mapSelectionBox.minY; r <= mapSelectionBox.maxY; r++) {
                     for (let c = mapSelectionBox.minX; c <= mapSelectionBox.maxX; c++) {
                         // 🛑 EL FIX: Escanear la memoria correctamente
@@ -7643,9 +7746,13 @@
                         if (tile && tile.hasCollision) {
                             areaHasCollision = true;
                         }
+                        if (tile && tile.isSit) {
+                            areaIsSit = true;
+                        }
                     }
                 }
                 inspectCollision.checked = areaHasCollision;
+                inspectIsSit.checked = areaIsSit;
             }
         }
 
@@ -7918,7 +8025,7 @@
         if (inspectDeleteAboveBtn) inspectDeleteAboveBtn.onclick = () => deleteLayers(8, 15);
         if (inspectDeleteAllBtn) inspectDeleteAllBtn.onclick = () => deleteLayers(0, 15); // <--- NUEVO
 
-        inspectCollision.onchange = () => {
+        function handleInspectorCheckboxChange() {
             if (mapSelectionBox) {
                 for (let r = mapSelectionBox.minY; r <= mapSelectionBox.maxY; r++) {
                     for (let c = mapSelectionBox.minX; c <= mapSelectionBox.maxX; c++) {
@@ -7926,9 +8033,10 @@
                         let tile = worldMap.get(key);
                         if (tile) {
                             tile.hasCollision = inspectCollision.checked;
+                            tile.isSit = inspectIsSit.checked;
                             worldMap.set(key, tile);
                             ws.send(MessagePack.encode({
-                                type: 'update_tile_metadata', x: c, y: r, layer: activeLayer, hasCollision: inspectCollision.checked
+                                type: 'update_tile_metadata', x: c, y: r, layer: activeLayer, hasCollision: inspectCollision.checked, isSit: inspectIsSit.checked
                             }));
                         }
                     }
@@ -7939,13 +8047,17 @@
                 let tile = worldMap.get(key);
                 if (tile) {
                     tile.hasCollision = inspectCollision.checked;
+                    tile.isSit = inspectIsSit.checked;
                     worldMap.set(key, tile);
                     ws.send(MessagePack.encode({
-                        type: 'update_tile_metadata', x: gx, y: gy, layer: gl, hasCollision: inspectCollision.checked
+                        type: 'update_tile_metadata', x: gx, y: gy, layer: gl, hasCollision: inspectCollision.checked, isSit: inspectIsSit.checked
                     }));
                 }
             }
-        };
+        }
+
+        inspectCollision.onchange = handleInspectorCheckboxChange;
+        inspectIsSit.onchange = handleInspectorCheckboxChange;
 
         // --- LÓGICA DEL MENÚ DESPLEGABLE DEL EDITOR ---
         const logicSelect = document.getElementById('logic-type-select');
@@ -8038,6 +8150,7 @@
                     type: 'update_tile_metadata',
                     x: gx, y: gy, layer: gl,
                     hasCollision: inspectCollision.checked,
+                    isSit: inspectIsSit.checked,
                     triggerType: tType,
                     destX: isNaN(dx) ? null : dx,
                     destY: isNaN(dy) ? null : dy,
@@ -11889,7 +12002,15 @@
             let displayFrameX = p.frameX;
 
             // --- LÓGICA DE ESTADOS Y ARMAS ---
-            if (p.equippedWeapon && p.equippedWeapon !== "none") {
+            
+            // 🪑 CHEQUEO DE SILLA
+            let isSitting = p.isSitting || false;
+
+            if (isSitting) {
+                state = "sit";
+                maxFrames = 1; // Solo 1 frame (estático)
+                displayFrameX = 0;
+            } else if (p.equippedWeapon && p.equippedWeapon !== "none") {
                 state = "walk_armed";
                 if (p.isMoving) {
                     maxFrames = 6;
@@ -12041,9 +12162,9 @@
             // ==========================================================
             // 🔥 RENDERIZADO POR CAPAS (Z-INDEX) 🔥
             // ==========================================================
-            if (aZ === 0) drawAccessory();
-            if (wZ === 0) drawWeapon();
-            if (hZ === 0) drawHand();
+            if (aZ === 0 && !isSitting) drawAccessory();
+            if (wZ === 0 && !isSitting) drawWeapon();
+            if (hZ === 0 && !isSitting) drawHand();
 
             // 🛑 EL FIX DE ROPA DINÁMICA: Dibujamos el cuerpo con la textura del jugador actual
             if (dynBodyImg && dynBodyImg.complete) {
@@ -12100,9 +12221,9 @@
             }
             // ===========================================================
 
-            if (aZ === 1) drawAccessory();
-            if (wZ === 1) drawWeapon();
-            if (hZ === 1) drawHand();
+            if (aZ === 1 && !isSitting) drawAccessory();
+            if (wZ === 1 && !isSitting) drawWeapon();
+            if (hZ === 1 && !isSitting) drawHand();
         } // <--- Fin de la función drawModularCharacter
 
         function executeTileLogic(logicTile, tileKey) {
@@ -12467,6 +12588,20 @@
 
             const now = Date.now();
 
+            // 🪑 CHEQUEO GLOBAL DE SILLA PARA ESTE FRAME
+            if (player) {
+                player.isSitting = false;
+                const gX = Math.floor(player.worldX / TILE_SIZE);
+                const gY = Math.floor(player.worldY / TILE_SIZE);
+                for (let l = 15; l >= 0; l--) {
+                    const t = worldMap.get(getMapKey(gX, gY, l));
+                    if (t && t.isSit) {
+                        player.isSitting = true;
+                        break;
+                    }
+                }
+            }
+
             // 🧹 CLIENT-SIDE GARBAGE COLLECTOR
             // If we haven't heard from a player in 5 seconds, assume they walked out of our Zone and delete them.
             for (let id in otherPlayers) {
@@ -12617,7 +12752,7 @@
                         const dy = mouseY - screenCenterY;
                         shootAngle = Math.atan2(dy, dx);
 
-                        if (isMouseDown && player.equippedWeapon !== "none") {
+                        if (isMouseDown) {
                             isShooting = true;
                         } else {
                             isShooting = false;
@@ -12667,7 +12802,6 @@
                     // ¿Es zona segura?
                     if (!z.zoneType || z.zoneType === 'safe') {
                         player.inSafeZone = true;
-                        isShooting = false; // Bloquea el gatillo localmente
                     }
 
                     // ¿Es una zona de Techo/Interior?
@@ -12715,10 +12849,10 @@
             // 🛑 EL FIX: Si el objeto no es un arma real, usamos las estadísticas de "none" (Manos vacías)
             let currentWeaponStats = WEAPONS[player.equippedWeapon];
             if (!currentWeaponStats) {
-                currentWeaponStats = WEAPONS["none"];
+                currentWeaponStats = WEAPONS["none"] || { type: 'melee', fireRate: 400, reach: 24, hitW: 24, hitH: 24, damage: 0 };
             }
 
-            if (isShooting && player.equippedWeapon !== "none" && !player.isReloading && !player.inSafeZone) {
+            if (isShooting && !player.isReloading && !player.inSafeZone && !player.isSitting) {
                 if (Date.now() - lastShotTime > (currentWeaponStats.fireRate || 300)) {
                     // 🔊 THE FIX: Play the sound locally the exact millisecond you attack!
                     playItemSound(player.equippedWeapon, 'use', 0.8);
@@ -12775,10 +12909,9 @@
                                     while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
 
                                     if (Math.abs(angleDiff) <= halfWidRad) {
-                                        // ¡GOLPE CONFIRMADO! Envía el daño al server
-                                        if (ws.readyState === WebSocket.OPEN) {
-                                            ws.send(MessagePack.encode({ type: 'damage_player', targetId: id, weaponId: player.equippedWeapon }));
-                                        }
+                                        // 🛑 SERVER-AUTHORITATIVE COMBAT:
+                                        // Ya no enviamos damage_player. El servidor lo calcula automáticamente
+                                        // usando las físicas del melee_swing.
                                     }
                                 }
                             }
@@ -13094,15 +13227,9 @@
 
                         if (enemy.worldX !== undefined && !enemy.isDead && p.owner !== id && Math.hypot(p.x - enemy.worldX, p.y - enemy.worldY) < HITBOX_RADIUS) {
                             hitSomeone = true;
-                            if (p.owner === myId) {
-                                if (ws.readyState === WebSocket.OPEN) {
-                                    ws.send(MessagePack.encode({
-                                        type: 'damage_player',
-                                        targetId: id,
-                                        weaponId: p.weapon
-                                    }));
-                                }
-                            }
+                            // 🛑 SERVER-AUTHORITATIVE COMBAT:
+                            // La bala local es solo visual. Se destruirá al chocar, 
+                            // pero es el SERVIDOR quien decide si bajó vida o no.
                             break;
                         }
                     }

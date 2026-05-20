@@ -12532,6 +12532,11 @@
         const FPS_TARGET  = 60;
         const FRAME_MIN_TIME = 1000 / FPS_TARGET; // ~16.66ms
 
+        // 📱 ROLLING AVERAGE DELTATIME (Absorbs single spike frames)
+        const DT_HISTORY_SIZE = 4;
+        const dtHistory = [FRAME_MIN_TIME, FRAME_MIN_TIME, FRAME_MIN_TIME, FRAME_MIN_TIME];
+        let dtHistoryIdx = 0;
+
         let networkTimer = 0;
         const NETWORK_TICK_RATE = 50; // Enviar datos cada 50ms (20 veces por segundo)
 
@@ -12562,18 +12567,17 @@
             requestAnimationFrame(update);
 
             if (!currentTime) currentTime = performance.now();
-            let rawDelta = currentTime - lastFrameTime; // Tiempo crudo real
+            let rawDelta = currentTime - lastFrameTime;
 
-            // ⚡ FPS CAP DINÁMICO: usa gameSettings.fpsCap (60 o 30)
-            // 10ms de umbral base para no descartar frames válidos a 60fps
+            // ⚡ FPS CAP DINÁMICO
             const minFrameMs = gameSettings.fpsCap >= 60 ? 10 : (1000 / gameSettings.fpsCap) - 2;
             if (rawDelta < minFrameMs) return;
 
-            let dtMs = rawDelta;
-            // 🚀 EL FIX DEL JITTER 3: Anti-Rubberband. Si el celular se traba un instante, 
-            // no permitimos que el jugador "salte" grandes distancias de golpe. 
-            // Así el servidor no se asusta y no te regresa el milisegundo anterior.
-            if (dtMs > 35) dtMs = 35;
+            // 📱 ROLLING AVERAGE: smooth out single spike frames
+            const dtClamped = Math.min(rawDelta, 50); // hard cap 50ms to stop teleport on resume
+            dtHistory[dtHistoryIdx] = dtClamped;
+            dtHistoryIdx = (dtHistoryIdx + 1) % DT_HISTORY_SIZE;
+            const dtMs = (dtHistory[0] + dtHistory[1] + dtHistory[2] + dtHistory[3]) / DT_HISTORY_SIZE;
 
             lastFrameTime = currentTime;
             let dtScale = dtMs / FRAME_MIN_TIME;
@@ -12661,12 +12665,14 @@
                 if (uiLoadingScreen) uiLoadingScreen.style.display = 'none';
             }
             // ... resto del código ...
-            // 🚀 FIX JITTER CÁMARA: Anclar el origen de la cámara a la cuadrícula de píxeles.
-            // Snap la posición del jugador al múltiplo de 1/zoomLevel más cercano
-            // para que (player.worldX * zoomLevel) siempre sea un entero exacto.
-            // Esto elimina el sub-pixel drift frame a frame sin mover al jugador físicamente.
-            const renderWorldX = Math.round(player.worldX * zoomLevel) / zoomLevel;
-            const renderWorldY = Math.round(player.worldY * zoomLevel) / zoomLevel;
+            // 📱 SMOOTH CAMERA: exponential follow instead of hard pixel-snap
+            // This eliminates the 1px camera hop that causes micro-stutter on mobile.
+            if (window.camX === undefined) { window.camX = player.worldX; window.camY = player.worldY; }
+            const camSpeed = Math.min(1.0, 18 * (dtMs / 1000)); // ~18 world-units/sec lag
+            window.camX += (player.worldX - window.camX) * camSpeed;
+            window.camY += (player.worldY - window.camY) * camSpeed;
+            const renderWorldX = window.camX;
+            const renderWorldY = window.camY;
 
             // Centro de pantalla en píxeles CSS enteros
             const screenCenterX = Math.floor(cachedScreenWidth  / 2);
@@ -12757,10 +12763,12 @@
                             player.vx = 0; player.vy = 0; player.isMoving = false;
                         }
                     } else {
-                        // 🚀 EL FIX FÍSICO EN MÓVILES
-                        player.vx = (player.joyX || 0) * (player.speed * speedMult) * dtScale;
-                        player.vy = (player.joyY || 0) * (player.speed * speedMult) * dtScale;
-                        player.isMoving = (player.vx !== 0 || player.vy !== 0);
+                        // 📱 LOW-PASS FILTER on joystick: smooths out finger micro-vibrations
+                        player.smoothJoyX = (player.smoothJoyX || 0) * 0.72 + (player.joyX || 0) * 0.28;
+                        player.smoothJoyY = (player.smoothJoyY || 0) * 0.72 + (player.joyY || 0) * 0.28;
+                        player.vx = player.smoothJoyX * (player.speed * speedMult) * dtScale;
+                        player.vy = player.smoothJoyY * (player.speed * speedMult) * dtScale;
+                        player.isMoving = (Math.abs(player.smoothJoyX) > 0.02 || Math.abs(player.smoothJoyY) > 0.02);
                     }
                 } else {
                     player.vx = 0; player.vy = 0; player.isMoving = false;
@@ -13669,7 +13677,8 @@
                 // Con factor fijo 0.3, en frames irregulares el jugador avanza
                 // distinto cada frame → tirones. Con dtScale el movimiento es
                 // proporcional al tiempo real transcurrido → suave en cualquier fps.
-                const lerpFactor = Math.min(1.0, 0.3 * dtScale);
+                // 🟢 SMOOTHER LERP: tighter factor catches up faster without overshooting
+                const lerpFactor = Math.min(1.0, 0.22 * dtScale);
                 p.worldX += dx * lerpFactor;
                 p.worldY += dy * lerpFactor;
 
@@ -13709,8 +13718,8 @@
 
                 if (p.frameY > 3) p.frameY = 0; // Escudo anti-crash
                 // 🚀 EL FIX DEL JITTER 2: Usar Math.floor igual que el piso, NUNCA Math.round
-                const pDrawX = Math.floor(screenCenterX + ((p.worldX - renderWorldX) * zoomLevel));
-                const pDrawY = Math.floor(screenCenterY + ((p.worldY - renderWorldY) * zoomLevel));
+                const pDrawX = screenCenterX + ((p.worldX - renderWorldX) * zoomLevel);
+                const pDrawY = screenCenterY + ((p.worldY - renderWorldY) * zoomLevel);
                 const timeSinceHit = Date.now() - (p.lastHitTime || 0);
                 const isHit = (timeSinceHit < 150);
 

@@ -5494,7 +5494,9 @@
                     player.hp = data.newHp;
                     player.health = data.newHp; // 🛑 EL FIX: Sincroniza la barra de vida sobre tu cabeza
                     player.isDead = data.isDead;
-                    player.lastHpUpdateTime = Date.now(); // Para animaciones visuales
+                    player.lastHpUpdateTime = Date.now();
+                    // 🛡️ Respawn shield: store when it expires so we can draw it
+                    if (data.shieldUntil) player.shieldUntil = data.shieldUntil;
 
                     if (data.damageDealt > 0) {
                         player.lastHitTime = Date.now();
@@ -5534,6 +5536,8 @@
                     enemy.health = data.newHp; // 🛑 EL FIX: Sincroniza la barra de vida del enemigo
                     enemy.isDead = data.isDead;
                     enemy.lastHpUpdateTime = Date.now();
+                    // 🛡️ Respawn shield
+                    if (data.shieldUntil) enemy.shieldUntil = data.shieldUntil;
 
                     if (data.damageDealt > 0) {
                         enemy.lastHitTime = Date.now();
@@ -5637,6 +5641,17 @@
                     op.squadLogo = data.player.squadLogo;
                     op.elo = data.player.elo || 1000;
                     op.lastUpdateTick = Date.now(); // Feed the garbage collector
+
+                    // 💬 Chat bubble: only reset timer when it's a NEW message
+                    if (data.player.message && data.player.message !== op.message) {
+                        op.message = data.player.message;
+                        op.messageTimer = data.player.messageTimer > 0 ? data.player.messageTimer : 420;
+                    } else if (!data.player.message) {
+                        // Sender cleared their message (timer hit 0 on their side)
+                        op.message = '';
+                        op.messageTimer = 0;
+                    }
+                    op.isTyping = data.player.isTyping;
                 }
             } else if (data.type === 'left') {
                 delete otherPlayers[data.id];
@@ -12224,6 +12239,31 @@
             if (aZ === 1 && !isSitting) drawAccessory();
             if (wZ === 1 && !isSitting) drawWeapon();
             if (hZ === 1 && !isSitting) drawHand();
+
+            // 🛡️ RESPAWN SHIELD: Blue pulsing circle while invulnerable
+            if (p.shieldUntil && Date.now() < p.shieldUntil) {
+                const shieldRemaining = p.shieldUntil - Date.now();
+                const shieldTotal = 2000;
+                const pulse = Math.abs(Math.sin(Date.now() / 150));
+                const alpha = (shieldRemaining / shieldTotal) * 0.55 * pulse;
+                const radius = (FRAME_WIDTH / 2 + 4) * zoom;
+
+                ctx.save();
+                ctx.translate(drawX, drawY);
+                ctx.globalAlpha = Math.max(0.08, alpha);
+                ctx.strokeStyle = '#00cfff';
+                ctx.lineWidth = 2.5 * zoom;
+                ctx.shadowColor = '#00cfff';
+                ctx.shadowBlur = 10 * zoom;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.globalAlpha = Math.max(0.02, alpha * 0.4);
+                ctx.fillStyle = '#00cfff';
+                ctx.fill();
+                ctx.restore();
+            }
         } // <--- Fin de la función drawModularCharacter
 
         function executeTileLogic(logicTile, tileKey) {
@@ -13855,9 +13895,9 @@
                 ctx.font = `bold ${8 * zoomLevel}px sans-serif`;
                 ctx.textAlign = "center";
 
-                let baseStatus = centralBase.name.toUpperCase();
+                let baseStatus = (centralBase.name || 'Base').toUpperCase();
                 if (centralBase.currentOwnerSquadId) {
-                    baseStatus = `${centralBase.name}: ${centralBase.currentOwnerSquadId.toUpperCase()}`;
+                    baseStatus = `${centralBase.name || 'Base'}: ${(centralBase.currentOwnerSquadId || '').toUpperCase()}`;
                 }
                 baseStatus += ` - ${Math.floor(centralBase.hp)}/${centralBase.maxHp}`;
                 ctx.fillText(baseStatus, bDrawX, barY - (4 * zoomLevel));
@@ -14060,7 +14100,10 @@
                 const currentHp = p.hp !== undefined ? p.hp : 100;
                 drawHealthBar(pTopLeftX, pTopLeftY, currentHp, 100, scaledWidth, p.lastHpUpdateTime);
                 drawDynamicBubble(p.message, p.messageTimer, p.isTyping, pTopLeftX, pTopLeftY, scaledWidth);
-                drawNametag(p, pTopLeftX, pTopLeftY, scaledWidth, scaledHeight, getColorForString(p.username)); // <--- CORREGIDO
+                drawNametag(p, pTopLeftX, pTopLeftY, scaledWidth, scaledHeight, getColorForString(p.username));
+
+                // ⏱️ Decrement locally so bubble fades without needing constant network updates
+                if (p.messageTimer > 0) p.messageTimer--;
             }
 
             // Dibujar TU barra de vida, nombre y clan
@@ -14071,7 +14114,12 @@
             drawDynamicBubble(player.message, player.messageTimer, player.isTyping, myTopLeftX, myTopLeftY, scaledWidth);
             drawNametag(player, myTopLeftX, myTopLeftY, scaledWidth, scaledHeight, "#f1c40f");
 
-            if (player.messageTimer > 0) player.messageTimer--;
+            if (player.messageTimer > 0) {
+                player.messageTimer--;
+                if (player.messageTimer === 0) {
+                    player.message = ''; // Clear so the network broadcasts empty → others hide bubble
+                }
+            }
 
             // === DIBUJAR NÚMEROS DE DAÑO (CON POOLING) ===
             for (let i = 0; i < MAX_FX; i++) {

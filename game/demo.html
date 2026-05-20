@@ -1787,6 +1787,56 @@
                                 style="color:white; font-weight:bold;">15</span>%</label>
                         <input type="range" id="sl-bgm-volume" min="0" max="100" value="15" style="width: 100%;">
                     </div>
+                    <!-- ⚡ RENDIMIENTO: nueva sección -->
+                    <h4 style="color:#e74c3c; margin:0 0 15px 0; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                        ⚡ Rendimiento
+                    </h4>
+
+                    <!-- Preset rápido -->
+                    <div style="margin-bottom:14px;">
+                        <label style="color:#aaa;font-size:12px;">Preset de Calidad</label>
+                        <select id="sel-render-preset"
+                            style="width:100%;padding:8px;margin-top:5px;background:rgba(0,0,0,0.5);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:6px;outline:none;">
+                            <option value="ultra">🔥 Ultra (DPR completo, 60fps)</option>
+                            <option value="high" selected>⚡ Alto (por defecto)</option>
+                            <option value="medium">🟡 Medio (75% res)</option>
+                            <option value="low">🟠 Bajo (60% res, 30fps)</option>
+                            <option value="potato">🥔 Potato (50% res, 30fps, sin efectos)</option>
+                        </select>
+                    </div>
+
+                    <!-- Escala de render manual -->
+                    <div style="margin-bottom:14px;">
+                        <label style="color:#aaa;font-size:12px;">
+                            Escala de Render: <span id="val-render-scale" style="color:white;font-weight:bold;">100</span>%
+                            <span style="color:#666;font-size:10px;"> (⬇ más suave, ⬆ más nítido)</span>
+                        </label>
+                        <input type="range" id="sl-render-scale" min="50" max="100" value="100" style="width:100%;">
+                    </div>
+
+                    <!-- Cap de FPS -->
+                    <div style="margin-bottom:14px;">
+                        <label style="color:#aaa;font-size:12px;">Límite de FPS</label>
+                        <select id="sel-fps-cap"
+                            style="width:100%;padding:8px;margin-top:5px;background:rgba(0,0,0,0.5);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:6px;outline:none;">
+                            <option value="60" selected>60 fps (fluido)</option>
+                            <option value="30">30 fps (ahorra batería)</option>
+                        </select>
+                    </div>
+
+                    <!-- Deshabilitar sombras -->
+                    <div style="margin-bottom:14px;">
+                        <label style="color:#aaa;font-size:13px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="chk-disable-shadows"
+                                style="width:18px;height:18px;accent-color:#e74c3c;">
+                            Deshabilitar Sombras de Canvas
+                        </label>
+                        <p style="color:#666;font-size:10px;margin:4px 0 0 26px;">Mejora FPS notablemente en móvil</p>
+                    </div>
+
+                    <!-- Info de impacto -->
+                    <div id="perf-preset-info" style="background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.3);border-radius:8px;padding:10px;font-size:11px;color:#e74c3c;margin-bottom:8px;display:none;"></div>
+
                 </div>
 
             </div>
@@ -4041,7 +4091,6 @@
             joyY: 30,
             showNametags: true,
             nameOpacity: 0.85,
-            // 👇 LAS DOS VARIABLES NUEVAS 👇
             showPerformance: true,
             perfOpacity: 0.85,
             timeMode: 'auto',
@@ -4049,9 +4098,14 @@
             fxBloom: 0,
             fxGloom: 0,
             fxVignette: 0,
-            // 👇 NUEVOS AJUSTES DE AUDIO 👇
             bgmEnabled: true,
-            bgmVolume: 15
+            bgmVolume: 15,
+            // ⚡ NUEVAS OPCIONES DE RENDIMIENTO
+            renderPreset: 'high',    // ultra | high | medium | low | potato
+            renderScale: 100,        // 50–100 (% del DPR nativo)
+            fpsCap: 60,              // 30 | 60 (frames per second cap)
+            disableShadows: false,   // apaga sombras CSS y canvas
+            nametag3D: true,         // avatares 3D en nametags (pesados en móvil)
         };
 
         function loadSettings() {
@@ -4104,6 +4158,23 @@
                     slBgmVolume.value = gameSettings.bgmVolume;
                     document.getElementById('val-bgm-volume').innerText = gameSettings.bgmVolume;
                     document.getElementById('chk-bgm-enabled').checked = gameSettings.bgmEnabled;
+                }
+
+                // ⚡ SYNC RENDIMIENTO UI
+                const selPresetEl = document.getElementById('sel-render-preset');
+                if (selPresetEl) selPresetEl.value = gameSettings.renderPreset || 'high';
+                const slScaleEl = document.getElementById('sl-render-scale');
+                if (slScaleEl) { slScaleEl.value = gameSettings.renderScale || 100; }
+                const valScaleEl = document.getElementById('val-render-scale');
+                if (valScaleEl) valScaleEl.innerText = gameSettings.renderScale || 100;
+                const selFpsEl = document.getElementById('sel-fps-cap');
+                if (selFpsEl) selFpsEl.value = gameSettings.fpsCap || 60;
+                const chkShadEl = document.getElementById('chk-disable-shadows');
+                if (chkShadEl) chkShadEl.checked = gameSettings.disableShadows || false;
+
+                // Aplicar escala al canvas desde el principio
+                if (typeof dynamicRenderScale !== 'undefined') {
+                    dynamicRenderScale = (gameSettings.renderScale || 100) / 100;
                 }
             }
 
@@ -4271,6 +4342,79 @@
             if (chkPerf) {
                 chkPerf.addEventListener('change', (e) => {
                     gameSettings.showPerformance = e.target.checked;
+                    saveSettings();
+                });
+            }
+
+            // ⚡ BINDINGS DE RENDIMIENTO
+            const PRESET_CONFIGS = {
+                ultra:  { renderScale: 100, fpsCap: 60, disableShadows: false, nametag3D: true,  info: null },
+                high:   { renderScale: 100, fpsCap: 60, disableShadows: false, nametag3D: true,  info: null },
+                medium: { renderScale: 75,  fpsCap: 60, disableShadows: false, nametag3D: true,  info: '🟡 Resolución al 75%.' },
+                low:    { renderScale: 60,  fpsCap: 30, disableShadows: true,  nametag3D: false, info: '🟠 60% res, cap 30fps, sin sombras.' },
+                potato: { renderScale: 50,  fpsCap: 30, disableShadows: true,  nametag3D: false, info: '🥔 Modo Patata: mínimo absoluto para correr en cualquier teléfono.' },
+            };
+
+            function applyRenderPreset(preset) {
+                const cfg = PRESET_CONFIGS[preset];
+                if (!cfg) return;
+                gameSettings.renderPreset    = preset;
+                gameSettings.renderScale     = cfg.renderScale;
+                gameSettings.fpsCap          = cfg.fpsCap;
+                gameSettings.disableShadows  = cfg.disableShadows;
+                gameSettings.nametag3D       = cfg.nametag3D;
+
+                // Actualizar sliders/checks de la UI para reflejar el preset
+                const slScale = document.getElementById('sl-render-scale');
+                const valScale = document.getElementById('val-render-scale');
+                const selFps  = document.getElementById('sel-fps-cap');
+                const chkShad = document.getElementById('chk-disable-shadows');
+                const infoDiv = document.getElementById('perf-preset-info');
+
+                if (slScale)  slScale.value   = cfg.renderScale;
+                if (valScale) valScale.innerText = cfg.renderScale;
+                if (selFps)   selFps.value    = cfg.fpsCap;
+                if (chkShad)  chkShad.checked = cfg.disableShadows;
+                if (infoDiv) {
+                    infoDiv.style.display = cfg.info ? 'block' : 'none';
+                    infoDiv.innerText = cfg.info || '';
+                }
+
+                // Aplicar escala dinámica al canvas
+                dynamicRenderScale = cfg.renderScale / 100;
+                resize();
+                saveSettings();
+            }
+
+            const selPreset = document.getElementById('sel-render-preset');
+            if (selPreset) {
+                selPreset.addEventListener('change', (e) => applyRenderPreset(e.target.value));
+            }
+
+            // Slider de escala manual (override del preset)
+            bindSlider('sl-render-scale', 'renderScale', 'val-render-scale', false);
+            const slRenderScale = document.getElementById('sl-render-scale');
+            if (slRenderScale) {
+                slRenderScale.addEventListener('input', () => {
+                    dynamicRenderScale = gameSettings.renderScale / 100;
+                    resize();
+                });
+            }
+
+            // Select FPS cap
+            const selFpsCap = document.getElementById('sel-fps-cap');
+            if (selFpsCap) {
+                selFpsCap.addEventListener('change', (e) => {
+                    gameSettings.fpsCap = parseInt(e.target.value);
+                    saveSettings();
+                });
+            }
+
+            // Checkbox sombras
+            const chkShadows = document.getElementById('chk-disable-shadows');
+            if (chkShadows) {
+                chkShadows.addEventListener('change', (e) => {
+                    gameSettings.disableShadows = e.target.checked;
                     saveSettings();
                 });
             }
@@ -4513,8 +4657,8 @@
                 player.vy = 0;
                 lastNetworkString = ""; // Obliga al navegador a sincronizarse de golpe
 
-                // 3. 🛑 EL FIX: Si el movimiento forzado NO fue por Knockback, entonces es un castigo Anti-Hack
-                if (data.reason !== 'knockback') {
+                // 3. Flash rojo y penalti SOLO si es anti-hack real, NO por colisiones con paredes
+                if (data.reason === 'antihack' || (!data.reason)) {
                     player.speed = 4; // Matar posible speedhack
                     if (uiFadeOverlay) {
                         uiFadeOverlay.style.background = 'red';
@@ -4524,15 +4668,8 @@
                             setTimeout(() => { uiFadeOverlay.style.background = 'black'; }, 200);
                         }, 100);
                     }
-                    if (overlay) {
-                        overlay.style.background = 'red';
-                        overlay.style.opacity = '0.5';
-                        setTimeout(() => {
-                            overlay.style.opacity = '0';
-                            setTimeout(() => { overlay.style.background = 'black'; }, 200);
-                        }, 100);
-                    }
                 }
+                // reason:'wall' = colisión limpia, sin flash ni penalti
                 return; // Detenemos la ejecución
             }
 
@@ -5301,9 +5438,10 @@
                 if (otherPlayers[data.id]) {
                     otherPlayers[data.id].lastShotTime = Date.now(); // 🛑 EL FIX: Levanta el arma del enemigo
                 }
-                spawnProjectile(data.x, data.y, data.angle, data.id, data.weaponId);
+                // ⚡ LAG COMPENSATION: avanzar la bala los ms que tardó en llegar
+                const bulletLag = data.t ? Math.min(Date.now() - data.t, 200) : 0;
+                spawnProjectile(data.x, data.y, data.angle, data.id, data.weaponId, bulletLag);
                 // 🔊 NUEVO: Play the sound!
-                // Si eres tú, suena más fuerte. Si es otro jugador, suena más bajo.
                 const isMe = (data.id === myId);
                 playItemSound(data.weaponId, 'use', isMe ? 0.8 : 0.3);
             }// 👇 NUEVO: RECIBIR ESCOPETAZO (ARRAY DE BALAS) 👇
@@ -5312,9 +5450,10 @@
                     otherPlayers[data.id].lastShotTime = Date.now(); // Levanta el arma del enemigo
                 }
 
-                // Hacemos un bucle para crear una bala por cada ángulo que venía en la caja
+                // ⚡ LAG COMPENSATION: avanzar cada pellet los ms de lag
+                const shotgunLag = data.t ? Math.min(Date.now() - data.t, 200) : 0;
                 data.angles.forEach(ang => {
-                    spawnProjectile(data.x, data.y, ang, data.id, data.weaponId);
+                    spawnProjectile(data.x, data.y, ang, data.id, data.weaponId, shotgunLag);
                 });
 
                 // 🔊 THE FIX: Trigger the sound!
@@ -5715,19 +5854,28 @@
         }
 
         // --- BULLET SPAWNER DINÁMICO (OBJECT POOLING) ---
-        function spawnProjectile(startX, startY, angle, ownerId, weaponId) {
+        // lagMs: milisegundos de red transcurridos → avanzamos la bala ese tiempo
+        // para compensar el delay y que visualmente aparezca donde debería estar.
+        function spawnProjectile(startX, startY, angle, ownerId, weaponId, lagMs = 0) {
             const stats = WEAPONS[weaponId];
             if (!stats) return;
 
             // Busca la primera bala que esté "apagada" en el cargador
             for (let i = 0; i < MAX_PROJECTILES; i++) {
                 if (!projectiles[i].active) {
+                    const vx = Math.cos(angle) * stats.speed;
+                    const vy = Math.sin(angle) * stats.speed;
+
+                    // Pasos de extrapolación: avanzamos la bala N ms de tiempo de red
+                    // usando el mismo dtScale=1 base para consistencia
+                    const lagSteps = Math.min(lagMs / 16.67, 18); // max ~300ms = ~18 frames
+
                     projectiles[i].active = true;
-                    projectiles[i].x = startX;
-                    projectiles[i].y = startY;
-                    projectiles[i].vx = Math.cos(angle) * stats.speed;
-                    projectiles[i].vy = Math.sin(angle) * stats.speed;
-                    projectiles[i].life = stats.range;
+                    projectiles[i].x     = startX + vx * lagSteps;
+                    projectiles[i].y     = startY + vy * lagSteps;
+                    projectiles[i].vx    = vx;
+                    projectiles[i].vy    = vy;
+                    projectiles[i].life  = stats.range - lagSteps; // también consume vida
                     projectiles[i].owner = ownerId;
                     projectiles[i].weapon = weaponId;
                     projectiles[i].color = stats.color || "#f1c40f";
@@ -5735,7 +5883,6 @@
                 }
             }
             // Si pasas de 100 balas al mismo tiempo, el arma simplemente se encasquilla.
-            // Esto es un escudo anti-lag extremo.
         }
 
         // --- TWIN STICK LOGIC ---
@@ -12003,11 +12150,19 @@
                 }
             }
             else if (logicTile.triggerType === 'arena') {
-                // 🚀 EL FIX: Convertimos el número a texto de forma segura y nos olvidamos de las comas
-                window.currentViewingArenaId = `arena_${tileKey}`;
+                // 🔧 FIX DE ID: El servidor guarda arenas como "arena_X_Y" (guiones bajos)
+                // El tileKey puede venir como "X,Y" o "X,Y,15" — lo parseamos para extraer X e Y
+                const parts = tileKey.toString().split(',');
+                const arenaGridX = parseInt(parts[0]);
+                const arenaGridY = parseInt(parts[1]);
+                const correctArenaId = `arena_${arenaGridX}_${arenaGridY}`;
 
-                ws.send(MessagePack.encode({ type: 'get_arena_info', arenaId: window.currentViewingArenaId }));
-                document.getElementById('arena-modal').style.display = 'flex';
+                // Guard: solo abrir/consultar si no está ya abierto con este mismo arenaId
+                if (window.currentViewingArenaId !== correctArenaId) {
+                    window.currentViewingArenaId = correctArenaId;
+                    ws.send(MessagePack.encode({ type: 'get_arena_info', arenaId: correctArenaId }));
+                    document.getElementById('arena-modal').style.display = 'flex';
+                }
             }
             else if (logicTile.triggerType === 'jeweler') {
                 if (!isJewelerOpen && lastJewelerTile !== tileKey) {
@@ -12211,12 +12366,11 @@
             }
         });
 
-        // ⏱️ VARIABLES DEL GAME LOOP Y 60 FPS CAP
+        // ⏱️ VARIABLES DEL GAME LOOP (FPS cap dinámico segun gameSettings)
         let lastFrameTime = performance.now();
-        const FPS_TARGET = 60;
+        const FPS_TARGET  = 60;
         const FRAME_MIN_TIME = 1000 / FPS_TARGET; // ~16.66ms
 
-        // 👇 AÑADE ESTAS DOS LÍNEAS 👇
         let networkTimer = 0;
         const NETWORK_TICK_RATE = 50; // Enviar datos cada 50ms (20 veces por segundo)
 
@@ -12230,6 +12384,18 @@
         const uiAmmoMax = document.getElementById('ammo-max');
         const uiPerfMonitor = document.getElementById('perf-monitor');
 
+        // ⚡ HELPER: envuelve ctx.shadowBlur para respetar disableShadows.
+        // Todos los draws que usaban !isTouchDevice ya no necesitan cambio,
+        // solo reemplazamos la asignación directa por setShadow().
+        function setShadow(blur, color) {
+            if (gameSettings.disableShadows || isTouchDevice) {
+                ctx.shadowBlur = 0;
+            } else {
+                ctx.shadowBlur  = blur;
+                ctx.shadowColor = color || 'transparent';
+            }
+        }
+
         function update(currentTime) {
             // 1. Pedir el siguiente frame
             requestAnimationFrame(update);
@@ -12237,11 +12403,10 @@
             if (!currentTime) currentTime = performance.now();
             let rawDelta = currentTime - lastFrameTime; // Tiempo crudo real
 
-            // 🛑 EL FIX DEL MICRO-STUTTER: (60 FPS Cap)
-            // iPhone 12 corre a 60fps exactos → frames de ~16.6ms
-            // Un umbral de 15ms descarta frames válidos de 15.x ms → stutter
-            // Bajamos a 10ms para solo bloquear frames demasiado rápidos (>100fps)
-            if (rawDelta < 10) return;
+            // ⚡ FPS CAP DINÁMICO: usa gameSettings.fpsCap (60 o 30)
+            // 10ms de umbral base para no descartar frames válidos a 60fps
+            const minFrameMs = gameSettings.fpsCap >= 60 ? 10 : (1000 / gameSettings.fpsCap) - 2;
+            if (rawDelta < minFrameMs) return;
 
             let dtMs = rawDelta;
             // 🚀 EL FIX DEL JITTER 3: Anti-Rubberband. Si el celular se traba un instante, 
@@ -12913,7 +13078,9 @@
                 p.life -= dtScale;
 
                 let hitSomeone = false;
-                const HITBOX_RADIUS = 12;
+                // ⚡ Hitbox ligeramente más grande (14px en vez de 12) para que el
+                // hit registration sea consistente entre ambas pantallas
+                const HITBOX_RADIUS = 14;
 
                 // A. ¿La bala chocó contra MÍ? 
                 if (p.owner !== myId && !player.isDead && Math.hypot(p.x - player.worldX, p.y - player.worldY) < HITBOX_RADIUS) {
@@ -13382,7 +13549,7 @@
 
                 if (p.isDead) ctx.globalAlpha = 0.3;
                 else if (isHit) {
-                    if (!isTouchDevice) { ctx.shadowBlur = 20 * zoomLevel; ctx.shadowColor = "red"; }
+                    setShadow(20 * zoomLevel, 'red');
                     ctx.globalAlpha = 0.6;
                 }
                 // 👇 DIBUJO LIMPIO DEL ENSAMBLADOR 👇
@@ -13412,7 +13579,7 @@
 
             if (player.isDead) ctx.globalAlpha = 0.3;
             else if (localIsHit) {
-                if (!isTouchDevice) { ctx.shadowBlur = 20 * zoomLevel; ctx.shadowColor = "red"; }
+                setShadow(20 * zoomLevel, 'red');
                 ctx.globalAlpha = 0.6;
             }
 
@@ -13449,11 +13616,8 @@
                 // 🛑 EL FIX DEL COLOR: Escudo de seguridad por si p.color es null o undefined
                 const safeColor = p.color ? p.color : "#f1c40f"; // Amarillo brillante por defecto
 
-                // NUEVO CÓDIGO OPTIMIZADO
-                if (!isTouchDevice) {
-                    ctx.shadowBlur = 10 * zoomLevel; // Brillo solo en PC
-                    ctx.shadowColor = safeColor;
-                }
+                // Brillo de bala (respeta disableShadows)
+                setShadow(10 * zoomLevel, safeColor);
                 ctx.fillStyle = safeColor;
                 ctx.beginPath();
                 ctx.arc(pDrawX, pDrawY, 3 * zoomLevel, 0, Math.PI * 2);

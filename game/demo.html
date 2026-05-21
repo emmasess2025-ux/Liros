@@ -20,9 +20,13 @@
             background-color: #222;
             touch-action: none;
             font-family: sans-serif;
-            /* 🚀 FIX IOS: Previene bugs de redimensionamiento */
+            /* 🚀 FIX IOS: Use dynamic viewport height to account for browser chrome */
             height: 100dvh;
             width: 100vw;
+
+            /* 📱 FIX iOS 'Larger Text' accessibility: prevent browser from scaling fonts */
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
 
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -35,7 +39,23 @@
         * {
             font-family: 'VT323', monospace !important;
             letter-spacing: 1px;
-            /* Le da un ligero respiro a los píxeles */
+            box-sizing: border-box; /* Prevents padding from pushing elements out of bounds */
+        }
+
+        /* 📱 UNIVERSAL MODAL OVERLAY: always covers the true visible area, even on iPhone */
+        .modal-overlay, [style*="width: 100vw"][style*="height: 100vh"],
+        [style*="width:100vw"][style*="height:100vh"] {
+            width: 100vw !important;
+            height: 100dvh !important;
+        }
+
+        /* 📱 UNIVERSAL MODAL PANEL: clamps any modal box to fit any screen */
+        .modal-panel {
+            max-width: min(95vw, 600px) !important;
+            max-height: 85dvh !important;
+            overflow-y: auto !important;
+            /* iPhone notch + home indicator safe area */
+            padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
         }
 
         /* ========================================================= */
@@ -1152,6 +1172,56 @@
                 transition: transform 0.1s !important;
                 /* Matar transición de filtro */
             }
+        }
+
+        /* ====================================================
+           📱 UNIVERSAL MOBILE MODAL FIX
+           Targets every fullscreen overlay + inner panel
+           ==================================================== */
+
+        /* 1. Every fullscreen overlay — use dvh so it never goes under Safari's address bar */
+        [style*="height: 100vh"],
+        [style*="height:100vh"] {
+            height: 100dvh !important;
+        }
+
+        /* 2. Every modal inner panel — clamp width & height, allow scrolling */
+        /* Matches elements that have a dark background (rgba 30,30,30 pattern) and are inside overlays */
+        [style*="background: rgba(30, 30, 30"],
+        [style*="background: rgba(20, 20, 20"],
+        [style*="background: rgba(15, 15, 15"] {
+            max-width: min(95vw, 700px) !important;
+            max-height: 88dvh !important;
+            overflow-y: auto !important;
+            /* Pull up from iPhone home indicator */
+            margin-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* 3. Small phones (≤390px wide, e.g. iPhone SE, older Androids) */
+        @media (max-width: 390px) {
+            [style*="background: rgba(30, 30, 30"],
+            [style*="background: rgba(20, 20, 20"],
+            [style*="background: rgba(15, 15, 15"] {
+                max-width: 98vw !important;
+                max-height: 90dvh !important;
+                padding: 12px !important;
+                font-size: 14px !important;
+            }
+            /* Shrink modal headings on tiny screens */
+            [style*="background: rgba(30, 30, 30"] h2,
+            [style*="background: rgba(30, 30, 30"] h3 {
+                font-size: 18px !important;
+            }
+        }
+
+        /* 4. Safe area for iPhone notch & home bar — applied to fixed HUD elements */
+        #hud-hotbar,
+        #hud-bottom,
+        #joystick-container,
+        #aim-zone {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
         }
     </style>
 </head>
@@ -12678,23 +12748,22 @@
                 if (uiLoadingScreen) uiLoadingScreen.style.display = 'none';
             }
             // ... resto del código ...
-            // 📱 SMOOTH CAMERA: exponential follow + teleport snap
-            if (window.camX === undefined) { window.camX = player.worldX; window.camY = player.worldY; }
-            const camJump = Math.hypot(player.worldX - window.camX, player.worldY - window.camY);
-            if (camJump > 80) {
-                window.camX = player.worldX;
-                window.camY = player.worldY;
+            // 🎮 CAMERA: direct player position, no lag, no lerp.
+            // Smooth camera caused 'dash and come back' jitter — the lag created
+            // a rubber-band effect as the camera rushed to catch up each frame.
+            // Teleport detection: if player jumped > 80 units, mark floor dirty so
+            // the map redraws immediately at the new position.
+            const prevRenderX = window._lastRenderX || player.worldX;
+            const prevRenderY = window._lastRenderY || player.worldY;
+            if (Math.hypot(player.worldX - prevRenderX, player.worldY - prevRenderY) > 80) {
                 floorDirty = true;
-            } else {
-                const camSpeed = Math.min(1.0, 18 * (dtMs / 1000));
-                window.camX += (player.worldX - window.camX) * camSpeed;
-                window.camY += (player.worldY - window.camY) * camSpeed;
             }
+            window._lastRenderX = player.worldX;
+            window._lastRenderY = player.worldY;
 
-            // 🔧 PIXEL-SNAP: snap camera to 1/zoomLevel grid so the floor canvas offset is
-            // always an exact integer → eliminates the wobbly tile effect entirely.
-            const renderWorldX = Math.round(window.camX * zoomLevel) / zoomLevel;
-            const renderWorldY = Math.round(window.camY * zoomLevel) / zoomLevel;
+            // Use player position directly — no pixel-snap, just Math.floor at draw time
+            const renderWorldX = player.worldX;
+            const renderWorldY = player.worldY;
 
             // Centro de pantalla en píxeles CSS enteros
             const screenCenterX = Math.floor(cachedScreenWidth  / 2);
@@ -13536,8 +13605,8 @@
                 const rawDx = screenCenterX + (bufferWorldX - renderWorldX) * zoomLevel;
                 const rawDy = screenCenterY + (bufferWorldY - renderWorldY) * zoomLevel;
 
-                dX = Math.round(rawDx);
-                dY = Math.round(rawDy);
+                dX = Math.floor(rawDx);
+                dY = Math.floor(rawDy);
                 window.camErrorX = 0;
                 window.camErrorY = 0;
 

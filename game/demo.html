@@ -3704,16 +3704,18 @@
         let floorDirty = true; // Nos dice si necesitamos tomar una nueva "foto"
         let floorBufferBox = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
         // 🚀 FIX JITTER MÓVIL: BUFFER_MARGIN más grande en móvil evita re-snapshots frecuentes
-        // Con margen=1, el snapshot se reconstruye casi cada tile → spike de CPU → jitter
-        // Con margen=4 tenemos ~3-4 tiles de cushion antes de necesitar reconstruir
-        const BUFFER_MARGIN = isTouchDevice ? 4 : 12;
+        const BUFFER_MARGIN = isTouchDevice ? 6 : 12;
+
+        // 📱 PRE-BAKED ZOOM: the floor canvas is drawn at zoomLevel resolution so the main
+        // ctx.drawImage is always 1:1 (no scaling) — this is the Safari/iOS killer fix.
+        let floorBakedZoom = 0; // Track what zoom the buffer was baked at
 
         function updateFloorBuffer() {
-            const screenWidthWorld = cachedScreenWidth / zoomLevel;
+            const screenWidthWorld  = cachedScreenWidth  / zoomLevel;
             const screenHeightWorld = cachedScreenHeight / zoomLevel;
             const centerCol = Math.floor(player.worldX / TILE_SIZE);
             const centerRow = Math.floor(player.worldY / TILE_SIZE);
-            const halfCols = Math.ceil(screenWidthWorld / TILE_SIZE / 2);
+            const halfCols = Math.ceil(screenWidthWorld  / TILE_SIZE / 2);
             const halfRows = Math.ceil(screenHeightWorld / TILE_SIZE / 2);
 
             floorBufferBox.minX = centerCol - halfCols - BUFFER_MARGIN;
@@ -3721,23 +3723,29 @@
             floorBufferBox.minY = centerRow - halfRows - BUFFER_MARGIN;
             floorBufferBox.maxY = centerRow + halfRows + BUFFER_MARGIN;
 
-            const newW = (floorBufferBox.maxX - floorBufferBox.minX) * TILE_SIZE;
-            const newH = (floorBufferBox.maxY - floorBufferBox.minY) * TILE_SIZE;
+            // 📱 PRE-BAKE AT ZOOM: canvas is sized in screen pixels, not world pixels.
+            // This makes the final drawImage a 1:1 blit (zero scaling cost on Safari).
+            const bakeZoom = zoomLevel;
+            const tilesW = (floorBufferBox.maxX - floorBufferBox.minX);
+            const tilesH = (floorBufferBox.maxY - floorBufferBox.minY);
+            const newW = Math.ceil(tilesW * TILE_SIZE * bakeZoom);
+            const newH = Math.ceil(tilesH * TILE_SIZE * bakeZoom);
 
-            if (floorCanvas.width !== newW) {
-                floorCanvas.width = newW; floorCanvas.height = newH;
-                overheadCanvas.width = newW; overheadCanvas.height = newH; // 🌟 Emparejamos tamaños
+            if (floorCanvas.width !== newW || floorCanvas.height !== newH) {
+                floorCanvas.width  = newW; floorCanvas.height = newH;
+                overheadCanvas.width = newW; overheadCanvas.height = newH;
             }
 
-            floorCtx.clearRect(0, 0, floorCanvas.width, floorCanvas.height);
-            overheadCtx.clearRect(0, 0, overheadCanvas.width, overheadCanvas.height); // 🌟 Limpiamos techos
+            floorBakedZoom = bakeZoom;
+
+            floorCtx.clearRect(0, 0, newW, newH);
+            overheadCtx.clearRect(0, 0, newW, newH);
             floorCtx.imageSmoothingEnabled = false;
             overheadCtx.imageSmoothingEnabled = false;
 
-            /// 🚀 EL FIX: Detenerse en la Capa 14. 
-            // La Capa 15 (Lógica) NO se dibuja en la foto para los jugadores normales.
+            const tileDrawSize = TILE_SIZE * bakeZoom;
+
             for (let l = 0; l <= 14; l++) {
-                // Seleccionamos en qué lienzo dibujar
                 const targetCtx = (l <= 7) ? floorCtx : overheadCtx;
 
                 for (let r = floorBufferBox.minY; r <= floorBufferBox.maxY; r++) {
@@ -3751,18 +3759,20 @@
                         const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
                         const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                         const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
-                        const drawX = (c - floorBufferBox.minX) * TILE_SIZE;
-                        const drawY = (r - floorBufferBox.minY) * TILE_SIZE;
+                        const drawX = (c - floorBufferBox.minX) * tileDrawSize;
+                        const drawY = (r - floorBufferBox.minY) * tileDrawSize;
                         const tileRot = tileData.rotation || 0;
 
                         if (tileRot !== 0) {
                             targetCtx.save();
-                            targetCtx.translate(drawX + TILE_SIZE / 2, drawY + TILE_SIZE / 2);
+                            targetCtx.translate(drawX + tileDrawSize / 2, drawY + tileDrawSize / 2);
                             targetCtx.rotate(tileRot * Math.PI / 180);
-                            targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, -TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
+                            targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE,
+                                -tileDrawSize / 2, -tileDrawSize / 2, tileDrawSize, tileDrawSize);
                             targetCtx.restore();
                         } else {
-                            targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE, drawX, drawY, TILE_SIZE, TILE_SIZE);
+                            targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE,
+                                drawX, drawY, tileDrawSize, tileDrawSize);
                         }
                     }
                 }
@@ -12018,8 +12028,11 @@
 
             // --- LÓGICA DE ESTADOS Y ARMAS ---
             
-            // 🪑 CHEQUEO DE SILLA
+            // 🪑 CHEQUEO DE SILLA Y ESTADO DE MOVIMIENTO
             let isSitting = p.isSitting || false;
+            
+            // 🚀 FIX ANIMACIONES: Usamos isVisuallyMoving para los otros (suavizado) y isMoving para el local (instantáneo)
+            const currentlyMoving = p.isVisuallyMoving !== undefined ? p.isVisuallyMoving : p.isMoving;
 
             if (isSitting) {
                 state = "sit";
@@ -12027,15 +12040,15 @@
                 displayFrameX = 0;
             } else if (p.equippedWeapon && p.equippedWeapon !== "none") {
                 state = "walk_armed";
-                if (p.isMoving) {
+                if (currentlyMoving) {
                     maxFrames = 6;
                 } else {
                     maxFrames = 6;
                     displayFrameX = 0;
                 }
             } else {
-                state = p.isMoving ? "walk_unarmed" : "idle";
-                maxFrames = p.isMoving ? 8 : 4;
+                state = currentlyMoving ? "walk_unarmed" : "idle";
+                maxFrames = currentlyMoving ? 8 : 4;
             }
 
             const safeFrameX = displayFrameX % maxFrames;
@@ -12666,11 +12679,19 @@
             }
             // ... resto del código ...
             // 📱 SMOOTH CAMERA: exponential follow instead of hard pixel-snap
-            // This eliminates the 1px camera hop that causes micro-stutter on mobile.
+            // Snap instantly when player teleports (jumped > 80 world units in 1 frame)
             if (window.camX === undefined) { window.camX = player.worldX; window.camY = player.worldY; }
-            const camSpeed = Math.min(1.0, 18 * (dtMs / 1000)); // ~18 world-units/sec lag
-            window.camX += (player.worldX - window.camX) * camSpeed;
-            window.camY += (player.worldY - window.camY) * camSpeed;
+            const camJump = Math.hypot(player.worldX - window.camX, player.worldY - window.camY);
+            if (camJump > 80) {
+                // Teleport detected — snap instantly, no glide
+                window.camX = player.worldX;
+                window.camY = player.worldY;
+                floorDirty = true; // Force map redraw at new position
+            } else {
+                const camSpeed = Math.min(1.0, 18 * (dtMs / 1000));
+                window.camX += (player.worldX - window.camX) * camSpeed;
+                window.camY += (player.worldY - window.camY) * camSpeed;
+            }
             const renderWorldX = window.camX;
             const renderWorldY = window.camY;
 
@@ -13504,30 +13525,25 @@
                     floorDirty = true;
                 }
 
-                if (floorDirty) updateFloorBuffer();
+                if (floorDirty || floorBakedZoom !== zoomLevel) updateFloorBuffer();
 
                 const bufferWorldX = floorBufferBox.minX * TILE_SIZE;
                 const bufferWorldY = floorBufferBox.minY * TILE_SIZE;
 
-                // 🚀 FIX JITTER CÁMARA: usamos renderWorldX/Y (posición snapped al pixel)
-                // en lugar del float crudo del jugador. Así (bufferWorldX - renderWorldX)*zoom
-                // siempre produce un entero exacto → cero sub-pixel drift.
+                // 📱 CAMERA SYNC FIX: use window.camX/Y (smooth camera) consistently
+                // so the floor and all sprites share the exact same origin.
                 const rawDx = screenCenterX + (bufferWorldX - renderWorldX) * zoomLevel;
                 const rawDy = screenCenterY + (bufferWorldY - renderWorldY) * zoomLevel;
 
-                dX = Math.floor(rawDx);
-                dY = Math.floor(rawDy);
+                dX = Math.round(rawDx);
+                dY = Math.round(rawDy);
+                window.camErrorX = 0;
+                window.camErrorY = 0;
 
-                // camError = 0 siempre (porque rawDx ya es entero), pero lo mantenemos
-                // para compatibilidad con el resto del código.
-                window.camErrorX = dX - rawDx;
-                window.camErrorY = dY - rawDy;
-
-                dW = Math.round(floorCanvas.width * zoomLevel);
-                dH = Math.round(floorCanvas.height * zoomLevel);
-
+                // 🎮 1:1 BLIT: canvas is already at screen resolution, no scaling needed.
+                // This is the key fix for Safari/iOS — zero cost drawImage.
                 ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(floorCanvas, dX, dY, dW, dH);
+                ctx.drawImage(floorCanvas, dX, dY);
             }
 
             // =========================================================
@@ -13811,7 +13827,7 @@
                 if (isUnderRoof) ctx.globalAlpha = 0.3; // Hacer techos transparentes si estás en casa
 
                 ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(overheadCanvas, dX, dY, dW, dH); // dX, dY, dW y dH ya los calculaste para el floorCanvas
+                ctx.drawImage(overheadCanvas, dX, dY); // 1:1 blit — pre-baked at zoom
                 ctx.globalAlpha = 1.0;
             }
             // === DIBUJAR UI Y SPRITE DE LA BASE CENTRAL ===

@@ -3783,9 +3783,7 @@
             let oCanvas = overheadChunks.get(chunkKey);
             let oCtx;
 
-            const bakeZoom = zoomLevel;
-            const tileDrawSize = TILE_SIZE * bakeZoom;
-            const chunkPixelSize = Math.ceil(CHUNK_SIZE * tileDrawSize);
+            const chunkPixelSize = CHUNK_SIZE * TILE_SIZE;
 
             // 🛑 OPTIMIZACIÓN: Solo crear oCanvas si de verdad hay tiles aéreos en este chunk
             let hasOverhead = false;
@@ -3805,11 +3803,10 @@
                 if (hasOverhead) break;
             }
 
-            if (!fCanvas || fCanvas.bakedZoom !== bakeZoom) {
+            if (!fCanvas) {
                 fCanvas = document.createElement('canvas');
                 fCanvas.width = chunkPixelSize;
                 fCanvas.height = chunkPixelSize;
-                fCanvas.bakedZoom = bakeZoom;
                 fCtx = fCanvas.getContext('2d', { alpha: true });
                 fCtx.imageSmoothingEnabled = false;
                 floorChunks.set(chunkKey, fCanvas);
@@ -3818,7 +3815,6 @@
                     oCanvas = document.createElement('canvas');
                     oCanvas.width = chunkPixelSize;
                     oCanvas.height = chunkPixelSize;
-                    oCanvas.bakedZoom = bakeZoom;
                     oCtx = oCanvas.getContext('2d', { alpha: true });
                     oCtx.imageSmoothingEnabled = false;
                     overheadChunks.set(chunkKey, oCanvas);
@@ -3834,7 +3830,7 @@
                 }
             }
 
-            // Dibujar solo los tiles que pertenecen a este chunk
+            // Dibujar solo los tiles que pertenecen a este chunk en escala 1:1 (PERFECT PIXEL)
             for (let r = startY; r < startY + CHUNK_SIZE; r++) {
                 for (let c = startX; c < startX + CHUNK_SIZE; c++) {
                     for (let l = 0; l <= 15; l++) {
@@ -3851,31 +3847,21 @@
                         const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                         const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
 
-                        // 🧱 THE WOBBLE FIX V3: Calcular pixeles anclados al Mundo Absoluto
-                        const exactX = c * tileDrawSize;
-                        const exactY = r * tileDrawSize;
+                        const drawX = (c - startX) * TILE_SIZE;
+                        const drawY = (r - startY) * TILE_SIZE;
                         
-                        const chunkStartX = Math.floor(cx * CHUNK_SIZE * tileDrawSize);
-                        const chunkStartY = Math.floor(cy * CHUNK_SIZE * tileDrawSize);
-
-                        const drawX = Math.floor(exactX) - chunkStartX;
-                        const drawY = Math.floor(exactY) - chunkStartY;
-                        
-                        const drawW = Math.floor((c + 1) * tileDrawSize) - Math.floor(exactX);
-                        const drawH = Math.floor((r + 1) * tileDrawSize) - Math.floor(exactY);
-
                         const tileRot = tileData.rotation || 0;
 
                         if (tileRot !== 0) {
                             targetCtx.save();
-                            targetCtx.translate(drawX + drawW / 2, drawY + drawH / 2);
+                            targetCtx.translate(drawX + TILE_SIZE / 2, drawY + TILE_SIZE / 2);
                             targetCtx.rotate(tileRot * Math.PI / 180);
                             targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE,
-                                -drawW / 2, -drawH / 2, drawW, drawH);
+                                -TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
                             targetCtx.restore();
                         } else {
                             targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE,
-                                drawX, drawY, drawW, drawH);
+                                drawX, drawY, TILE_SIZE, TILE_SIZE);
                         }
                     }
                 }
@@ -13807,20 +13793,29 @@
                         const chunkKey = `${cx},${cy}`;
                         let fCanvas = floorChunks.get(chunkKey);
                         
-                        // JIT (Just In Time) Baking! Si el chunk no existe o cambió el zoom, se hornea al instante
-                        if (!fCanvas || fCanvas.bakedZoom !== zoomLevel) {
+                        // JIT (Just In Time) Baking!
+                        if (!fCanvas) {
                             rebakeChunk(cx, cy);
                             fCanvas = floorChunks.get(chunkKey);
                         }
 
                         if (fCanvas) {
-                            const chunkStartX = Math.floor(cx * CHUNK_SIZE * tileDrawSize);
-                            const chunkStartY = Math.floor(cy * CHUNK_SIZE * tileDrawSize);
+                            const chunkStartX = cx * CHUNK_SIZE * TILE_SIZE;
+                            const chunkStartY = cy * CHUNK_SIZE * TILE_SIZE;
+                            const chunkEndX = (cx + 1) * CHUNK_SIZE * TILE_SIZE;
+                            const chunkEndY = (cy + 1) * CHUNK_SIZE * TILE_SIZE;
                             
-                            const rawDx = screenCenterX + chunkStartX - (player.worldX * zoomLevel);
-                            const rawDy = screenCenterY + chunkStartY - (player.worldY * zoomLevel);
+                            const rawDx1 = screenCenterX + (chunkStartX - player.worldX) * zoomLevel;
+                            const rawDy1 = screenCenterY + (chunkStartY - player.worldY) * zoomLevel;
+                            const rawDx2 = screenCenterX + (chunkEndX - player.worldX) * zoomLevel;
+                            const rawDy2 = screenCenterY + (chunkEndY - player.worldY) * zoomLevel;
                             
-                            ctx.drawImage(fCanvas, Math.floor(rawDx), Math.floor(rawDy));
+                            const drawX = Math.floor(rawDx1);
+                            const drawY = Math.floor(rawDy1);
+                            const drawW = Math.floor(rawDx2) - drawX;
+                            const drawH = Math.floor(rawDy2) - drawY;
+                            
+                            ctx.drawImage(fCanvas, drawX, drawY, drawW, drawH);
                         }
                     }
                 }
@@ -14125,13 +14120,22 @@
                         const chunkKey = `${cx},${cy}`;
                         const oCanvas = overheadChunks.get(chunkKey);
                         if (oCanvas) {
-                            const chunkStartX = Math.floor(cx * CHUNK_SIZE * tileDrawSize);
-                            const chunkStartY = Math.floor(cy * CHUNK_SIZE * tileDrawSize);
+                            const chunkStartX = cx * CHUNK_SIZE * TILE_SIZE;
+                            const chunkStartY = cy * CHUNK_SIZE * TILE_SIZE;
+                            const chunkEndX = (cx + 1) * CHUNK_SIZE * TILE_SIZE;
+                            const chunkEndY = (cy + 1) * CHUNK_SIZE * TILE_SIZE;
                             
-                            const rawDx = screenCenterX + chunkStartX - (player.worldX * zoomLevel);
-                            const rawDy = screenCenterY + chunkStartY - (player.worldY * zoomLevel);
+                            const rawDx1 = screenCenterX + (chunkStartX - player.worldX) * zoomLevel;
+                            const rawDy1 = screenCenterY + (chunkStartY - player.worldY) * zoomLevel;
+                            const rawDx2 = screenCenterX + (chunkEndX - player.worldX) * zoomLevel;
+                            const rawDy2 = screenCenterY + (chunkEndY - player.worldY) * zoomLevel;
                             
-                            ctx.drawImage(oCanvas, Math.floor(rawDx), Math.floor(rawDy));
+                            const drawX = Math.floor(rawDx1);
+                            const drawY = Math.floor(rawDy1);
+                            const drawW = Math.floor(rawDx2) - drawX;
+                            const drawH = Math.floor(rawDy2) - drawY;
+                            
+                            ctx.drawImage(oCanvas, drawX, drawY, drawW, drawH);
                         }
                     }
                 }

@@ -3851,13 +3851,18 @@
                         const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                         const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
 
-                        const exactX = (c - startX) * tileDrawSize;
-                        const exactY = (r - startY) * tileDrawSize;
-                        const drawX = Math.floor(exactX);
-                        const drawY = Math.floor(exactY);
+                        // 🧱 THE WOBBLE FIX V3: Calcular pixeles anclados al Mundo Absoluto
+                        const exactX = c * tileDrawSize;
+                        const exactY = r * tileDrawSize;
                         
-                        const drawW = Math.floor((c - startX + 1) * tileDrawSize) - Math.floor(exactX);
-                        const drawH = Math.floor((r - startY + 1) * tileDrawSize) - Math.floor(exactY);
+                        const chunkStartX = Math.floor(cx * CHUNK_SIZE * tileDrawSize);
+                        const chunkStartY = Math.floor(cy * CHUNK_SIZE * tileDrawSize);
+
+                        const drawX = Math.floor(exactX) - chunkStartX;
+                        const drawY = Math.floor(exactY) - chunkStartY;
+                        
+                        const drawW = Math.floor((c + 1) * tileDrawSize) - Math.floor(exactX);
+                        const drawH = Math.floor((r + 1) * tileDrawSize) - Math.floor(exactY);
 
                         const tileRot = tileData.rotation || 0;
 
@@ -13809,10 +13814,11 @@
                         }
 
                         if (fCanvas) {
-                            const exactChunkX = cx * CHUNK_SIZE * tileDrawSize;
-                            const exactChunkY = cy * CHUNK_SIZE * tileDrawSize;
-                            const rawDx = screenCenterX + exactChunkX - (player.worldX * zoomLevel);
-                            const rawDy = screenCenterY + exactChunkY - (player.worldY * zoomLevel);
+                            const chunkStartX = Math.floor(cx * CHUNK_SIZE * tileDrawSize);
+                            const chunkStartY = Math.floor(cy * CHUNK_SIZE * tileDrawSize);
+                            
+                            const rawDx = screenCenterX + chunkStartX - (player.worldX * zoomLevel);
+                            const rawDy = screenCenterY + chunkStartY - (player.worldY * zoomLevel);
                             
                             ctx.drawImage(fCanvas, Math.floor(rawDx), Math.floor(rawDy));
                         }
@@ -14119,10 +14125,11 @@
                         const chunkKey = `${cx},${cy}`;
                         const oCanvas = overheadChunks.get(chunkKey);
                         if (oCanvas) {
-                            const exactChunkX = cx * CHUNK_SIZE * tileDrawSize;
-                            const exactChunkY = cy * CHUNK_SIZE * tileDrawSize;
-                            const rawDx = screenCenterX + exactChunkX - (player.worldX * zoomLevel);
-                            const rawDy = screenCenterY + exactChunkY - (player.worldY * zoomLevel);
+                            const chunkStartX = Math.floor(cx * CHUNK_SIZE * tileDrawSize);
+                            const chunkStartY = Math.floor(cy * CHUNK_SIZE * tileDrawSize);
+                            
+                            const rawDx = screenCenterX + chunkStartX - (player.worldX * zoomLevel);
+                            const rawDy = screenCenterY + chunkStartY - (player.worldY * zoomLevel);
                             
                             ctx.drawImage(oCanvas, Math.floor(rawDx), Math.floor(rawDy));
                         }

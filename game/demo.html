@@ -3779,8 +3779,8 @@
         const overheadCtx = overheadCanvas.getContext('2d');     // 🌟 NUEVO
         let floorDirty = true; // Nos dice si necesitamos tomar una nueva "foto"
         let floorBufferBox = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        // 🚀 FIX JITTER MÓVIL: BUFFER_MARGIN más grande en móvil evita re-snapshots frecuentes
-        const BUFFER_MARGIN = isTouchDevice ? 6 : 12;
+        // 🚀 FIX JITTER MÓVIL: currentBufferMargin dinámico calculado según la VRAM
+        let currentBufferMargin = isTouchDevice ? 6 : 12;
 
         // 📱 PRE-BAKED ZOOM: the floor canvas is drawn at zoomLevel resolution so the main
         // ctx.drawImage is always 1:1 (no scaling) — this is the Safari/iOS killer fix.
@@ -3794,10 +3794,10 @@
             const halfCols = Math.ceil(screenWidthWorld  / TILE_SIZE / 2);
             const halfRows = Math.ceil(screenHeightWorld / TILE_SIZE / 2);
 
-            floorBufferBox.minX = centerCol - halfCols - BUFFER_MARGIN;
-            floorBufferBox.maxX = centerCol + halfCols + BUFFER_MARGIN;
-            floorBufferBox.minY = centerRow - halfRows - BUFFER_MARGIN;
-            floorBufferBox.maxY = centerRow + halfRows + BUFFER_MARGIN;
+            floorBufferBox.minX = centerCol - halfCols - currentBufferMargin;
+            floorBufferBox.maxX = centerCol + halfCols + currentBufferMargin;
+            floorBufferBox.minY = centerRow - halfRows - currentBufferMargin;
+            floorBufferBox.maxY = centerRow + halfRows + currentBufferMargin;
 
             // 📱 PRE-BAKE AT ZOOM: canvas is sized in screen pixels, not world pixels.
             // This makes the final drawImage a 1:1 blit (zero scaling cost on Safari).
@@ -13001,15 +13001,35 @@
             };
 
             // 1. Try moving X first
+            const oldX = player.worldX;
             player.worldX += player.vx;
             if (isColliding(player.worldX, player.worldY)) {
-                player.worldX -= player.vx; // Hit a wall horizontally? Undo X!
+                player.worldX = oldX; 
+                // 🛑 EL FIX: "Aproximación fina" pixel por pixel para pegar al jugador a la pared sin rebotar
+                const stepX = Math.sign(player.vx);
+                if (stepX !== 0) {
+                    let steps = Math.floor(Math.abs(player.vx));
+                    while (steps > 0 && !isColliding(player.worldX + stepX, player.worldY)) {
+                        player.worldX += stepX;
+                        steps--;
+                    }
+                }
             }
 
             // 2. Try moving Y second
+            const oldY = player.worldY;
             player.worldY += player.vy;
             if (isColliding(player.worldX, player.worldY)) {
-                player.worldY -= player.vy; // Hit a wall vertically? Undo Y!
+                player.worldY = oldY; 
+                // 🛑 EL FIX: "Aproximación fina" en Y
+                const stepY = Math.sign(player.vy);
+                if (stepY !== 0) {
+                    let steps = Math.floor(Math.abs(player.vy));
+                    while (steps > 0 && !isColliding(player.worldX, player.worldY + stepY)) {
+                        player.worldY += stepY;
+                        steps--;
+                    }
+                }
             }
 
             // --- 3. SHOOTING & COMBAT PHYSICS ---
@@ -13614,7 +13634,19 @@
                 const halfCols = Math.ceil((cachedScreenWidth / zoomLevel) / TILE_SIZE / 2);
                 const halfRows = Math.ceil((cachedScreenHeight / zoomLevel) / TILE_SIZE / 2);
 
-                const triggerDist = Math.floor(BUFFER_MARGIN / 2);
+                // 🚀 EL FIX MAXIMO DE JITTER: Calcula el margen más grande posible sin crashear iOS (Max 3600px)
+                const maxCanvasSize = isTouchDevice ? 3600 : 5600;
+                const maxTilesW = Math.floor(maxCanvasSize / (TILE_SIZE * zoomLevel));
+                const maxTilesH = Math.floor(maxCanvasSize / (TILE_SIZE * zoomLevel));
+                
+                const availableTilesW = maxTilesW - (halfCols * 2);
+                const availableTilesH = maxTilesH - (halfRows * 2);
+                const safeMargin = Math.max(2, Math.floor(Math.min(availableTilesW, availableTilesH) / 2));
+                
+                // Ponemos un cap en 60 tiles (casi 1000 píxeles de holgura). Te da MUCHÍSIMO espacio sin cargar nada.
+                currentBufferMargin = Math.min(60, safeMargin);
+
+                const triggerDist = Math.floor(currentBufferMargin * 0.5);
 
                 if (centerCol - halfCols < floorBufferBox.minX + triggerDist ||
                     centerCol + halfCols > floorBufferBox.maxX - triggerDist ||

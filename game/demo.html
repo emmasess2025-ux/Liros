@@ -1221,7 +1221,7 @@
             padding-left: env(safe-area-inset-left, 0px);
             padding-right: env(safe-area-inset-right, 0px);
         }
-        #joystick-container {
+        #joystick-zone {
             margin-bottom: env(safe-area-inset-bottom, 0px);
             margin-left: env(safe-area-inset-left, 0px);
         }
@@ -3835,15 +3835,19 @@
                         const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
                         const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                         const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
-                        // 🧱 THE TILE GAP FIX: Calculate exact start/end pixels to prevent sub-pixel seams
-                        const exactX = (c - floorBufferBox.minX) * tileDrawSize;
-                        const exactY = (r - floorBufferBox.minY) * tileDrawSize;
-                        const drawX = Math.floor(exactX);
-                        const drawY = Math.floor(exactY);
-                        const nextX = Math.floor((c + 1 - floorBufferBox.minX) * tileDrawSize);
-                        const nextY = Math.floor((r + 1 - floorBufferBox.minY) * tileDrawSize);
-                        const drawW = nextX - drawX;
-                        const drawH = nextY - drawY;
+                        // 🧱 THE WOBBLE FIX: Calculate pixels anchored to the Absolute World, not the Buffer.
+                        // This guarantees tile widths NEVER oscillate when the buffer moves.
+                        const exactX = c * tileDrawSize;
+                        const exactY = r * tileDrawSize;
+                        const bufferStartX = Math.floor(floorBufferBox.minX * tileDrawSize);
+                        const bufferStartY = Math.floor(floorBufferBox.minY * tileDrawSize);
+
+                        const drawX = Math.floor(exactX) - bufferStartX;
+                        const drawY = Math.floor(exactY) - bufferStartY;
+                        
+                        // Width is exactly the difference to the next world-anchored tile
+                        const drawW = Math.floor((c + 1) * tileDrawSize) - Math.floor(exactX);
+                        const drawH = Math.floor((r + 1) * tileDrawSize) - Math.floor(exactY);
 
                         const tileRot = tileData.rotation || 0;
 
@@ -12873,8 +12877,14 @@
                         }
                     } else {
                         // 📱 LOW-PASS FILTER on joystick: smooths out finger micro-vibrations
-                        player.smoothJoyX = (player.smoothJoyX || 0) * 0.72 + (player.joyX || 0) * 0.28;
-                        player.smoothJoyY = (player.smoothJoyY || 0) * 0.72 + (player.joyY || 0) * 0.28;
+                        if (player.joyX === 0 && player.joyY === 0) {
+                            // Instant stop when thumb lifted (fixes idle animation bug)
+                            player.smoothJoyX = 0;
+                            player.smoothJoyY = 0;
+                        } else {
+                            player.smoothJoyX = (player.smoothJoyX || 0) * 0.72 + (player.joyX || 0) * 0.28;
+                            player.smoothJoyY = (player.smoothJoyY || 0) * 0.72 + (player.joyY || 0) * 0.28;
+                        }
                         player.vx = player.smoothJoyX * (player.speed * speedMult) * dtScale;
                         player.vy = player.smoothJoyY * (player.speed * speedMult) * dtScale;
                         player.isMoving = (Math.abs(player.smoothJoyX) > 0.02 || Math.abs(player.smoothJoyY) > 0.02);
@@ -13615,13 +13625,11 @@
 
                 if (floorDirty || floorBakedZoom !== zoomLevel) updateFloorBuffer();
 
-                const bufferWorldX = floorBufferBox.minX * TILE_SIZE;
-                const bufferWorldY = floorBufferBox.minY * TILE_SIZE;
+                const bufferWorldX_scaled = Math.floor(floorBufferBox.minX * TILE_SIZE * zoomLevel);
+                const bufferWorldY_scaled = Math.floor(floorBufferBox.minY * TILE_SIZE * zoomLevel);
 
-                // 📱 CAMERA SYNC FIX: use window.camX/Y (smooth camera) consistently
-                // so the floor and all sprites share the exact same origin.
-                const rawDx = screenCenterX + (bufferWorldX - renderWorldX) * zoomLevel;
-                const rawDy = screenCenterY + (bufferWorldY - renderWorldY) * zoomLevel;
+                const rawDx = screenCenterX + bufferWorldX_scaled - (renderWorldX * zoomLevel);
+                const rawDy = screenCenterY + bufferWorldY_scaled - (renderWorldY * zoomLevel);
 
                 dX = Math.floor(rawDx);
                 dY = Math.floor(rawDy);

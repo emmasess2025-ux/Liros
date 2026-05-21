@@ -3759,8 +3759,8 @@
                         const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
                         const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                         const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
-                        const drawX = (c - floorBufferBox.minX) * tileDrawSize;
-                        const drawY = (r - floorBufferBox.minY) * tileDrawSize;
+                        const drawX = Math.round((c - floorBufferBox.minX) * tileDrawSize);
+                        const drawY = Math.round((r - floorBufferBox.minY) * tileDrawSize);
                         const tileRot = tileData.rotation || 0;
 
                         if (tileRot !== 0) {
@@ -12678,22 +12678,23 @@
                 if (uiLoadingScreen) uiLoadingScreen.style.display = 'none';
             }
             // ... resto del código ...
-            // 📱 SMOOTH CAMERA: exponential follow instead of hard pixel-snap
-            // Snap instantly when player teleports (jumped > 80 world units in 1 frame)
+            // 📱 SMOOTH CAMERA: exponential follow + teleport snap
             if (window.camX === undefined) { window.camX = player.worldX; window.camY = player.worldY; }
             const camJump = Math.hypot(player.worldX - window.camX, player.worldY - window.camY);
             if (camJump > 80) {
-                // Teleport detected — snap instantly, no glide
                 window.camX = player.worldX;
                 window.camY = player.worldY;
-                floorDirty = true; // Force map redraw at new position
+                floorDirty = true;
             } else {
                 const camSpeed = Math.min(1.0, 18 * (dtMs / 1000));
                 window.camX += (player.worldX - window.camX) * camSpeed;
                 window.camY += (player.worldY - window.camY) * camSpeed;
             }
-            const renderWorldX = window.camX;
-            const renderWorldY = window.camY;
+
+            // 🔧 PIXEL-SNAP: snap camera to 1/zoomLevel grid so the floor canvas offset is
+            // always an exact integer → eliminates the wobbly tile effect entirely.
+            const renderWorldX = Math.round(window.camX * zoomLevel) / zoomLevel;
+            const renderWorldY = Math.round(window.camY * zoomLevel) / zoomLevel;
 
             // Centro de pantalla en píxeles CSS enteros
             const screenCenterX = Math.floor(cachedScreenWidth  / 2);

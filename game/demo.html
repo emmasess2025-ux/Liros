@@ -3762,12 +3762,126 @@
         let editMode = false;
         let selectedTileId = 0;
         const TILE_SIZE = 16; // Your tileset looks like a 16px grid
+        // 🚀 EL FIX DE RENDIMIENTO MÁXIMO: TILEMAP CHUNKING ARCHITECTURE
+        const CHUNK_SIZE = 32; // 32x32 tiles por chunk (512x512 píxeles de mundo)
+        const floorChunks = new Map();
+        const overheadChunks = new Map();
+        const dirtyChunks = new Set();
+        
+        let chunksBakedZoom = 0; // Track zoom level
+
+        function markChunkDirty(tileX, tileY) {
+            const cx = Math.floor(tileX / CHUNK_SIZE);
+            const cy = Math.floor(tileY / CHUNK_SIZE);
+            dirtyChunks.add(`${cx},${cy}`);
+        }
+
+        function rebakeChunk(cx, cy) {
+            const chunkKey = `${cx},${cy}`;
+            let fCanvas = floorChunks.get(chunkKey);
+            let fCtx;
+            let oCanvas = overheadChunks.get(chunkKey);
+            let oCtx;
+
+            const bakeZoom = zoomLevel;
+            const tileDrawSize = TILE_SIZE * bakeZoom;
+            const chunkPixelSize = Math.ceil(CHUNK_SIZE * tileDrawSize);
+
+            // 🛑 OPTIMIZACIÓN: Solo crear oCanvas si de verdad hay tiles aéreos en este chunk
+            let hasOverhead = false;
+            const startX = cx * CHUNK_SIZE;
+            const startY = cy * CHUNK_SIZE;
+
+            for (let r = startY; r < startY + CHUNK_SIZE; r++) {
+                for (let c = startX; c < startX + CHUNK_SIZE; c++) {
+                    for (let l = 8; l <= 11; l++) {
+                        if (worldMap.has(`${c},${r},${l}`)) {
+                            hasOverhead = true;
+                            break;
+                        }
+                    }
+                    if (hasOverhead) break;
+                }
+                if (hasOverhead) break;
+            }
+
+            if (!fCanvas || fCanvas.bakedZoom !== bakeZoom) {
+                fCanvas = document.createElement('canvas');
+                fCanvas.width = chunkPixelSize;
+                fCanvas.height = chunkPixelSize;
+                fCanvas.bakedZoom = bakeZoom;
+                fCtx = fCanvas.getContext('2d', { alpha: true });
+                fCtx.imageSmoothingEnabled = false;
+                floorChunks.set(chunkKey, fCanvas);
+
+                if (hasOverhead) {
+                    oCanvas = document.createElement('canvas');
+                    oCanvas.width = chunkPixelSize;
+                    oCanvas.height = chunkPixelSize;
+                    oCanvas.bakedZoom = bakeZoom;
+                    oCtx = oCanvas.getContext('2d', { alpha: true });
+                    oCtx.imageSmoothingEnabled = false;
+                    overheadChunks.set(chunkKey, oCanvas);
+                } else {
+                    overheadChunks.delete(chunkKey);
+                }
+            } else {
+                fCtx = fCanvas.getContext('2d');
+                fCtx.clearRect(0, 0, fCanvas.width, fCanvas.height);
+                if (oCanvas) {
+                    oCtx = oCanvas.getContext('2d');
+                    oCtx.clearRect(0, 0, oCanvas.width, oCanvas.height);
+                }
+            }
+
+            // Dibujar solo los tiles que pertenecen a este chunk
+            for (let r = startY; r < startY + CHUNK_SIZE; r++) {
+                for (let c = startX; c < startX + CHUNK_SIZE; c++) {
+                    for (let l = 0; l <= 15; l++) {
+                        const tileData = worldMap.get(`${c},${r},${l}`);
+                        if (!tileData) continue;
+
+                        let targetCtx = (l >= 8 && l <= 11) ? oCtx : fCtx;
+                        if (!targetCtx) continue;
+
+                        const tsData = getTilesetData(tileData.tileId);
+                        if (!tsData || !tsData.img) continue;
+
+                        const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
+                        const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
+                        const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
+
+                        const exactX = (c - startX) * tileDrawSize;
+                        const exactY = (r - startY) * tileDrawSize;
+                        const drawX = Math.floor(exactX);
+                        const drawY = Math.floor(exactY);
+                        
+                        const drawW = Math.floor((c - startX + 1) * tileDrawSize) - Math.floor(exactX);
+                        const drawH = Math.floor((r - startY + 1) * tileDrawSize) - Math.floor(exactY);
+
+                        const tileRot = tileData.rotation || 0;
+
+                        if (tileRot !== 0) {
+                            targetCtx.save();
+                            targetCtx.translate(drawX + drawW / 2, drawY + drawH / 2);
+                            targetCtx.rotate(tileRot * Math.PI / 180);
+                            targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE,
+                                -drawW / 2, -drawH / 2, drawW, drawH);
+                            targetCtx.restore();
+                        } else {
+                            targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE,
+                                drawX, drawY, drawW, drawH);
+                        }
+                    }
+                }
+            }
+        }
+
         // 🚀 EL FIX FÍSICO: Map() y Claves Numéricas
         const worldMap = new Map();
 
         function getMapKey(x, y, l) {
-            // Convierte coordenadas en un número único. Offset de 10,000 para soportar coordenadas negativas.
-            return (x + 10000) * 1000000 + (y + 10000) * 100 + l;
+            return `${x},${y},${l}`;
         }
         let safeZones = [];   // <--- NUEVO: MEMORIA DE ZONAS SEGURAS
         // 1. PRIMERO declaramos la variable para saber si es celular
@@ -5257,8 +5371,11 @@
                     img.onload = () => {
                         assetsLoaded++;
                         updateLoadingBar();
-                        // 📸 EL FIX: ¡La imagen ya descargó! Dile al fotógrafo que repita la foto.
-                        floorDirty = true;
+                        if (assetsLoaded >= totalAssetsToLoad) {
+                            floorChunks.clear();
+                            overheadChunks.clear();
+                            dirtyChunks.clear();
+                        }
                     };
                     img.src = ts.src;
                     loadedTilesets[ts.id] = img;
@@ -5508,7 +5625,7 @@
                         tileId: data.tileId, l: data.l, hasCollision: existing.hasCollision, isSit: existing.isSit
                     });
                 }
-                if (data.l <= 7) floorDirty = true;
+                markChunkDirty(data.x, data.y);
                 minimapDirty = true; // 📸 AVISAR AL MINIMAPA QUE ALGO SE CONSTRUYÓ
             }
             else if (data.type === 'tile_update_bulk') {
@@ -5525,7 +5642,7 @@
                         });
                     }
                 });
-                if (data.tiles.some(t => t.l <= 7)) floorDirty = true;
+                data.tiles.forEach(t => markChunkDirty(t.x, t.y));
                 minimapDirty = true; // 📸 AVISAR AL MINIMAPA
             }
             else if (data.type === 'tile_meta_update') {
@@ -13634,44 +13751,73 @@
                 const halfCols = Math.ceil((cachedScreenWidth / zoomLevel) / TILE_SIZE / 2);
                 const halfRows = Math.ceil((cachedScreenHeight / zoomLevel) / TILE_SIZE / 2);
 
-                // 🚀 EL FIX MAXIMO DE JITTER: Calcula el margen más grande posible sin crashear iOS (Max 3600px)
-                const maxCanvasSize = isTouchDevice ? 3600 : 5600;
-                const maxTilesW = Math.floor(maxCanvasSize / (TILE_SIZE * zoomLevel));
-                const maxTilesH = Math.floor(maxCanvasSize / (TILE_SIZE * zoomLevel));
+                const tileDrawSize = TILE_SIZE * zoomLevel;
+                const screenWorldW = cachedScreenWidth / zoomLevel;
+                const screenWorldH = cachedScreenHeight / zoomLevel;
                 
-                const availableTilesW = maxTilesW - (halfCols * 2);
-                const availableTilesH = maxTilesH - (halfRows * 2);
-                const safeMargin = Math.max(2, Math.floor(Math.min(availableTilesW, availableTilesH) / 2));
-                
-                // Ponemos un cap en 60 tiles (casi 1000 píxeles de holgura). Te da MUCHÍSIMO espacio sin cargar nada.
-                currentBufferMargin = Math.min(60, safeMargin);
+                const minWorldX = player.worldX - screenWorldW / 2;
+                const maxWorldX = player.worldX + screenWorldW / 2;
+                const minWorldY = player.worldY - screenWorldH / 2;
+                const maxWorldY = player.worldY + screenWorldH / 2;
 
-                const triggerDist = Math.floor(currentBufferMargin * 0.5);
+                const minCX = Math.floor((minWorldX / TILE_SIZE) / CHUNK_SIZE);
+                const maxCX = Math.floor((maxWorldX / TILE_SIZE) / CHUNK_SIZE);
+                const minCY = Math.floor((minWorldY / TILE_SIZE) / CHUNK_SIZE);
+                const maxCY = Math.floor((maxWorldY / TILE_SIZE) / CHUNK_SIZE);
 
-                if (centerCol - halfCols < floorBufferBox.minX + triggerDist ||
-                    centerCol + halfCols > floorBufferBox.maxX - triggerDist ||
-                    centerRow - halfRows < floorBufferBox.minY + triggerDist ||
-                    centerRow + halfRows > floorBufferBox.maxY - triggerDist) {
-                    floorDirty = true;
+                // 🚀 EL FIX MAXIMO DE MEMORIA (JIT BAKING & GARBAGE COLLECTION)
+                // Mantén solo los chunks cercanos en la memoria RAM para no crashear iOS
+                const activeChunkKeys = new Set();
+                for (let cy = minCY - 1; cy <= maxCY + 1; cy++) {
+                    for (let cx = minCX - 1; cx <= maxCX + 1; cx++) {
+                        activeChunkKeys.add(`${cx},${cy}`);
+                    }
                 }
 
-                if (floorDirty || floorBakedZoom !== zoomLevel) updateFloorBuffer();
+                floorChunks.forEach((canvas, chunkKey) => {
+                    if (!activeChunkKeys.has(chunkKey)) {
+                        canvas.width = 0; // Liberar RAM
+                        floorChunks.delete(chunkKey);
+                    }
+                });
+                overheadChunks.forEach((canvas, chunkKey) => {
+                    if (!activeChunkKeys.has(chunkKey)) {
+                        canvas.width = 0; // Liberar RAM
+                        overheadChunks.delete(chunkKey);
+                    }
+                });
+                
+                if (dirtyChunks.size > 0) {
+                    dirtyChunks.forEach(chunkKey => {
+                        const [cx, cy] = chunkKey.split(',').map(Number);
+                        rebakeChunk(cx, cy);
+                    });
+                    dirtyChunks.clear();
+                }
 
-                const bufferWorldX_scaled = Math.floor(floorBufferBox.minX * TILE_SIZE * zoomLevel);
-                const bufferWorldY_scaled = Math.floor(floorBufferBox.minY * TILE_SIZE * zoomLevel);
-
-                const rawDx = screenCenterX + bufferWorldX_scaled - (renderWorldX * zoomLevel);
-                const rawDy = screenCenterY + bufferWorldY_scaled - (renderWorldY * zoomLevel);
-
-                dX = Math.floor(rawDx);
-                dY = Math.floor(rawDy);
-                window.camErrorX = 0;
-                window.camErrorY = 0;
-
-                // 🎮 1:1 BLIT: canvas is already at screen resolution, no scaling needed.
-                // This is the key fix for Safari/iOS — zero cost drawImage.
                 ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(floorCanvas, dX, dY);
+
+                for (let cy = minCY; cy <= maxCY; cy++) {
+                    for (let cx = minCX; cx <= maxCX; cx++) {
+                        const chunkKey = `${cx},${cy}`;
+                        let fCanvas = floorChunks.get(chunkKey);
+                        
+                        // JIT (Just In Time) Baking! Si el chunk no existe o cambió el zoom, se hornea al instante
+                        if (!fCanvas || fCanvas.bakedZoom !== zoomLevel) {
+                            rebakeChunk(cx, cy);
+                            fCanvas = floorChunks.get(chunkKey);
+                        }
+
+                        if (fCanvas) {
+                            const exactChunkX = cx * CHUNK_SIZE * tileDrawSize;
+                            const exactChunkY = cy * CHUNK_SIZE * tileDrawSize;
+                            const rawDx = screenCenterX + exactChunkX - (player.worldX * zoomLevel);
+                            const rawDy = screenCenterY + exactChunkY - (player.worldY * zoomLevel);
+                            
+                            ctx.drawImage(fCanvas, Math.floor(rawDx), Math.floor(rawDy));
+                        }
+                    }
+                }
             }
 
             // =========================================================
@@ -13955,7 +14101,33 @@
                 if (isUnderRoof) ctx.globalAlpha = 0.3; // Hacer techos transparentes si estás en casa
 
                 ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(overheadCanvas, dX, dY); // 1:1 blit — pre-baked at zoom
+                
+                const screenWorldW = cachedScreenWidth / zoomLevel;
+                const screenWorldH = cachedScreenHeight / zoomLevel;
+                const minWorldX = player.worldX - screenWorldW / 2;
+                const maxWorldX = player.worldX + screenWorldW / 2;
+                const minWorldY = player.worldY - screenWorldH / 2;
+                const maxWorldY = player.worldY + screenWorldH / 2;
+                const minCX = Math.floor((minWorldX / TILE_SIZE) / CHUNK_SIZE);
+                const maxCX = Math.floor((maxWorldX / TILE_SIZE) / CHUNK_SIZE);
+                const minCY = Math.floor((minWorldY / TILE_SIZE) / CHUNK_SIZE);
+                const maxCY = Math.floor((maxWorldY / TILE_SIZE) / CHUNK_SIZE);
+                const tileDrawSize = TILE_SIZE * zoomLevel;
+
+                for (let cy = minCY; cy <= maxCY; cy++) {
+                    for (let cx = minCX; cx <= maxCX; cx++) {
+                        const chunkKey = `${cx},${cy}`;
+                        const oCanvas = overheadChunks.get(chunkKey);
+                        if (oCanvas) {
+                            const exactChunkX = cx * CHUNK_SIZE * tileDrawSize;
+                            const exactChunkY = cy * CHUNK_SIZE * tileDrawSize;
+                            const rawDx = screenCenterX + exactChunkX - (player.worldX * zoomLevel);
+                            const rawDy = screenCenterY + exactChunkY - (player.worldY * zoomLevel);
+                            
+                            ctx.drawImage(oCanvas, Math.floor(rawDx), Math.floor(rawDy));
+                        }
+                    }
+                }
                 ctx.globalAlpha = 1.0;
             }
             // === DIBUJAR UI Y SPRITE DE LA BASE CENTRAL ===

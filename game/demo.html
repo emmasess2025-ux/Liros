@@ -1216,12 +1216,18 @@
 
         /* 4. Safe area for iPhone notch & home bar — applied to fixed HUD elements */
         #hud-hotbar,
-        #hud-bottom,
-        #joystick-container,
-        #aim-zone {
+        #hud-bottom {
             padding-bottom: env(safe-area-inset-bottom, 0px);
             padding-left: env(safe-area-inset-left, 0px);
             padding-right: env(safe-area-inset-right, 0px);
+        }
+        #joystick-container {
+            margin-bottom: env(safe-area-inset-bottom, 0px);
+            margin-left: env(safe-area-inset-left, 0px);
+        }
+        #aim-zone {
+            margin-bottom: env(safe-area-inset-bottom, 0px);
+            margin-right: env(safe-area-inset-right, 0px);
         }
     </style>
 </head>
@@ -3829,20 +3835,28 @@
                         const tilesPerRow = Math.floor(tsData.img.width / TILE_SIZE);
                         const sx = (tsData.localId % tilesPerRow) * TILE_SIZE;
                         const sy = Math.floor(tsData.localId / tilesPerRow) * TILE_SIZE;
-                        const drawX = Math.round((c - floorBufferBox.minX) * tileDrawSize);
-                        const drawY = Math.round((r - floorBufferBox.minY) * tileDrawSize);
+                        // 🧱 THE TILE GAP FIX: Calculate exact start/end pixels to prevent sub-pixel seams
+                        const exactX = (c - floorBufferBox.minX) * tileDrawSize;
+                        const exactY = (r - floorBufferBox.minY) * tileDrawSize;
+                        const drawX = Math.floor(exactX);
+                        const drawY = Math.floor(exactY);
+                        const nextX = Math.floor((c + 1 - floorBufferBox.minX) * tileDrawSize);
+                        const nextY = Math.floor((r + 1 - floorBufferBox.minY) * tileDrawSize);
+                        const drawW = nextX - drawX;
+                        const drawH = nextY - drawY;
+
                         const tileRot = tileData.rotation || 0;
 
                         if (tileRot !== 0) {
                             targetCtx.save();
-                            targetCtx.translate(drawX + tileDrawSize / 2, drawY + tileDrawSize / 2);
+                            targetCtx.translate(drawX + drawW / 2, drawY + drawH / 2);
                             targetCtx.rotate(tileRot * Math.PI / 180);
                             targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE,
-                                -tileDrawSize / 2, -tileDrawSize / 2, tileDrawSize, tileDrawSize);
+                                -drawW / 2, -drawH / 2, drawW, drawH);
                             targetCtx.restore();
                         } else {
                             targetCtx.drawImage(tsData.img, sx, sy, TILE_SIZE, TILE_SIZE,
-                                drawX, drawY, tileDrawSize, tileDrawSize);
+                                drawX, drawY, drawW, drawH);
                         }
                     }
                 }
@@ -12663,7 +12677,11 @@
             const dtMs = (dtHistory[0] + dtHistory[1] + dtHistory[2] + dtHistory[3]) / DT_HISTORY_SIZE;
 
             lastFrameTime = currentTime;
+            
+            // 🛑 THE DASH FIX: Cap dtScale so physics don't rubber-band forward during lag spikes
             let dtScale = dtMs / FRAME_MIN_TIME;
+            if (dtScale > 1.2) dtScale = 1.2;
+            if (dtScale < 0.8) dtScale = 0.8;
 
             // 📊 CALCULADORA MAESTRA DE RENDIMIENTO (Siempre activa para proteger el celular)
             fpsFrameCount++;

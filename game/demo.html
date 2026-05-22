@@ -5653,27 +5653,53 @@
                         worldMap[key].itemRow = data.itemRow;
                     }
                 }
-            }// --- NEW: RECEIVE BULLET FROM ANOTHER PLAYER ---
+            } // Restore missing brace
             else if (data.type === 'shoot') {
+                let spawnX = data.x;
+                let spawnY = data.y;
+
                 if (otherPlayers[data.id]) {
                     otherPlayers[data.id].lastShotTime = Date.now(); // 🛑 EL FIX: Levanta el arma del enemigo
+
+                    // 🔫 EL FIX VISUAL: Sincronizar bala con el cañón interpolado
+                    const enemy = otherPlayers[data.id];
+                    const wStats = window.loadedWeaponsDB ? window.loadedWeaponsDB[data.weaponId] : null;
+                    if (wStats) {
+                        const dir = enemy.frameY || 0;
+                        const d = wStats.dirStats ? (wStats.dirStats[dir] || {}) : {};
+                        spawnX = enemy.worldX + (d.hitX || 0);
+                        spawnY = enemy.worldY + (d.hitY || 0);
+                    }
                 }
                 // ⚡ LAG COMPENSATION: avanzar la bala los ms que tardó en llegar
                 const bulletLag = data.t ? Math.min(Date.now() - data.t, 200) : 0;
-                spawnProjectile(data.x, data.y, data.angle, data.id, data.weaponId, bulletLag);
+                spawnProjectile(spawnX, spawnY, data.angle, data.id, data.weaponId, bulletLag);
                 // 🔊 NUEVO: Play the sound!
                 const isMe = (data.id === myId);
                 playItemSound(data.weaponId, 'use', isMe ? 0.8 : 0.3);
             }// 👇 NUEVO: RECIBIR ESCOPETAZO (ARRAY DE BALAS) 👇
             else if (data.type === 'shoot_shotgun') {
+                let spawnX = data.x;
+                let spawnY = data.y;
+
                 if (otherPlayers[data.id]) {
                     otherPlayers[data.id].lastShotTime = Date.now(); // Levanta el arma del enemigo
+
+                    // 🔫 EL FIX VISUAL: Sincronizar perdigones con el cañón interpolado
+                    const enemy = otherPlayers[data.id];
+                    const wStats = window.loadedWeaponsDB ? window.loadedWeaponsDB[data.weaponId] : null;
+                    if (wStats) {
+                        const dir = enemy.frameY || 0;
+                        const d = wStats.dirStats ? (wStats.dirStats[dir] || {}) : {};
+                        spawnX = enemy.worldX + (d.hitX || 0);
+                        spawnY = enemy.worldY + (d.hitY || 0);
+                    }
                 }
 
                 // ⚡ LAG COMPENSATION: avanzar cada pellet los ms de lag
                 const shotgunLag = data.t ? Math.min(Date.now() - data.t, 200) : 0;
                 data.angles.forEach(ang => {
-                    spawnProjectile(data.x, data.y, ang, data.id, data.weaponId, shotgunLag);
+                    spawnProjectile(spawnX, spawnY, ang, data.id, data.weaponId, shotgunLag);
                 });
 
                 // 🔊 THE FIX: Trigger the sound!

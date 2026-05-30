@@ -137,11 +137,11 @@
         .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; flex-shrink: 0; }
         .input-row { display: flex; gap: 10px; margin-bottom: 25px; flex-shrink: 0; }
         
-        input[type="text"], textarea {
+        input[type="text"], input[type="number"], input[type="date"], textarea {
             flex-grow: 1; padding: 15px 20px; background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.8);
             border-radius: 20px; font-family: var(--font); color: var(--text-dark); font-size: 16px; outline: none; transition: 0.3s; resize: none;
         }
-        input[type="text"]:focus, textarea:focus { background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(74, 111, 165, 0.2); }
+        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, textarea:focus { background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(74, 111, 165, 0.2); }
         
         .btn { padding: 15px 25px; border: 2px solid var(--text-dark); border-radius: 30px; background: transparent; color: var(--text-dark); font-family: var(--font); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; display: inline-block; width: 100%; }
         .btn:hover { background: var(--text-dark); color: white; }
@@ -173,6 +173,36 @@
         .sortable-ghost { opacity: 0.3; background-color: var(--accent-soft); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
         .divider { height: 1px; border: none; background: color-mix(in srgb, var(--text-grey) 20%, transparent); margin: 25px 0; flex-shrink: 0;}
         .done-label { text-align: center; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-grey); margin-bottom: 15px; flex-shrink: 0;}
+
+        /* --- COLLAPSIBLE CLIENT UI --- */
+        .client-card {
+            background-color: color-mix(in srgb, var(--c-glass) 40%, transparent);
+            border-radius: 18px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0px 4px 10px rgba(0,0,0,0.03);
+        }
+        .client-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; font-weight: 900; cursor: pointer;
+        }
+        .client-body {
+            padding: 15px 20px;
+            display: none;
+            border-top: 1px solid rgba(255,255,255,0.3);
+        }
+        .client-body.expanded { display: block; }
+        .client-songs-scroll-area { max-height: 300px; overflow-y: auto; padding-right: 5px; margin-top: 10px; }
+        .client-songs-scroll-area::-webkit-scrollbar { display: none; }
+        .price-display {
+            font-size: 0.8rem; color: var(--accent); font-weight: 900; background: rgba(255,255,255,0.6);
+            padding: 4px 10px; border-radius: 20px;
+        }
+        .mini-input-group {
+            display: flex; gap: 8px; margin-bottom: 15px; width: 100%;
+        }
+        .mini-input-group input { padding: 10px 15px; font-size: 14px; border-radius: 15px; width: 100%; }
+        .mini-input-group .btn { padding: 10px 15px; }
 
         /* Song Stage Dividers */
         .stage-label {
@@ -256,11 +286,23 @@
             <div id="songListContainer" class="scroll-area"></div>
         </div>
 
+        <div class="liquid-box liquid-glass card-inactive" id="card-2" onclick="handleCardClick(2)">
+            <h2><i style="color:var(--accent);"></i> Ventas</h2>
+            <div class="input-row">
+                <input type="text" id="clientNameInput" placeholder="Nombre del cliente..." onkeypress="if(event.key==='Enter') addClient()">
+                <button class="btn btn-inverted btn-small" onclick="addClient()">
+                    <i class="fas fa-plus"></i> ADD
+                </button>
+            </div>
+            <div id="clientListContainer" class="scroll-area"></div>
+        </div>
+
     </div>
 
     <nav class="bottom-island liquid-glass">
         <button class="nav-btn active" id="btn-nav-0" onclick="switchCard(0)"><i class="fas fa-check-double"></i></button>
         <button class="nav-btn" id="btn-nav-1" onclick="switchCard(1)"><i class="fas fa-music"></i></button>
+        <button class="nav-btn" id="btn-nav-2" onclick="switchCard(2)"><i class="fas fa-handshake"></i></button>
     </nav>
 
     <script>
@@ -272,6 +314,9 @@
 
         let tasks = [];
         let songs = [];
+        let clients = [];
+        let clientSongs = [];
+        let expandedClients = new Set();
         
         // The stages flow and labels
         const colorStages = ['#2196F3', '#FFC107', '#FF9800', '#8BC34A', '#4CAF50'];
@@ -295,9 +340,11 @@
         function switchCard(index) {
             document.getElementById('card-0').className = index === 0 ? 'liquid-box liquid-glass card-active' : 'liquid-box liquid-glass card-inactive';
             document.getElementById('card-1').className = index === 1 ? 'liquid-box liquid-glass card-active' : 'liquid-box liquid-glass card-inactive';
+            document.getElementById('card-2').className = index === 2 ? 'liquid-box liquid-glass card-active' : 'liquid-box liquid-glass card-inactive';
             
             document.getElementById('btn-nav-0').className = index === 0 ? 'nav-btn active' : 'nav-btn';
             document.getElementById('btn-nav-1').className = index === 1 ? 'nav-btn active' : 'nav-btn';
+            document.getElementById('btn-nav-2').className = index === 2 ? 'nav-btn active' : 'nav-btn';
 
             // Save the current card to LocalStorage to remember it on refresh
             localStorage.setItem('liros_active_card', index);
@@ -608,7 +655,273 @@
             document.body.addEventListener('mouseleave', (e) => { if(e.target.closest('button, input, textarea, .text-container, .icon-btn, .nav-btn, .status-dot-small, .color-option, .liquid-box')) cursor.classList.remove('hover'); }, true);
         }
 
-        // --- 8. INITIALIZATION LOGIC ---
+        // --- 8. VENTAS / CLIENTS LOGIC ---
+        async function loadClients() {
+            const { data, error } = await supabaseClient.from('clients').select('*').order('id', { ascending: false });
+            if (!error) { clients = data; renderClients(); }
+        }
+        
+        async function loadClientSongs() {
+            const { data, error } = await supabaseClient.from('client_songs').select('*').order('position', { ascending: true }).order('id', { ascending: false });
+            if (!error) { clientSongs = data; renderClients(); }
+        }
+
+        async function addClient() {
+            const name = document.getElementById('clientNameInput').value.trim();
+            if (name) {
+                const { data, error } = await supabaseClient.from('clients').insert([{ name: name, total_price: 0 }]).select();
+                if (!error) { clients.unshift(data[0]); document.getElementById('clientNameInput').value = ''; renderClients(); }
+            }
+        }
+
+        async function updateClientTotal(id, total) {
+            const { error } = await supabaseClient.from('clients').update({ total_price: parseFloat(total) || 0 }).eq('id', id);
+            if (!error) {
+                const client = clients.find(c => c.id === id);
+                if (client) { client.total_price = parseFloat(total) || 0; renderClients(); }
+            }
+        }
+
+        async function updateClientDeadline(id, deadline) {
+            const { error } = await supabaseClient.from('clients').update({ deadline: deadline }).eq('id', id);
+            if (!error) {
+                const client = clients.find(c => c.id === id);
+                if (client) { client.deadline = deadline; renderClients(); }
+            }
+        }
+
+        async function addClientSong(clientId, inputId) {
+            const title = document.getElementById(inputId).value.trim();
+            if (title) {
+                const { data, error } = await supabaseClient.from('client_songs').insert([{ 
+                    client_id: clientId, title: title, is_done: false, color: colorStages[0], position: -Date.now(), price: null 
+                }]).select();
+                if (!error) { clientSongs.unshift(data[0]); document.getElementById(inputId).value = ''; renderClients(); }
+            }
+        }
+
+        async function toggleClientSong(id, currentStatus) {
+            const newStatus = !currentStatus;
+            const { error } = await supabaseClient.from('client_songs').update({ is_done: newStatus }).eq('id', id);
+            if (!error) {
+                const song = clientSongs.find(s => s.id === id);
+                if (song) { song.is_done = newStatus; renderClients(); }
+            }
+        }
+
+        async function cycleClientSongColor(e, id, currentColor) {
+            e.stopPropagation(); 
+            const currentIndex = colorStages.indexOf(currentColor);
+            const nextIndex = (currentIndex + 1) % colorStages.length;
+            const newColor = colorStages[nextIndex];
+            const { error } = await supabaseClient.from('client_songs').update({ color: newColor }).eq('id', id);
+            if (!error) {
+                const song = clientSongs.find(s => s.id === id);
+                if (song) { song.color = newColor; renderClients(); }
+            }
+        }
+
+        async function deleteClientSong(id) {
+            const { error } = await supabaseClient.from('client_songs').delete().eq('id', id);
+            if (!error) { clientSongs = clientSongs.filter(s => s.id !== id); renderClients(); }
+        }
+        
+        async function deleteClient(id) {
+            if(!confirm("¿Seguro que quieres eliminar este cliente y todas sus canciones?")) return;
+            const { error } = await supabaseClient.from('clients').delete().eq('id', id);
+            if (!error) { 
+                clients = clients.filter(c => c.id !== id); 
+                clientSongs = clientSongs.filter(s => s.client_id !== id);
+                renderClients(); 
+            }
+        }
+
+        async function editClientSongPrice(id, currentPrice) {
+            let p = prompt("Precio para esta canción (déjalo vacío para cálculo automático):", currentPrice || "");
+            if (p !== null) {
+                let val = p.trim() === "" ? null : parseFloat(p);
+                const { error } = await supabaseClient.from('client_songs').update({ price: val }).eq('id', id);
+                if (!error) {
+                    const song = clientSongs.find(s => s.id === id);
+                    if (song) { song.price = val; renderClients(); }
+                }
+            }
+        }
+        
+        async function editClientSongName(id, currentTitle) {
+            let p = prompt("Nombre de la canción:", currentTitle || "");
+            if (p !== null && p.trim() !== "") {
+                const { error } = await supabaseClient.from('client_songs').update({ title: p.trim() }).eq('id', id);
+                if (!error) {
+                    const song = clientSongs.find(s => s.id === id);
+                    if (song) { song.title = p.trim(); renderClients(); }
+                }
+            }
+        }
+
+        function toggleClientExpand(id) {
+            const body = document.getElementById('client-body-' + id);
+            if (body) { 
+                body.classList.toggle('expanded'); 
+                if (body.classList.contains('expanded')) {
+                    expandedClients.add(id);
+                } else {
+                    expandedClients.delete(id);
+                }
+            }
+        }
+
+        function renderClients() {
+            sortData(clientSongs);
+            const container = document.getElementById('clientListContainer');
+            container.innerHTML = '';
+            
+            clients.forEach(client => {
+                const mySongs = clientSongs.filter(s => s.client_id === client.id);
+                const pending = mySongs.filter(s => !s.is_done);
+                const done = mySongs.filter(s => s.is_done);
+                
+                // Calculate auto price
+                const manualPriceTotal = pending.reduce((sum, s) => sum + (s.price || 0), 0);
+                const manualPriceCount = pending.filter(s => s.price !== null).length;
+                const autoPriceCount = pending.length - manualPriceCount;
+                
+                let autoPricePerSong = 0;
+                if (autoPriceCount > 0) {
+                    let remainingTotal = (client.total_price || 0) - manualPriceTotal;
+                    autoPricePerSong = remainingTotal / autoPriceCount;
+                }
+
+                const clientCard = document.createElement('div');
+                clientCard.className = 'client-card';
+                
+                const header = document.createElement('div');
+                header.className = 'client-header';
+                header.onclick = () => toggleClientExpand(client.id);
+                
+                let titleHtml = `<span>${client.name}</span>`;
+                if (client.total_price) { titleHtml += `<span class="price-display">$${client.total_price}</span>`; }
+                
+                header.innerHTML = `${titleHtml} <div class="action-btns"><button class="icon-btn delete" onclick="event.stopPropagation(); deleteClient(${client.id})"><i class="fas fa-trash"></i></button></div>`;
+                
+                const body = document.createElement('div');
+                body.className = 'client-body' + (expandedClients.has(client.id) ? ' expanded' : '');
+                body.id = 'client-body-' + client.id;
+                
+                // Top controls (Total price & Deadline)
+                body.innerHTML = `
+                    <div class="mini-input-group">
+                        <input type="number" placeholder="Costo Total ($)" value="${client.total_price || ''}" onchange="updateClientTotal(${client.id}, this.value)">
+                        <input type="date" title="Fecha límite" value="${client.deadline || ''}" onchange="updateClientDeadline(${client.id}, this.value)">
+                    </div>
+                    <div class="mini-input-group">
+                        <input type="text" id="cs-input-${client.id}" placeholder="Nueva canción..." onkeypress="if(event.key==='Enter') addClientSong(${client.id}, 'cs-input-${client.id}')">
+                        <button class="btn btn-inverted btn-small" onclick="addClientSong(${client.id}, 'cs-input-${client.id}')"><i class="fas fa-plus"></i></button>
+                    </div>
+                `;
+                
+                // Render pending stages
+                const scrollContainer = document.createElement('div');
+                scrollContainer.className = 'client-songs-scroll-area';
+                
+                colorStages.forEach(color => {
+                    const stageSongs = pending.filter(s => (s.color || colorStages[0]) === color);
+                    if (stageSongs.length > 0) {
+                        const label = document.createElement('div');
+                        label.className = 'stage-label'; label.style.color = color; label.textContent = stageLabels[color];
+                        scrollContainer.appendChild(label);
+                        
+                        const ul = document.createElement('ul'); ul.className = 'sortable-list'; ul.dataset.color = color; ul.dataset.client = client.id;
+                        
+                        stageSongs.forEach(song => {
+                            let songPrice = song.price !== null ? song.price : autoPricePerSong;
+                            ul.appendChild(createClientSongElement(song, songPrice));
+                        });
+                        scrollContainer.appendChild(ul);
+                        
+                        new Sortable(ul, {
+                            group: 'client_songs_' + client.id, 
+                            animation: 150, delay: 200, delayOnTouchOnly: true, ghostClass: 'sortable-ghost',
+                            onEnd: async function (evt) {
+                                const newColor = evt.to.dataset.color; 
+                                const items = Array.from(evt.to.children);
+                                for (let i = 0; i < items.length; i++) {
+                                    const itemId = parseInt(items[i].dataset.id);
+                                    const item = clientSongs.find(t => t.id === itemId);
+                                    if (item) {
+                                        let updates = {}; let needsUpdate = false;
+                                        if (item.position !== i) { item.position = i; updates.position = i; needsUpdate = true; }
+                                        if (item.color !== newColor) { item.color = newColor; updates.color = newColor; needsUpdate = true; }
+                                        if (needsUpdate) supabaseClient.from('client_songs').update(updates).eq('id', itemId).then();
+                                    }
+                                }
+                                if (evt.from !== evt.to) { renderClients(); }
+                            }
+                        });
+                    }
+                });
+                
+                if (done.length > 0) {
+                    const div = document.createElement('hr'); div.className = 'divider'; scrollContainer.appendChild(div);
+                    const label = document.createElement('div'); label.className = 'done-label'; label.textContent = 'Completadas'; scrollContainer.appendChild(label);
+                    const doneList = document.createElement('ul');
+                    done.forEach(song => doneList.appendChild(createClientSongElement(song, 0, true)));
+                    scrollContainer.appendChild(doneList);
+                }
+                
+                body.appendChild(scrollContainer);
+                
+                clientCard.appendChild(header);
+                clientCard.appendChild(body);
+                container.appendChild(clientCard);
+            });
+        }
+        
+        function createClientSongElement(item, displayPrice, isDone = false) {
+            const li = document.createElement('li');
+            li.className = 'task-item'; li.dataset.id = item.id; 
+            
+            const textContainer = document.createElement('div');
+            textContainer.className = `text-container ${isDone ? 'done' : ''}`;
+            
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'task-text'; titleSpan.textContent = item.title;
+            titleSpan.onclick = () => toggleClientSong(item.id, isDone);
+            textContainer.appendChild(titleSpan);
+
+            const descRow = document.createElement('div');
+            descRow.className = 'task-desc-row';
+            
+            const dot = document.createElement('span');
+            dot.className = 'status-dot-small'; dot.style.background = item.color || colorStages[0];
+            if(!isDone) dot.onclick = (e) => cycleClientSongColor(e, item.id, item.color || colorStages[0]);
+            descRow.appendChild(dot);
+            
+            const priceText = document.createElement('span');
+            priceText.className = 'task-desc'; 
+            priceText.textContent = isDone ? "" : `$${parseFloat(displayPrice).toFixed(2)}`;
+            if(!isDone) {
+                priceText.style.cursor = 'pointer';
+                priceText.onclick = () => editClientSongPrice(item.id, item.price);
+            }
+            descRow.appendChild(priceText);
+            textContainer.appendChild(descRow);
+            
+            const actions = document.createElement('div'); actions.className = 'action-btns';
+            if (!isDone) {
+                const editBtn = document.createElement('button'); editBtn.className = 'icon-btn edit'; editBtn.innerHTML = '<i class="fas fa-pen"></i>';
+                editBtn.onclick = () => editClientSongName(item.id, item.title);
+                actions.appendChild(editBtn);
+            }
+            const delBtn = document.createElement('button'); delBtn.className = 'icon-btn delete'; delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            delBtn.onclick = () => deleteClientSong(item.id);
+            actions.appendChild(delBtn);
+            
+            li.appendChild(textContainer); li.appendChild(actions);
+            return li;
+        }
+
+        // --- 9. INITIALIZATION LOGIC ---
         // Read memory on load to open the correct card automatically
         const savedCard = localStorage.getItem('liros_active_card');
         if (savedCard !== null) {
@@ -619,6 +932,8 @@
 
         loadTasks();
         loadSongs();
+        loadClients();
+        loadClientSongs();
     </script>
 </body>
 </html>

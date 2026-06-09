@@ -1271,6 +1271,12 @@
     </div>
 
     <div id="dynamic-island">
+        
+        <!-- 🌟 BOTÓN DE TAREAS/LOGROS 🌟 -->
+        <div id="tasks-btn" class="map-ctrl-btn" style="position: absolute; top: 0px; left: calc(100% + 10px); width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1000;">
+            <span style="font-size: 14px;">⭐</span>
+            <div id="tasks-badge" style="display: none; position: absolute; top: -2px; right: -2px; background: red; width: 8px; height: 8px; border-radius: 50%; border: 1px solid black;"></div>
+        </div>
 
         <!-- 🛑 BOTÓN DE CHAT DE SQUAD (VERDE) ACTUALIZADO -->
         <div id="island-squad-chat-btn"
@@ -1546,12 +1552,9 @@
 
             <div
                 style="position: absolute; bottom: 30px; right: 30px; display: flex; flex-direction: column; gap: 8px;">
-                <button id="map-recenter" class="pixel-icon"><img src="items/icons/recenter.png" class="pixel-icon"
-                        alt="Recenter"></button>
-                <button id="map-zoom-in" class="pixel-icon"><img src="items/icons/Plus.png" class="pixel-icon"
-                        alt="Zoom In"></button>
-                <button id="map-zoom-out" class="pixel-icon "><img src="items/icons/Minus.png" class="pixel-icon"
-                        alt="Zoom Out"></button>
+                <button id="map-recenter" class="map-ctrl-btn"><img src="items/icons/recenter.png" style="width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated;" alt="Recenter"></button>
+                <button id="map-zoom-in" class="map-ctrl-btn"><img src="items/icons/Plus.png" style="width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated;" alt="Zoom In"></button>
+                <button id="map-zoom-out" class="map-ctrl-btn"><img src="items/icons/Minus.png" style="width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated;" alt="Zoom Out"></button>
             </div>
 
             <canvas id="minimap-canvas" width="500" height="300"></canvas>
@@ -3145,6 +3148,26 @@
             ▼</div>
     </div>
 
+    <!-- 🌟 MODAL DE TAREAS Y LOGROS 🌟 -->
+    <div id="tasks-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);">
+        <div style="background: rgba(30, 30, 30, 0.9); border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; width: 90%; max-width: 400px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="color: white; margin: 0; font-family: sans-serif; font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 8px;">⭐ Achievements</h2>
+                <button id="close-tasks-modal" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div id="tasks-tabs" style="display: flex; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                <button class="task-tab-btn" data-category="daily" style="background: none; border: none; color: white; font-weight: bold; font-family: sans-serif; cursor: pointer; padding-bottom: 5px; border-bottom: 2px solid #2ecc71; opacity: 1;">Daily</button>
+                <button class="task-tab-btn" data-category="milestone" style="background: none; border: none; color: white; font-weight: bold; font-family: sans-serif; cursor: pointer; padding-bottom: 5px; border-bottom: 2px solid transparent; opacity: 0.5;">Milestones</button>
+                <button class="task-tab-btn" data-category="squad" style="background: none; border: none; color: white; font-weight: bold; font-family: sans-serif; cursor: pointer; padding-bottom: 5px; border-bottom: 2px solid transparent; opacity: 0.5;">Squad</button>
+            </div>
+            
+            <div id="tasks-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                <!-- JS will inject tasks here -->
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- SEPARAMOS EL ANCHO Y EL ALTO ---
         const FRAME_SIZE = 48; // Regresamos a 48 porque es el tamaño real de cada celda de tu sprite
@@ -3833,7 +3856,7 @@
             // Dibujar solo los tiles que pertenecen a este chunk en escala 1:1 (PERFECT PIXEL)
             for (let r = startY; r < startY + CHUNK_SIZE; r++) {
                 for (let c = startX; c < startX + CHUNK_SIZE; c++) {
-                    for (let l = 0; l <= 15; l++) {
+                    for (let l = 0; l <= 14; l++) {
                         const tileData = worldMap.get(`${c},${r},${l}`);
                         if (!tileData) continue;
 
@@ -4648,6 +4671,8 @@
         let myId = null;
         // --- BASE DE DATOS DE ARMAS EN EL CLIENTE ---
         let weaponsDB = {};
+        
+        // 🌟 SISTEMA DE LOGROS Y TAREAS 🌟
 
         // Auth UI Elements
         const authOverlay = document.getElementById('auth-overlay');
@@ -4893,7 +4918,26 @@
                 authMessage.style.color = '#ff6b6b'; // Red
                 authMessage.innerText = data.message;
             } // --- RECIBIR RESPUESTA DE LA TIENDA ---
-            else if (data.type === 'buy_success') {
+            else if (data.type === 'inventory_update') {
+                player.inventory = data.inventory;
+                updateInventoryUI();
+            }else if (data.type === 'task_claimed') {
+                myClaimedTasks = data.claimedTasks;
+                if(typeof renderTasksModal === 'function') renderTasksModal();
+                if(typeof checkTaskBadge === 'function') checkTaskBadge();
+                
+                // Texto flotante de éxito
+                spawnDamageText(player.worldX, player.worldY, "¡RECOMPENSA!", true);
+            } else if (data.type === 'coins_update') {
+                player.coins = data.coins;
+                const coinsDisplay = document.getElementById('profile-coins-display');
+                if (coinsDisplay) coinsDisplay.innerText = player.coins;
+            } else if (data.type === 'claim_error') {
+                // NUNCA silencies un error en desarrollo. Si falla, el jugador debe saber por qué.
+                alert("❌ No se pudo reclamar: " + (data.message || "Error desconocido"));
+                // Forzamos a repintar para quitar el estado de "Procesando..."
+                if(typeof renderTasksModal === 'function') renderTasksModal();
+            } else if (data.type === 'buy_success') {
                 // Actualizar billetera e inventario localmente
                 player.coins = data.newCoins;
                 player.inventory = data.newInventory;
@@ -4965,6 +5009,7 @@
             // --- RECIBIR DETALLES DE UN SQUAD AL HACER CLIC ---
             else if (data.type === 'my_squad_data') {
                 const sq = data.squad;
+                window.mySquadData = sq; // Save for tasks menu
                 document.getElementById('my-squad-title').innerText = sq.name;
                 document.getElementById('my-squad-member-count').innerText = `${sq.members.length + 1} / 25 Miembros`;
 
@@ -5020,9 +5065,6 @@
 
                 // Y PON ESTA:
                 renderSquadGrid(sq);
-
-                squadListModal.style.display = 'none';
-                mySquadModal.style.display = 'flex';
 
 
             }// --- RECIBIR DATOS DEL LEADERBOARD ---
@@ -5309,6 +5351,15 @@
                 // --- NUEVO: CONTADOR DE CARGA Y DESCARGA DEL CATÁLOGO MÁGICO ---
                 window.MASTER_CATALOG = data.masterCatalog || {};
                 window.loadedItemSprites = window.loadedItemSprites || {};
+                
+                // 🌟 ASIGNAR TAREAS Y LOGROS GLOBALES 🌟
+                globalTasks = data.globalTasks || {};
+                if (!player || !player.accountId) {
+                    myTaskProgress = data.taskProgress || {};
+                    myClaimedTasks = data.claimedTasks || {}; 
+                }
+                console.log(`[DEBUG] Updated myClaimedTasks from ${data.type}:`, myClaimedTasks);
+                if(typeof checkTaskBadge === 'function') checkTaskBadge();
 
                 CLIENT_TRASH_CATALOG = data.trashCatalog || [];
                 CLIENT_METALS_CATALOG = Object.values(data.masterCatalog || {})
@@ -5856,6 +5907,7 @@
                     op.username = data.player.username;
                     op.frameY = data.player.frameY;
                     op.isMoving = data.player.isMoving;
+                    op.isSitting = data.player.isSitting;
 
                     // 🛑 THE JITTER FIX: We DELETED `op.frameX = data.player.frameX`
                     // The client will animate the legs locally!
@@ -5885,6 +5937,9 @@
                     }
                     op.isTyping = data.player.isTyping;
                 }
+            } else if (data.type === 'player_count') {
+                const mapPlayerCount = document.getElementById('map-player-count');
+                if (mapPlayerCount) mapPlayerCount.innerText = `Players: ${data.count}`;
             } else if (data.type === 'left') {
                 delete otherPlayers[data.id];
             } else if (data.type === 'login_success') {
@@ -5916,6 +5971,18 @@
                 player.hotbar = data.player.hotbar || ["none", "none", "none"];
                 player.quickSwaps = data.player.quickSwaps || [];
                 player.accountId = data.player.accountId;
+                
+                // --- 🌟 NUEVO: CARGAR TAREAS DEL SERVIDOR TRAS LOGIN 🌟 ---
+                globalTasks = data.globalTasks || {};
+                myTaskProgress = data.taskProgress || {};
+                myClaimedTasks = data.claimedTasks || {}; console.log(`[DEBUG] Updated myClaimedTasks from ${data.type}:`, myClaimedTasks);
+                if(typeof checkTaskBadge === 'function') checkTaskBadge();
+
+                // 🌟 NUEVO: Pedir datos del squad si pertenece a uno, para las recompensas de Squad
+                if (data.player.squad) {
+                    ws.send(MessagePack.encode({ type: 'get_squad_details', squadId: data.player.squad }));
+                }
+
                 // 🛑 EL FIX 3: Cargar tu ropa desde el servidor al entrar
                 player.equipped = data.player.equipped || { head: 'head_default', body: 'body_default', hands: 'none' };
                 // --- NUEVO: RECIBIR TU ROL ---
@@ -5960,6 +6027,9 @@
                 player.worldX = data.player.worldX;
                 player.worldY = data.player.worldY;
                 player.coins = data.player.coins || 0;
+                player.kills = data.player.kills || 0;
+                player.losses = data.player.losses || 0;
+                player.elo = data.player.elo || 1000;
                 player.squadName = data.player.squadName;
                 player.squadLogo = data.player.squadLogo;
                 player.squad = data.player.squad;
@@ -8439,9 +8509,7 @@
         function drawMinimap() {
             if (!mCtx) return;
 
-            // Actualizar el número de jugadores
-            const totalPlayers = Object.keys(otherPlayers).length + 1;
-            mapPlayerCount.innerText = `Players: ${totalPlayers}`;
+            // El número de jugadores ahora se actualiza automáticamente vía red (type: 'player_count')
 
             const cameraX = player.worldX + mapOffsetX;
             const cameraY = player.worldY + mapOffsetY;
@@ -13010,18 +13078,10 @@
                             player.vx = 0; player.vy = 0; player.isMoving = false;
                         }
                     } else {
-                        // 📱 LOW-PASS FILTER on joystick: smooths out finger micro-vibrations
-                        if (player.joyX === 0 && player.joyY === 0) {
-                            // Instant stop when thumb lifted (fixes idle animation bug)
-                            player.smoothJoyX = 0;
-                            player.smoothJoyY = 0;
-                        } else {
-                            player.smoothJoyX = (player.smoothJoyX || 0) * 0.72 + (player.joyX || 0) * 0.28;
-                            player.smoothJoyY = (player.smoothJoyY || 0) * 0.72 + (player.joyY || 0) * 0.28;
-                        }
-                        player.vx = player.smoothJoyX * (player.speed * speedMult) * dtScale;
-                        player.vy = player.smoothJoyY * (player.speed * speedMult) * dtScale;
-                        player.isMoving = (Math.abs(player.smoothJoyX) > 0.02 || Math.abs(player.smoothJoyY) > 0.02);
+                        // 📱 MOVIMIENTO INSTANTÁNEO 1:1 (Sin aceleración ni retraso)
+                        player.vx = (player.joyX || 0) * (player.speed * speedMult) * dtScale;
+                        player.vy = (player.joyY || 0) * (player.speed * speedMult) * dtScale;
+                        player.isMoving = (Math.abs(player.joyX || 0) > 0.02 || Math.abs(player.joyY || 0) > 0.02);
                     }
                 } else {
                     player.vx = 0; player.vy = 0; player.isMoving = false;
@@ -14676,7 +14736,8 @@
                         player.isMoving !== window.lastNetMoving ||
                         player.equippedWeapon !== window.lastNetWep ||
                         player.message !== window.lastNetMsg ||
-                        player.isTyping !== window.lastNetTyping
+                        player.isTyping !== window.lastNetTyping ||
+                        player.isSitting !== window.lastNetSitting
                     );
 
                     // Solo enviamos si algo cambió, o si pasaron 2 segundos por seguridad
@@ -14690,6 +14751,7 @@
                                 isMoving: player.isMoving,
                                 message: player.message, messageTimer: player.messageTimer,
                                 isTyping: player.isTyping,
+                                isSitting: player.isSitting,
                                 equippedWeapon: player.equippedWeapon
                             }
                         }));
@@ -14698,11 +14760,310 @@
                         window.lastNetX = rx; window.lastNetY = ry;
                         window.lastNetDir = player.frameY; window.lastNetMoving = player.isMoving;
                         window.lastNetWep = player.equippedWeapon; window.lastNetMsg = player.message;
-                        window.lastNetTyping = player.isTyping;
+                        window.lastNetTyping = player.isTyping; window.lastNetSitting = player.isSitting;
                         window.lastForceSendTime = timeNow;
                     }
                 }
             }
+        }
+
+        // 🌟 SISTEMA DE LOGROS Y TAREAS (LOGICA UI) 🌟
+        if(typeof globalTasks === 'undefined') {
+            window.globalTasks = {};
+            window.myTaskProgress = {};
+            window.myClaimedTasks = {};
+        }
+// Variables existentes
+        const tasksBtn = document.getElementById('tasks-btn');
+        const tasksModal = document.getElementById('tasks-modal');
+        const closeTasksBtn = document.getElementById('close-tasks-modal');
+        const tasksBadge = document.getElementById('tasks-badge');
+        const tasksList = document.getElementById('tasks-list');
+
+        // 👇 NUEVA VARIABLE PARA EL RELOJ
+        let activeTasksInterval = null;
+
+        tasksBtn.addEventListener('click', () => {
+            if (!player || !player.accountId) return alert("⚠️ You must log in to view achievements.");
+            tasksModal.style.display = 'flex';
+            renderTasksModal();
+        });
+
+        // 👇 ACTUALIZAR EL BOTÓN DE CERRAR
+        closeTasksBtn.addEventListener('click', () => {
+            tasksModal.style.display = 'none';
+            if (activeTasksInterval) {
+                clearInterval(activeTasksInterval);
+                activeTasksInterval = null;
+            }
+        });
+
+function checkTaskBadge() {
+            if (!tasksBadge) return;
+            let hasUnclaimed = false;
+            const now = Date.now();
+            
+            for (let taskId in globalTasks) {
+                const task = globalTasks[taskId];
+                
+                // Misma lógica a prueba de fallos
+                let isClaimed = false;
+                if (Array.isArray(myClaimedTasks)) {
+                    isClaimed = myClaimedTasks.includes(taskId);
+                } else if (myClaimedTasks && typeof myClaimedTasks === 'object') {
+                    if (myClaimedTasks[taskId]) {
+                        const lastClaimedTime = Number(myClaimedTasks[taskId]);
+                        if (!task.isRepeatable) isClaimed = true;
+                        else isClaimed = (now - lastClaimedTime) < (task.resetIntervalMs || 86400000);
+                    }
+                }
+                
+                if (isClaimed) continue; // Si ya la reclamó, la saltamos
+
+                let completed = false;
+                if (task.requirementType === 'login') completed = true;
+                else if (task.requirementType === 'kills') completed = (player.kills >= task.requirementValue);
+                else if (task.requirementType === 'elo') completed = (player.elo >= task.requirementValue);
+                else if (task.requirementType === 'play_hours') completed = ((myTaskProgress[taskId] || 0) >= task.requirementValue);
+                else if (task.requirementType === 'squad_base_minutes') {
+                    if (window.mySquadData && window.mySquadData.territoryTimeMinutes >= task.requirementValue) {
+                        const isLeader = window.mySquadData.leader && window.mySquadData.leader.accountId === player.accountId;
+                        let lockedByAntiCheat = false;
+                        if (!isLeader && window.mySquadData.members) {
+                            const memberInfo = window.mySquadData.members.find(m => m.accountId === player.accountId);
+                            if (memberInfo && memberInfo.joinedAt) {
+                                const joinedTime = new Date(memberInfo.joinedAt).getTime();
+                                let milestoneDate = null;
+                                if (window.mySquadData.milestonesAchieved && window.mySquadData.milestonesAchieved[taskId]) {
+                                    milestoneDate = new Date(window.mySquadData.milestonesAchieved[taskId]).getTime();
+                                }
+                                
+                                if (milestoneDate && joinedTime > milestoneDate) {
+                                    lockedByAntiCheat = true;
+                                } else {
+                                    const daysInSquad = (Date.now() - joinedTime) / (1000 * 60 * 60 * 24);
+                                    if (daysInSquad < 15 && !milestoneDate) {
+                                        lockedByAntiCheat = true;
+                                    }
+                                }
+                            }
+                        }
+                        completed = !lockedByAntiCheat;
+                    }
+                }
+
+                if (completed) {
+                    hasUnclaimed = true;
+                    break;
+                }
+            }
+            
+            tasksBadge.style.display = hasUnclaimed ? 'flex' : 'none';
+        }
+
+        let currentTaskCategory = 'daily';
+
+        document.querySelectorAll('.task-tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.task-tab-btn').forEach(b => {
+                    b.style.borderBottom = "2px solid transparent";
+                    b.style.opacity = "0.5";
+                });
+                e.target.style.borderBottom = "2px solid #2ecc71";
+                e.target.style.opacity = "1";
+                currentTaskCategory = e.target.getAttribute('data-category');
+                renderTasksModal();
+            });
+        });
+
+        function renderTasksModal() {
+            if (!tasksList) return;
+            tasksList.innerHTML = '';
+            
+            // Limpiar cualquier reloj previo antes de redibujar
+            if (activeTasksInterval) clearInterval(activeTasksInterval);
+
+            const now = Date.now();
+
+            for (let taskId in globalTasks) {
+                const task = globalTasks[taskId];
+                if (task.category !== currentTaskCategory) continue;
+
+                // 🛑 EL FIX: Asumir que si está en 'daily', ES repetible automáticamente
+                const isRepeatable = task.isRepeatable || task.category === 'daily';
+                const cooldownMs = task.resetIntervalMs || 86400000; // 24 horas por defecto
+
+                let isClaimed = false;
+                let lastClaimedTime = null;
+                let timeRemainingMs = 0;
+
+                // Detectamos cómo manda el servidor los datos
+                if (Array.isArray(myClaimedTasks)) {
+                    isClaimed = myClaimedTasks.includes(taskId);
+                    // Como es un array, no tenemos la hora exacta. Inventaremos un tiempo positivo para activar la UI amarilla.
+                    if (isClaimed && isRepeatable) {
+                        timeRemainingMs = 1; 
+                    }
+                } else if (myClaimedTasks && typeof myClaimedTasks === 'object') {
+                    if (myClaimedTasks[taskId]) {
+                        lastClaimedTime = Number(myClaimedTasks[taskId]);
+                        if (!isRepeatable) {
+                            isClaimed = true; 
+                        } else {
+                            timeRemainingMs = (lastClaimedTime + cooldownMs) - now;
+                            isClaimed = timeRemainingMs > 0;
+                        }
+                    }
+                }
+
+                // Cálculo del progreso actual
+                let currentVal = 0;
+                let lockedByAntiCheat = false;
+                let antiCheatMsg = "";
+                if (task.requirementType === 'login') currentVal = 1;
+                else if (task.requirementType === 'kills') currentVal = player.kills;
+                else if (task.requirementType === 'elo') currentVal = player.elo;
+                else if (task.requirementType === 'play_hours') currentVal = myTaskProgress[taskId] || 0;
+                else if (task.requirementType === 'squad_base_minutes') {
+                    currentVal = (window.mySquadData && window.mySquadData.territoryTimeMinutes) ? window.mySquadData.territoryTimeMinutes : 0;
+                    if (window.mySquadData && window.mySquadData.members) {
+                        const isLeader = window.mySquadData.leader && window.mySquadData.leader.accountId === player.accountId;
+                        if (!isLeader) {
+                            const memberInfo = window.mySquadData.members.find(m => m.accountId === player.accountId);
+                            if (memberInfo && memberInfo.joinedAt) {
+                                const joinedTime = new Date(memberInfo.joinedAt).getTime();
+                                let milestoneDate = null;
+                                if (window.mySquadData.milestonesAchieved && window.mySquadData.milestonesAchieved[taskId]) {
+                                    milestoneDate = new Date(window.mySquadData.milestonesAchieved[taskId]).getTime();
+                                }
+                                
+                                if (milestoneDate && joinedTime > milestoneDate) {
+                                    // Player joined after milestone was achieved.
+                                    // Completely hide the achievement so they don't feel left out.
+                                    continue;
+                                } else {
+                                    const daysInSquad = (Date.now() - joinedTime) / (1000 * 60 * 60 * 24);
+                                    if (daysInSquad < 15 && !milestoneDate) {
+                                        lockedByAntiCheat = true;
+                                        antiCheatMsg = `\uD83D\uDD12 Disponible en ${Math.ceil(15 - daysInSquad)} d\u00edas`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const progressPercent = Math.min(100, Math.floor((currentVal / task.requirementValue) * 100));
+                const canClaim = (currentVal >= task.requirementValue) && !isClaimed && !lockedByAntiCheat;
+
+                const card = document.createElement('div');
+                card.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; gap: 10px; transition: 0.3s;";
+                
+                if (isClaimed) {
+                    card.style.opacity = "0.5";
+                    card.style.filter = "grayscale(100%)";
+                    card.style.webkitFilter = "grayscale(100%)";
+                }
+
+                let rewardDisplay = "";
+                if(task.rewardType === 'coins') {
+                    rewardDisplay = `<span style="font-size: 16px; margin-right: 4px; vertical-align: middle;">💰</span> <span style="color: gold; font-weight: bold;">+${task.rewardValue}</span>`;
+                } else {
+                    rewardDisplay = `<span style="color: #2ecc71; font-weight: bold;">Item: ${task.rewardValue}</span>`;
+                }
+
+                // 🛑 LA MAGIA DE LA UI: Generar botón dinámico según el estado
+                let btnHtml = "";
+                if (isClaimed && isRepeatable) {
+                    if (lastClaimedTime) {
+                        // SI HAY HORA: Mostrar Temporizador Real
+                        const expireTime = lastClaimedTime + cooldownMs;
+                        btnHtml = `<button class="claim-btn task-timer" data-expire="${expireTime}" disabled style="background: transparent; color: #f1c40f; border: 1px solid #f1c40f; padding: 8px; border-radius: 5px; font-weight: bold; cursor: not-allowed; font-family: monospace; font-size: 14px; transition: 0.2s; margin-top: 5px; text-shadow: 1px 1px 0px black;">
+                            ⏳ --:--:--
+                        </button>`;
+                    } else {
+                        // NO HAY HORA (Servidor manda Array): Mostrar texto de espera sin temporizador vivo
+                        btnHtml = `<button class="claim-btn" disabled style="background: transparent; color: #f1c40f; border: 1px solid #f1c40f; padding: 8px; border-radius: 5px; font-weight: bold; cursor: not-allowed; font-family: monospace; font-size: 14px; transition: 0.2s; margin-top: 5px; text-shadow: 1px 1px 0px black;">
+                            ⏳ En enfriamiento (Vuelve más tarde)
+                        </button>`;
+                    }
+                } else if (isClaimed && !isRepeatable) {
+                    // Reclamado para siempre (Milestones)
+                    btnHtml = `<button class="claim-btn" disabled style="background: #555; color: #888; border: none; padding: 8px; border-radius: 5px; font-weight: bold; cursor: not-allowed; font-family: sans-serif; transition: 0.2s; margin-top: 5px;">
+                        CLAIMED
+                    </button>`;
+                } else if (lockedByAntiCheat) {
+                    btnHtml = `<button class="claim-btn" disabled style="background: transparent; color: #e74c3c; border: 1px solid #e74c3c; padding: 8px; border-radius: 5px; font-weight: bold; cursor: not-allowed; font-family: monospace; font-size: 14px; transition: 0.2s; margin-top: 5px; text-shadow: 1px 1px 0px black;">
+                        🔒 ${antiCheatMsg}
+                    </button>`;
+                } else {
+                    // Botón Normal para reclamar (o bloqueado si no hay progreso suficiente)
+                    btnHtml = `<button class="claim-btn" ${canClaim ? '' : 'disabled'} style="background: ${canClaim ? '#2ecc71' : '#555'}; color: ${canClaim ? 'black' : '#888'}; border: none; padding: 8px; border-radius: 5px; font-weight: bold; cursor: ${canClaim ? 'pointer' : 'not-allowed'}; font-family: sans-serif; transition: 0.2s; margin-top: 5px;">
+                        CLAIM REWARD
+                    </button>`;
+                }
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="color: white; font-weight: bold; font-family: sans-serif; font-size: 14px;">${task.title}</div>
+                            <div style="color: #aaa; font-family: sans-serif; font-size: 11px; margin-top: 4px;">${task.description}</div>
+                        </div>
+                        <div style="text-align: right; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 5px;">
+                            ${rewardDisplay}
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="flex-grow: 1; background: rgba(0,0,0,0.5); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="background: ${canClaim ? '#2ecc71' : '#3498db'}; width: ${progressPercent}%; height: 100%; transition: width 0.3s;"></div>
+                        </div>
+                        <div style="color: white; font-size: 10px; font-weight: bold; min-width: 40px; text-align: right;">${Math.min(currentVal, task.requirementValue)} / ${task.requirementValue}</div>
+                    </div>
+                    ${btnHtml}
+                `;
+
+                if (canClaim) {
+                    const btn = card.querySelector('.claim-btn');
+                    btn.addEventListener('click', (e) => {
+                        e.target.innerText = "Procesando...";
+                        e.target.style.background = "#f1c40f"; 
+                        e.target.disabled = true;
+                        ws.send(MessagePack.encode({ type: 'claim_task', taskId: taskId }));
+                    });
+                }
+
+                tasksList.appendChild(card);
+            }
+
+            // Iniciar o reiniciar el motor del reloj
+            if (activeTasksInterval) clearInterval(activeTasksInterval);
+            activeTasksInterval = setInterval(updateTaskTimers, 1000);
+            updateTaskTimers(); // Ejecutar el primer frame de inmediato
+        }
+
+        function updateTaskTimers() {
+            const timers = document.querySelectorAll('.task-timer');
+            const now = Date.now();
+            
+            timers.forEach(timerEl => {
+                const expireTime = Number(timerEl.getAttribute('data-expire'));
+                const diffMs = expireTime - now;
+                
+                if (diffMs <= 0) {
+                    // ¡El tiempo acabó! El botón amarillo desaparece y volvemos a dibujar
+                    // la ventana completa para que se pinte verde
+                    renderTasksModal();
+                    if(typeof checkTaskBadge === 'function') checkTaskBadge();
+                } else {
+                    // Matemáticas simples para sacar Horas, Minutos y Segundos
+                    const totalSeconds = Math.floor(diffMs / 1000);
+                    const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+                    const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+                    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+                    
+                    timerEl.innerText = `⏳ Disponible en ${hours}:${minutes}:${seconds}`;
+                }
+            });
         }
 
         update();

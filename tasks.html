@@ -262,6 +262,10 @@
                         <input type="radio" name="songColor" value="#2196F3" checked>
                         <span class="color-dot-large" style="background: #2196F3;"></span>
                     </label>
+                    <label class="color-option" title="Lyric writing done" onclick="scrollToStage('#9C27B0')">
+                        <input type="radio" name="songColor" value="#9C27B0">
+                        <span class="color-dot-large" style="background: #9C27B0;"></span>
+                    </label>
                     <label class="color-option" title="Recording instruments" onclick="scrollToStage('#FFC107')">
                         <input type="radio" name="songColor" value="#FFC107">
                         <span class="color-dot-large" style="background: #FFC107;"></span>
@@ -319,9 +323,10 @@
         let expandedClients = new Set();
         
         // The stages flow and labels
-        const colorStages = ['#2196F3', '#FFC107', '#FF9800', '#8BC34A', '#4CAF50'];
+        const colorStages = ['#2196F3', '#9C27B0', '#FFC107', '#FF9800', '#8BC34A', '#4CAF50'];
         const stageLabels = {
             '#2196F3': 'Idea / Sample',
+            '#9C27B0': 'Lyric writing done',
             '#FFC107': 'Recording Instruments',
             '#FF9800': 'Vocals & Instruments',
             '#8BC34A': 'Mix & Master',

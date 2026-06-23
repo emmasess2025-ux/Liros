@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Liros | System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
@@ -312,8 +313,13 @@
     <script>
         // --- 1. CONFIGURATION ---
         const { createClient } = supabase;
-        const supabaseUrl = 'https://hwsffnsxwxygvamqdxcd.supabase.co'; 
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3c2ZmbnN4d3h5Z3ZhbXFkeGNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzM2MTIsImV4cCI6MjA4NDYwOTYxMn0.1cslca0G6SMjGv2UBiRCYJsTNelc8vfhCixErap-2hU';
+        const supabaseUrl = window.CONFIG_SUPABASE_URL || '';
+        const supabaseKey = window.CONFIG_SUPABASE_KEY || '';
+
+        if (!supabaseUrl || !supabaseKey) {
+            console.error('Supabase configuration is missing. Please provide CONFIG_SUPABASE_URL and CONFIG_SUPABASE_KEY in config.js.');
+        }
+
         const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
         let tasks = [];

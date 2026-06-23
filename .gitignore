@@ -1,0 +1,5 @@
+# Secrets and sensitive configuration
+config.js
+.env
+.env.local
+.env.*.local
